@@ -1,0 +1,1505 @@
+{
+  "info": {
+    "_postman_id": "c6a2f891-b0e4-4d89-8d54-159e84d436a0",
+    "name": "Arogio Health API",
+    "description": "Production-ready Postman Collection for the Arogio Health Backend API (/api/v1).\n\nIncludes complete request definitions, automated token management test scripts, and full Success / Error response examples for every endpoint.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "Default fallback baseUrl if no environment is selected"
+    },
+    {
+      "key": "apiPrefix",
+      "value": "/api/v1",
+      "type": "string",
+      "description": "Global API Version Prefix"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT access token populated automatically upon login or registration"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string",
+      "description": "One-time rotating refresh token populated automatically"
+    },
+    {
+      "key": "googleIdToken",
+      "value": "sample-google-id-token",
+      "type": "string",
+      "description": "Google OAuth ID token received by the mobile/web client"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Readiness",
+      "description": "Endpoints for infrastructure liveness and dependency readiness probes.",
+      "item": [
+        {
+          "name": "Liveness Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "health"
+              ]
+            },
+            "description": "Check if the API process is running and able to handle incoming requests."
+          },
+          "response": [
+            {
+              "name": "200 OK - Process Healthy",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/health",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "health"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "53e8d2e6-a94f-4d64-963a-864bf38f4201"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"timestamp\": \"2026-10-24T12:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Readiness Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/ready",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "ready"
+              ]
+            },
+            "description": "Check if all critical dependencies (PostgreSQL database pool) are connected and ready to accept queries."
+          },
+          "response": [
+            {
+              "name": "200 OK - Dependencies Ready",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/ready",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "ready"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "88863f5e-1ba6-455b-8f3a-23ef7dc0142b"
+                }
+              ],
+              "body": "{\n  \"status\": \"ready\",\n  \"checks\": {\n    \"database\": \"up\"\n  },\n  \"timestamp\": \"2026-10-24T12:00:00.000Z\"\n}"
+            },
+            {
+              "name": "503 Service Unavailable - Database Down",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/ready",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "ready"
+                  ]
+                }
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "d4f3b067-1111-4775-9e1f-827c89ba7631"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"SERVICE_NOT_READY\",\n    \"message\": \"Database is not reachable\",\n    \"requestId\": \"d4f3b067-1111-4775-9e1f-827c89ba7631\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/ready\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "description": "Registration, login, Google OAuth, token rotation, and session logout endpoints.",
+      "item": [
+        {
+          "name": "Register with Email & Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.accessToken) {",
+                  "        pm.environment.set('accessToken', json.accessToken);",
+                  "        pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    }",
+                  "    if (json.refreshToken) {",
+                  "        pm.environment.set('refreshToken', json.refreshToken);",
+                  "        pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"fullName\": \"Arogio User\",\n  \"heightValue\": 68,\n  \"heightUnit\": \"in\",\n  \"weightValue\": 150.8,\n  \"weightUnit\": \"lb\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Register a new user account with email, password (min 12 chars with upper, lower, number), and optional health metrics (height & weight)."
+          },
+          "response": [
+            {
+              "name": "201 Created - Registration Successful",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"fullName\": \"Arogio User\",\n  \"heightValue\": 68,\n  \"heightUnit\": \"in\",\n  \"weightValue\": 150.8,\n  \"weightUnit\": \"lb\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "79ab2ef3-54cd-4e92-953b-e01e4a3b7829"
+                }
+              ],
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlNGI5ZDAzOC1mOWI4LTRjOGQtOGE1Ni00MjdjM2U1YTJkYjEiLCJzaWQiOiIyZjBhZGE5Ny04MmQ3LTRhMTItODlhNi1iNDQ5Yzc3YTNmZTgiLCJpYXQiOjE3Mjk3NzEyMDAsImV4cCI6MTcyOTc3MjEwMCwiaXNzIjoiYXJvZ2lvLWFwaSIsImF1ZCI6ImFyb2dpby1jbGllbnRzIn0.sampleSignatureValue\",\n  \"refreshToken\": \"7nQ8fX2a_81aLd0zPq9kM3rYtWxUvBzO9xKlMnO2PqR\",\n  \"tokenType\": \"Bearer\",\n  \"expiresIn\": 900,\n  \"user\": {\n    \"id\": \"e4b9d038-f9b8-4c8d-8a56-427c3e5a2db1\",\n    \"fullName\": \"Arogio User\",\n    \"username\": null,\n    \"email\": \"user@example.com\",\n    \"mobileNumber\": null,\n    \"heightValue\": 68,\n    \"heightUnit\": \"in\",\n    \"weightValue\": 150.8,\n    \"weightUnit\": \"lb\",\n    \"bmi\": 22.9,\n    \"status\": \"active\",\n    \"createdAt\": \"2026-10-24T12:00:00.000Z\",\n    \"updatedAt\": \"2026-10-24T12:00:00.000Z\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request - Validation Error",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"invalid-email\",\n  \"password\": \"short\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "3ca9d54e-e112-4cf3-bf5b-c2e7b51b75d0"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_FAILED\",\n    \"message\": \"Request validation failed\",\n    \"details\": {\n      \"email\": [\n        \"email must be an email\"\n      ],\n      \"password\": [\n        \"password must be longer than or equal to 12 characters\",\n        \"password must contain an uppercase letter\",\n        \"password must contain a number\"\n      ]\n    },\n    \"requestId\": \"3ca9d54e-e112-4cf3-bf5b-c2e7b51b75d0\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/register\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request - Height/Weight Value and Unit Mismatch",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"heightValue\": 68\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "6612d41a-a128-44fb-b148-36e788bc1142"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_FAILED\",\n    \"message\": \"Height value and unit must be provided together\",\n    \"requestId\": \"6612d41a-a128-44fb-b148-36e788bc1142\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/register\"\n  }\n}"
+            },
+            {
+              "name": "409 Conflict - Email Already Registered",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "2b93df98-e7c1-4b7f-8561-12f7194689aa"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"EMAIL_ALREADY_REGISTERED\",\n    \"message\": \"An account with this email already exists\",\n    \"requestId\": \"2b93df98-e7c1-4b7f-8561-12f7194689aa\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/register\"\n  }\n}"
+            },
+            {
+              "name": "429 Too Many Requests - Throttled",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Retry-After",
+                  "value": "60"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "11aa22bb-33cc-44dd-55ee-66ff77889900"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"HTTP_429\",\n    \"message\": \"ThrottlerException: Too Many Requests\",\n    \"requestId\": \"11aa22bb-33cc-44dd-55ee-66ff77889900\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/register\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login with Email & Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.accessToken) {",
+                  "        pm.environment.set('accessToken', json.accessToken);",
+                  "        pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    }",
+                  "    if (json.refreshToken) {",
+                  "        pm.environment.set('refreshToken', json.refreshToken);",
+                  "        pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Authenticate with verified email and password. Returns a new access token and rotating refresh token."
+          },
+          "response": [
+            {
+              "name": "200 OK - Login Successful",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "4820ad1b-29f1-46da-b789-983ce2f1a603"
+                }
+              ],
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlNGI5ZDAzOC1mOWI4LTRjOGQtOGE1Ni00MjdjM2U1YTJkYjEiLCJzaWQiOiIyZjBhZGE5Ny04MmQ3LTRhMTItODlhNi1iNDQ5Yzc3YTNmZTgiLCJpYXQiOjE3Mjk3NzEyMDAsImV4cCI6MTcyOTc3MjEwMCwiaXNzIjoiYXJvZ2lvLWFwaSIsImF1ZCI6ImFyb2dpby1jbGllbnRzIn0.sampleSignatureValue\",\n  \"refreshToken\": \"7nQ8fX2a_81aLd0zPq9kM3rYtWxUvBzO9xKlMnO2PqR\",\n  \"tokenType\": \"Bearer\",\n  \"expiresIn\": 900,\n  \"user\": {\n    \"id\": \"e4b9d038-f9b8-4c8d-8a56-427c3e5a2db1\",\n    \"fullName\": \"Arogio User\",\n    \"username\": \"arogiouser\",\n    \"email\": \"user@example.com\",\n    \"mobileNumber\": null,\n    \"heightValue\": 68,\n    \"heightUnit\": \"in\",\n    \"weightValue\": 150.8,\n    \"weightUnit\": \"lb\",\n    \"bmi\": 22.9,\n    \"status\": \"active\",\n    \"createdAt\": \"2026-10-24T12:00:00.000Z\",\n    \"updatedAt\": \"2026-10-24T12:00:00.000Z\"\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized - Invalid Credentials",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"WrongPassword999!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "9e120f38-6623-4482-9602-0e3a65c276b1"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"message\": \"Invalid email or password\",\n    \"requestId\": \"9e120f38-6623-4482-9602-0e3a65c276b1\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/login\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Google OAuth Sign-In",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.accessToken) {",
+                  "        pm.environment.set('accessToken', json.accessToken);",
+                  "        pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    }",
+                  "    if (json.refreshToken) {",
+                  "        pm.environment.set('refreshToken', json.refreshToken);",
+                  "        pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"{{googleIdToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/auth/google",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "auth",
+                "google"
+              ]
+            },
+            "description": "Sign in or register using a verified Google OAuth ID token issued by Google to an authorized client ID."
+          },
+          "response": [
+            {
+              "name": "200 OK - Google Authentication Successful",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idToken\": \"sample-valid-google-id-token\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/google",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "google"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "78f1a23b-4c5d-6e7f-8a9b-0c1d2e3f4a5b"
+                }
+              ],
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3ZjhhOWIwYy0xZDJlLTNmNGEtNWI2Yy03ZDhlOWYwYTFiMmMiLCJzaWQiOiI1N2YxOTRjNy04ZmI3LTQ5MTctOTRhMS05NDM5ZjY3YTdmODkiLCJpYXQiOjE3Mjk3NzEyMDAsImV4cCI6MTcyOTc3MjEwMCwiaXNzIjoiYXJvZ2lvLWFwaSIsImF1ZCI6ImFyb2dpby1jbGllbnRzIn0.sampleSignatureValue\",\n  \"refreshToken\": \"kL90Pq_81aLd0zPq9kM3rYtWxUvBzO9xKlMnO2PqR7n\",\n  \"tokenType\": \"Bearer\",\n  \"expiresIn\": 900,\n  \"user\": {\n    \"id\": \"7f8a9b0c-1d2e-3f4a-5b6c-7d8e9f0a1b2c\",\n    \"fullName\": \"Google Account User\",\n    \"username\": null,\n    \"email\": \"user@gmail.com\",\n    \"mobileNumber\": null,\n    \"heightValue\": null,\n    \"heightUnit\": null,\n    \"weightValue\": null,\n    \"weightUnit\": null,\n    \"bmi\": null,\n    \"status\": \"active\",\n    \"createdAt\": \"2026-10-24T12:00:00.000Z\",\n    \"updatedAt\": \"2026-10-24T12:00:00.000Z\"\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized - Invalid Google Token",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idToken\": \"invalid-or-expired-token\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/google",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "google"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "54a10e82-273b-4899-b148-7389201948ae"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_GOOGLE_TOKEN\",\n    \"message\": \"Google authentication failed\",\n    \"requestId\": \"54a10e82-273b-4899-b148-7389201948ae\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/google\"\n  }\n}"
+            },
+            {
+              "name": "409 Conflict - Account Linking Required",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idToken\": \"valid-token-for-existing-password-email\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/google",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "google"
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "d6391458-7e21-4fa3-b672-038294a5e317"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"ACCOUNT_LINK_REQUIRED\",\n    \"message\": \"Sign in with the existing method before linking Google\",\n    \"requestId\": \"d6391458-7e21-4fa3-b672-038294a5e317\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/google\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Access Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.accessToken) {",
+                  "        pm.environment.set('accessToken', json.accessToken);",
+                  "        pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    }",
+                  "    if (json.refreshToken) {",
+                  "        pm.environment.set('refreshToken', json.refreshToken);",
+                  "        pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Rotate the one-time refresh token. The submitted refresh token is invalidated, and a new token pair is returned. Attempting to reuse an expired or rotated token revokes the entire token family."
+          },
+          "response": [
+            {
+              "name": "200 OK - Tokens Rotated Successfully",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"7nQ8fX2a_81aLd0zPq9kM3rYtWxUvBzO9xKlMnO2PqR\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/refresh",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "refresh"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "98124ef1-0174-42b7-8cb2-8172904b3a19"
+                }
+              ],
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlNGI5ZDAzOC1mOWI4LTRjOGQtOGE1Ni00MjdjM2U1YTJkYjEiLCJzaWQiOiIzYjcxYTg4NC04M2U3LTQ3MTgtODhhNi1hNDQ5Yzc3YTNmZTYiLCJpYXQiOjE3Mjk3NzIxMDAsImV4cCI6MTcyOTc3MzAwMCwiaXNzIjoiYXJvZ2lvLWFwaSIsImF1ZCI6ImFyb2dpby1jbGllbnRzIn0.sampleSignatureValue2\",\n  \"refreshToken\": \"9vK3bY1a_92bMe1zQr0lN4sZuXyVwCaP0yLmNo3QrS\",\n  \"tokenType\": \"Bearer\",\n  \"expiresIn\": 900\n}"
+            },
+            {
+              "name": "401 Unauthorized - Invalid or Expired Refresh Token",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"already-used-or-invalid-refresh-token-string\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/refresh",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "refresh"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "450918b3-1994-4cd7-bca2-91823719283a"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_REFRESH_TOKEN\",\n    \"message\": \"Refresh token is invalid or expired\",\n    \"requestId\": \"450918b3-1994-4cd7-bca2-91823719283a\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/refresh\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout (Revoke Refresh Session)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 204) {",
+                  "    pm.environment.set('accessToken', '');",
+                  "    pm.environment.set('refreshToken', '');",
+                  "    pm.collectionVariables.set('accessToken', '');",
+                  "    pm.collectionVariables.set('refreshToken', '');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Revoke the active refresh session in the database so the refresh token cannot be rotated again."
+          },
+          "response": [
+            {
+              "name": "204 No Content - Logout Successful",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"7nQ8fX2a_81aLd0zPq9kM3rYtWxUvBzO9xKlMnO2PqR\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "logout"
+                  ]
+                }
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "plain",
+              "header": [
+                {
+                  "key": "x-request-id",
+                  "value": "249817ad-9182-4217-bfd1-8172904b3a19"
+                }
+              ],
+              "body": ""
+            },
+            {
+              "name": "400 Bad Request - Malformed Token",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"too-short\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "auth",
+                    "logout"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "11983719-2819-4819-a918-918273918273"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_FAILED\",\n    \"message\": \"Request validation failed\",\n    \"details\": {\n      \"refreshToken\": [\n        \"refreshToken must be longer than or equal to 40 characters\"\n      ]\n    },\n    \"requestId\": \"11983719-2819-4819-a918-918273918273\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/logout\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "Authenticated profile retrieval and update endpoints.",
+      "item": [
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "users",
+                "me"
+              ]
+            },
+            "description": "Fetch the authenticated user's profile details using the Bearer access token."
+          },
+          "response": [
+            {
+              "name": "200 OK - Profile Retrieved",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/users/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "users",
+                    "me"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "a3194812-7481-4918-8f19-918273819284"
+                }
+              ],
+              "body": "{\n  \"id\": \"e4b9d038-f9b8-4c8d-8a56-427c3e5a2db1\",\n  \"fullName\": \"Arogio User\",\n  \"username\": \"arogiouser\",\n  \"email\": \"user@example.com\",\n  \"mobileNumber\": null,\n  \"heightValue\": 68,\n  \"heightUnit\": \"in\",\n  \"weightValue\": 150.8,\n  \"weightUnit\": \"lb\",\n  \"bmi\": 22.9,\n  \"status\": \"active\",\n  \"createdAt\": \"2026-10-24T12:00:00.000Z\",\n  \"updatedAt\": \"2026-10-24T12:00:00.000Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized - Missing or Expired Token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer invalid-or-expired-token"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/users/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "users",
+                    "me"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "f1948293-8471-4918-a812-918273819284"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"HTTP_401\",\n    \"message\": \"Unauthorized\",\n    \"requestId\": \"f1948293-8471-4918-a812-918273819284\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/users/me\"\n  }\n}"
+            },
+            {
+              "name": "404 Not Found - User Unavailable",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/users/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "users",
+                    "me"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "c9182736-4718-4918-b812-817263819284"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"USER_NOT_FOUND\",\n    \"message\": \"User is unavailable\",\n    \"requestId\": \"c9182736-4718-4918-b812-817263819284\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/users/me\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Current User Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Arogio Health Champion\",\n  \"username\": \"health_champion\",\n  \"heightValue\": 175,\n  \"heightUnit\": \"cm\",\n  \"weightValue\": 70.5,\n  \"weightUnit\": \"kg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "users",
+                "me"
+              ]
+            },
+            "description": "Update permitted current-user profile fields: fullName (2-100 chars), username (3-30 lowercase alphanumeric + underscores), height (with unit cm/in), and weight (with unit kg/lb). BMI is automatically re-calculated."
+          },
+          "response": [
+            {
+              "name": "200 OK - Profile Updated Successfully",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Arogio Health Champion\",\n  \"username\": \"health_champion\",\n  \"heightValue\": 175,\n  \"heightUnit\": \"cm\",\n  \"weightValue\": 70.5,\n  \"weightUnit\": \"kg\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/users/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "users",
+                    "me"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "f9182746-1829-4718-a812-716253481928"
+                }
+              ],
+              "body": "{\n  \"id\": \"e4b9d038-f9b8-4c8d-8a56-427c3e5a2db1\",\n  \"fullName\": \"Arogio Health Champion\",\n  \"username\": \"health_champion\",\n  \"email\": \"user@example.com\",\n  \"mobileNumber\": null,\n  \"heightValue\": 175,\n  \"heightUnit\": \"cm\",\n  \"weightValue\": 70.5,\n  \"weightUnit\": \"kg\",\n  \"bmi\": 23,\n  \"status\": \"active\",\n  \"createdAt\": \"2026-10-24T12:00:00.000Z\",\n  \"updatedAt\": \"2026-10-24T12:05:00.000Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request - No Fields Provided",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/users/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "users",
+                    "me"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "81726354-9182-4718-a918-182736451928"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_FAILED\",\n    \"message\": \"At least one profile field is required\",\n    \"requestId\": \"81726354-9182-4718-a918-182736451928\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/users/me\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request - Invalid Username Format",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"Invalid Username!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/users/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "users",
+                    "me"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "71829304-9182-4718-a812-192837461928"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_FAILED\",\n    \"message\": \"Request validation failed\",\n    \"details\": {\n      \"username\": [\n        \"username may contain lowercase letters, numbers, and underscores only\"\n      ]\n    },\n    \"requestId\": \"71829304-9182-4718-a812-192837461928\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/users/me\"\n  }\n}"
+            },
+            {
+              "name": "409 Conflict - Username Taken",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"already_taken_user\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/users/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "users",
+                    "me"
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "x-request-id",
+                  "value": "91827364-1829-4718-a918-716253481928"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"USERNAME_TAKEN\",\n    \"message\": \"This username is unavailable\",\n    \"requestId\": \"91827364-1829-4718-a918-716253481928\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/users/me\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
