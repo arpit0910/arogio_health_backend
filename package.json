@@ -23,7 +23,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/database/migrate.ts",
     "db:check": "drizzle-kit check",
-    "db:migrate:production": "node dist/database/migrate.js"
+    "db:migrate:production": "node dist/database/migrate.js",
+    "start:local:validation": "node scripts/start-local-validation.cjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.7",
