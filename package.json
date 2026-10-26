@@ -22,7 +22,8 @@
     "test:e2e": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config test/jest-e2e.json --runInBand",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/database/migrate.ts",
-    "db:check": "drizzle-kit check"
+    "db:check": "drizzle-kit check",
+    "db:migrate:production": "node dist/database/migrate.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.7",

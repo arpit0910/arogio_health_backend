@@ -3,6 +3,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { ApiError } from '../../common/errors/api-error';
+import { isUniqueViolation } from '../../common/errors/database-error';
 import { normalizeMeasurements } from '../../common/health/measurements';
 import { GoogleTokenVerifier } from '../../infrastructure/google/google-token-verifier.service';
 import { AuthRepository } from './auth.repository';
@@ -12,11 +13,6 @@ import { PasswordService } from './password.service';
 
 function tokenHash(token: string): string {
   return createHash('sha256').update(token, 'utf8').digest('base64url');
-}
-
-function isUniqueViolation(error: unknown, constraint?: string): boolean {
-  const pgError = error as { code?: string; constraint?: string };
-  return pgError.code === '23505' && (!constraint || pgError.constraint === constraint);
 }
 
 @Injectable()

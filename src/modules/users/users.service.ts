@@ -1,15 +1,11 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ApiError } from '../../common/errors/api-error';
+import { isUniqueViolation } from '../../common/errors/database-error';
 import { normalizeMeasurements } from '../../common/health/measurements';
 import { type SafeUserDto, toSafeUser } from '../auth/dto/auth-response.dto';
 import type { UpdateProfileDto } from './dto/update-profile.dto';
 import type { ProfileSetupDto } from './dto/profile-setup.dto';
 import { UsersRepository } from './users.repository';
-
-function isUsernameConflict(error: unknown): boolean {
-  const pgError = error as { code?: string; constraint?: string };
-  return pgError.code === '23505' && pgError.constraint === 'users_username_unique';
-}
 
 @Injectable()
 export class UsersService {
@@ -48,7 +44,7 @@ export class UsersService {
       }
       return toSafeUser(user);
     } catch (error) {
-      if (isUsernameConflict(error)) {
+      if (isUniqueViolation(error, 'users_username_unique')) {
         throw new ApiError('USERNAME_TAKEN', 'This username is unavailable', HttpStatus.CONFLICT);
       }
       throw error;
@@ -60,7 +56,12 @@ export class UsersService {
       throw new ApiError('USER_NOT_FOUND', 'User is unavailable', HttpStatus.NOT_FOUND);
     }
     const { complete, heightValue, heightUnit, weightValue, weightUnit, ...details } = input;
-    const setup = { ...existing.profileSetup, ...details };
+    // Transformed DTO instances contain undefined class fields for omitted input.
+    // Do not let those fields erase previously saved steps during a partial PATCH.
+    const suppliedDetails = Object.fromEntries(
+      Object.entries(details).filter(([, value]) => value !== undefined),
+    );
+    const setup = { ...existing.profileSetup, ...suppliedDetails };
     if (details.dateOfBirth) {
       const date = new Date(details.dateOfBirth + 'T00:00:00Z');
       if (
