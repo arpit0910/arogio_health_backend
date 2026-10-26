@@ -2,6 +2,12 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { User } from '../../../database/schema';
 
 export class SafeUserDto {
+  @ApiPropertyOptional({ nullable: true })
+  profileSetup: Record<string, unknown> | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  profileCompletedAt: Date | null;
+
   @ApiProperty({ format: 'uuid' })
   id: string;
 
@@ -71,6 +77,8 @@ export function toSafeUser(user: User): SafeUserDto {
       ? Math.round((user.weightKg / (user.heightCm / 100) ** 2) * 10) / 10
       : null;
   return {
+    profileSetup: user.profileSetup,
+    profileCompletedAt: user.profileCompletedAt,
     id: user.id,
     fullName: user.fullName,
     username: user.username,

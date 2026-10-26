@@ -3,6 +3,7 @@ import { ApiError } from '../../common/errors/api-error';
 import { normalizeMeasurements } from '../../common/health/measurements';
 import { type SafeUserDto, toSafeUser } from '../auth/dto/auth-response.dto';
 import type { UpdateProfileDto } from './dto/update-profile.dto';
+import type { ProfileSetupDto } from './dto/profile-setup.dto';
 import { UsersRepository } from './users.repository';
 
 function isUsernameConflict(error: unknown): boolean {
@@ -52,5 +53,53 @@ export class UsersService {
       }
       throw error;
     }
+  }
+  async saveSetup(userId: string, input: ProfileSetupDto): Promise<SafeUserDto> {
+    const existing = await this.repository.findById(userId);
+    if (!existing || existing.status !== 'active') {
+      throw new ApiError('USER_NOT_FOUND', 'User is unavailable', HttpStatus.NOT_FOUND);
+    }
+    const { complete, heightValue, heightUnit, weightValue, weightUnit, ...details } = input;
+    const setup = { ...existing.profileSetup, ...details };
+    if (details.dateOfBirth) {
+      const date = new Date(details.dateOfBirth + 'T00:00:00Z');
+      if (
+        !Number.isFinite(date.getTime()) ||
+        date.toISOString().slice(0, 10) !== details.dateOfBirth ||
+        date > new Date() ||
+        date.getUTCFullYear() < 1900
+      ) {
+        throw new ApiError(
+          'VALIDATION_FAILED',
+          'Enter a valid date of birth in the past',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+    const measurements = { heightValue, heightUnit, weightValue, weightUnit };
+    const normalized = normalizeMeasurements(measurements);
+    if (
+      complete &&
+      (!setup.dateOfBirth ||
+        !setup.activityLevel ||
+        !Array.isArray(setup.healthGoals) ||
+        !setup.healthGoals.length ||
+        !(heightValue ?? existing.heightValue) ||
+        !(weightValue ?? existing.weightValue))
+    ) {
+      throw new ApiError(
+        'VALIDATION_FAILED',
+        'Complete personal details, activity level and at least one health goal',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const user = await this.repository.updateProfile(userId, {
+      ...measurements,
+      ...normalized,
+      profileSetup: { ...setup, step: complete ? 7 : (setup.step ?? 0) },
+      ...(complete ? { profileCompletedAt: existing.profileCompletedAt ?? new Date() } : {}),
+    });
+    if (!user) throw new ApiError('USER_NOT_FOUND', 'User is unavailable', HttpStatus.NOT_FOUND);
+    return toSafeUser(user);
   }
 }

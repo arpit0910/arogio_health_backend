@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   check,
+  jsonb,
   index,
   pgEnum,
   pgTable,
@@ -31,6 +32,8 @@ export const users = pgTable(
     heightUnit: heightUnit('height_unit'),
     weightValue: real('weight_value'),
     weightUnit: weightUnit('weight_unit'),
+    profileSetup: jsonb('profile_setup').$type<Record<string, unknown>>(),
+    profileCompletedAt: timestamp('profile_completed_at', { withTimezone: true }),
     passwordHash: text('password_hash'),
     status: userStatus('status').notNull().default('active'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

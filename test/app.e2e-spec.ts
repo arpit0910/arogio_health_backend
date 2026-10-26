@@ -18,7 +18,7 @@ describe('application API', () => {
     refresh: jest.fn(),
     logout: jest.fn(),
   };
-  const users = { getMe: jest.fn(), updateMe: jest.fn() };
+  const users = { getMe: jest.fn(), updateMe: jest.fn(), saveSetup: jest.fn() };
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
@@ -162,5 +162,47 @@ describe('application API', () => {
       .expect(200)
       .expect(({ body }) => expect(body.id).toBe(userId));
     expect(users.getMe).toHaveBeenCalledWith(userId);
+  });
+
+  it('protects profile setup and validates setup choices at the API boundary', async () => {
+    await request(app.getHttpServer())
+      .patch('/api/v1/users/me/setup')
+      .send({ step: 1 })
+      .expect(401);
+    const jwt = app.get(JwtService);
+    const token = await jwt.signAsync({
+      sub: '11111111-1111-4111-8111-111111111111',
+      sid: '22222222-2222-4222-8222-222222222222',
+    });
+    for (const payload of [
+      { activityLevel: 'invalid' },
+      { healthGoals: ['invalid'] },
+      { healthGoals: ['improve_sleep', 'improve_sleep'] },
+      { step: 8 },
+      { healthReminders: 'true' },
+      { dateOfBirth: null },
+      { heightValue: null, heightUnit: 'cm' },
+      { weightValue: null, weightUnit: 'kg' },
+      { profileCompletedAt: '2026-01-01' },
+    ]) {
+      await request(app.getHttpServer())
+        .patch('/api/v1/users/me/setup')
+        .set('authorization', `Bearer ${token}`)
+        .send(payload)
+        .expect(400);
+    }
+    expect(users.saveSetup).not.toHaveBeenCalled();
+    users.saveSetup.mockResolvedValueOnce({
+      id: '11111111-1111-4111-8111-111111111111',
+      profileSetup: { step: 1 },
+    });
+    await request(app.getHttpServer())
+      .patch('/api/v1/users/me/setup')
+      .set('authorization', `Bearer ${token}`)
+      .send({ step: 1 })
+      .expect(200);
+    expect(users.saveSetup).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', {
+      step: 1,
+    });
   });
 });

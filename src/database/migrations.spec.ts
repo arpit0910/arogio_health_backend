@@ -2,6 +2,8 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
+import { UsersRepository } from '../modules/users/users.repository';
+import { UsersService } from '../modules/users/users.service';
 import { AuthRepository } from '../modules/auth/auth.repository';
 import type { DatabaseService } from './database.service';
 import * as schema from './schema';
@@ -143,5 +145,71 @@ describe('database migrations', () => {
       emailVerified: true,
     });
     expect(second.id).toBe(first.id);
+  });
+
+  it('persists setup drafts and completes the profile with normalized measurements', async () => {
+    const connection = { db: drizzle(database, { schema }) } as unknown as DatabaseService;
+    const auth = new AuthRepository(connection);
+    const account = await auth.createPasswordUser({
+      email: 'setup@example.com',
+      passwordHash: 'private',
+    });
+    const service = new UsersService(new UsersRepository(connection));
+    expect((await service.getMe(account.id)).profileCompletedAt).toBeNull();
+    await service.saveSetup(account.id, { step: 1 });
+    await service.saveSetup(account.id, {
+      dateOfBirth: '2001-03-17',
+      weightValue: 70,
+      weightUnit: 'kg',
+      heightValue: 170,
+      heightUnit: 'cm',
+      step: 2,
+    });
+    await service.saveSetup(account.id, { activityLevel: 'lightly_active', step: 3 });
+    await service.saveSetup(account.id, {
+      healthGoals: ['weight_management', 'fitness_activity'],
+      gender: 'female',
+      location: 'Mumbai',
+      referralSource: 'Friend',
+      healthReminders: true,
+      tipsAndInsights: true,
+      productUpdates: false,
+      step: 6,
+    });
+    const resumed = await service.getMe(account.id);
+    expect(resumed.profileSetup).toMatchObject({
+      step: 6,
+      dateOfBirth: '2001-03-17',
+      activityLevel: 'lightly_active',
+      productUpdates: false,
+    });
+    expect(resumed.profileCompletedAt).toBeNull();
+    const complete = await service.saveSetup(account.id, { complete: true });
+    expect(complete.profileCompletedAt).toBeInstanceOf(Date);
+    expect(complete.bmi).toBe(24.2);
+    expect(complete.profileSetup?.step).toBe(7);
+    expect(complete).not.toHaveProperty('passwordHash');
+    const again = await service.getMe(account.id);
+    expect(again.profileCompletedAt).toEqual(complete.profileCompletedAt);
+    await service.saveSetup(account.id, { complete: true });
+    expect((await service.getMe(account.id)).profileCompletedAt).toEqual(
+      complete.profileCompletedAt,
+    );
+  });
+
+  it('rejects premature completion and impossible birth dates without persisting', async () => {
+    const connection = { db: drizzle(database, { schema }) } as unknown as DatabaseService;
+    const account = await new AuthRepository(connection).createPasswordUser({
+      email: 'incomplete@example.com',
+      passwordHash: 'private',
+    });
+    const service = new UsersService(new UsersRepository(connection));
+    await expect(service.saveSetup(account.id, { complete: true })).rejects.toMatchObject({
+      code: 'VALIDATION_FAILED',
+    });
+    await expect(
+      service.saveSetup(account.id, { dateOfBirth: '2001-02-31' }),
+    ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+    expect((await service.getMe(account.id)).profileSetup).toBeNull();
   });
 });

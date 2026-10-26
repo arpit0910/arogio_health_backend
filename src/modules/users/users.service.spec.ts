@@ -17,6 +17,8 @@ const user: User = {
   heightUnit: 'cm',
   weightValue: 68.4,
   weightUnit: 'kg',
+  profileSetup: null,
+  profileCompletedAt: null,
   passwordHash: 'must-not-leak',
   status: 'active',
   createdAt: new Date('2026-01-01T00:00:00Z'),

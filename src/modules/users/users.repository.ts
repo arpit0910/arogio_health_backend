@@ -16,6 +16,8 @@ export class UsersRepository {
   async updateProfile(
     id: string,
     changes: {
+      profileSetup?: Record<string, unknown>;
+      profileCompletedAt?: Date;
       fullName?: string;
       username?: string;
       heightValue?: number;
