@@ -9,6 +9,7 @@ See [IMPLEMENTATION.md](./IMPLEMENTATION.md) for the architecture, scope, and de
 - Versioned REST API at `/api/v1`.
 - PostgreSQL schema and versioned Drizzle migrations for users, external identities, and refresh sessions.
 - Liveness and database-readiness checks.
+- Backend status homepage and a bounded, privacy-safe API request monitor.
 - Email/password registration and login using Argon2id, with optional height/weight collection.
 - Backend Google ID-token verification.
 - Short-lived JWT access tokens and rotating opaque refresh tokens.
@@ -87,12 +88,23 @@ npm run start:dev
 
 The default endpoints are:
 
+- Backend status: `http://localhost:3000/`
 - API: `http://localhost:3000/api/v1`
 - Swagger: `http://localhost:3000/api/docs`
 - Liveness: `http://localhost:3000/api/v1/health`
 - Readiness: `http://localhost:3000/api/v1/ready`
 
 Disable Swagger in an exposed environment unless it is intentionally required by setting `SWAGGER_ENABLED=false`.
+
+## Check APK connectivity
+
+Open the backend homepage (`https://backend.arogio.com/` after deployment), click **Run connection checks**, then leave the page open while trying login or signup in the APK. The request feed refreshes every five seconds. Application API requests and diagnostic probes have separate counts; monitor polling does not count as app traffic. Enable **Include diagnostic probes** to see health/readiness/test calls.
+
+The APK uses `https://backend.arogio.com/api/v1`. A successful API connection must return JSON, not a hosting HTML page or a Node welcome message. A 400/401 response in the feed still proves the request reached Nest; inspect its validation/authentication error next. If an app action adds no row, compare the APK URL with the homepage API base URL and check domain routing, TLS and device networking. All clients share this feed; it does not identify an individual APK or phone.
+
+`GET /api/v1/diagnostics` returns process identity, start time, counters and the latest 50 completed requests. `GET /api/v1/diagnostics/ping` is a safe test request. The public feed only records method, registered route pattern, HTTP status, timestamp and duration. It never records bodies, credentials, headers, query strings, raw unmatched paths, IP addresses or user identifiers. It is an in-memory connectivity aid: restart clears it, older entries are dropped, and each worker has its own counters/feed. Use structured server logs for persistent investigation.
+
+On 2026-10-26, the live domain returned hosting HTML 404 responses at `/`, `/api/v1/health` and `/api/v1/ready`; it was not serving this API at those routes. The homepage and monitor must be deployed before they can diagnose production traffic. See [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## Google configuration
 

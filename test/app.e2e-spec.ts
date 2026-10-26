@@ -37,6 +37,71 @@ describe('application API', () => {
   afterAll(async () => app.close());
   beforeEach(() => jest.clearAllMocks());
 
+  it('serves the status homepage and CSP-compatible assets outside the API prefix', async () => {
+    await request(app.getHttpServer())
+      .get('/')
+      .expect(200)
+      .expect('content-type', /text\/html/)
+      .expect('cache-control', 'no-store')
+      .expect('x-arogio-service', 'arogio-health-api')
+      .expect(({ text, headers }) => {
+        expect(text).toContain('Arogio backend status');
+        expect(text).toContain('/status-assets/status.js');
+        expect(headers['content-security-policy']).toContain("script-src 'self'");
+      });
+    await request(app.getHttpServer()).get('/status-assets/status.js').expect(200);
+    await request(app.getHttpServer()).get('/status-assets/status.css').expect(200);
+    await request(app.getHttpServer()).get('/api/v1/health').expect(200);
+  });
+
+  it('tracks rejected API calls without exposing request data or counting monitor polling', async () => {
+    const initial = await request(app.getHttpServer()).get('/api/v1/diagnostics').expect(200);
+    await request(app.getHttpServer()).get('/api/v1/diagnostics').expect(200);
+    await request(app.getHttpServer())
+      .get('/api/v1/users/me?privateQuery=do-not-publish')
+      .set('authorization', 'Bearer private-token-do-not-publish')
+      .set('x-request-id', 'private-request-id-do-not-publish')
+      .expect(401);
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email: 'private-email-do-not-publish', password: 'private-password-do-not-publish' })
+      .expect(400);
+    await request(app.getHttpServer()).get('/api/v1/private-path-do-not-publish').expect(404);
+    await request(app.getHttpServer()).get('/api/v1/diagnostics/ping').expect(200);
+    const result = await request(app.getHttpServer()).get('/api/v1/diagnostics').expect(200);
+    expect(result.body.counts.apiRequests).toBe(initial.body.counts.apiRequests + 3);
+    expect(result.body.counts.clientErrors).toBe(initial.body.counts.clientErrors + 3);
+    expect(result.body.counts.probes).toBe(initial.body.counts.probes + 1);
+    expect(result.body.recent).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          method: 'GET',
+          route: '/api/v1/users/me',
+          status: 401,
+          kind: 'api',
+        }),
+        expect.objectContaining({ method: 'POST', route: '/api/v1/auth/login', status: 400 }),
+        expect.objectContaining({ route: '(unmatched API route)', status: 404 }),
+        expect.objectContaining({ route: '/api/v1/diagnostics/ping', kind: 'probe' }),
+      ]),
+    );
+    expect(JSON.stringify(result.body)).not.toContain('do-not-publish');
+    expect(result.headers['cache-control']).toBe('no-store');
+  });
+
+  it('bounds retained traffic and treats trailing-slash health calls as probes', async () => {
+    const initial = await request(app.getHttpServer()).get('/api/v1/diagnostics').expect(200);
+    for (let index = 0; index < 55; index += 1) {
+      await request(app.getHttpServer()).get('/api/v1/health/').expect(200);
+    }
+    const result = await request(app.getHttpServer()).get('/api/v1/diagnostics/').expect(200);
+    expect(result.body.recent).toHaveLength(50);
+    expect(result.body.counts.apiRequests).toBe(initial.body.counts.apiRequests);
+    expect(result.body.counts.probes).toBe(initial.body.counts.probes + 55);
+    const recent = result.body.recent as { kind: string }[];
+    expect(recent.every((event) => event.kind === 'probe')).toBe(true);
+  });
+
   it('separates liveness from database readiness', async () => {
     await request(app.getHttpServer())
       .get('/api/v1/health')
