@@ -347,7 +347,7 @@
                   "value": "3ca9d54e-e112-4cf3-bf5b-c2e7b51b75d0"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_FAILED\",\n    \"message\": \"Request validation failed\",\n    \"details\": {\n      \"email\": [\n        \"email must be an email\"\n      ],\n      \"password\": [\n        \"password must be longer than or equal to 12 characters\",\n        \"password must contain an uppercase letter\",\n        \"password must contain a number\"\n      ]\n    },\n    \"requestId\": \"3ca9d54e-e112-4cf3-bf5b-c2e7b51b75d0\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/register\"\n  }\n}"
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_FAILED\",\n    \"message\": \"Request validation failed\",\n    \"details\": {\n      \"email\": [\n        \"email must be an email\"\n      ],\n      \"password\": [\n        \"password must be longer than or equal to 8 characters\",\n        \"password must contain an uppercase letter\",\n        \"password must contain a number\"\n      ]\n    },\n    \"requestId\": \"3ca9d54e-e112-4cf3-bf5b-c2e7b51b75d0\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/register\"\n  }\n}"
             },
             {
               "name": "400 Bad Request - Height/Weight Value and Unit Mismatch",

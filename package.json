@@ -24,6 +24,7 @@
     "db:migrate": "tsx src/database/migrate.ts",
     "db:check": "drizzle-kit check",
     "db:migrate:production": "node dist/database/migrate.js",
+    "db:diagnose": "node scripts/check-database.cjs",
     "start:local:validation": "node scripts/start-local-validation.cjs"
   },
   "dependencies": {

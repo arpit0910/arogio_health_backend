@@ -16,7 +16,7 @@ import { AuthResponseDto, TokenPairDto } from './dto/auth-response.dto';
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
-  @Post('register')
+  @Post(['email/register', 'register'])
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Register with email and password' })
   @ApiCreatedResponse({ type: AuthResponseDto })
@@ -24,7 +24,7 @@ export class AuthController {
     return this.auth.register(input);
   }
 
-  @Post('login')
+  @Post(['email/login', 'login'])
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({ summary: 'Sign in with email and password' })
@@ -33,7 +33,7 @@ export class AuthController {
     return this.auth.login(input);
   }
 
-  @Post('google')
+  @Post(['google/login', 'google'])
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({ summary: 'Sign in or register with a Google ID token' })
@@ -42,7 +42,7 @@ export class AuthController {
     return this.auth.googleLogin(input);
   }
 
-  @Post('refresh')
+  @Post(['tokens/refresh', 'refresh'])
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @ApiOperation({ summary: 'Rotate a refresh token' })

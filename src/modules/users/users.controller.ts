@@ -31,7 +31,7 @@ export class UsersController {
   ): Promise<SafeUserDto> {
     return this.users.updateMe(currentUser.userId, input);
   }
-  @Patch('me/setup')
+  @Patch(['me/profile-setup', 'me/setup'])
   @ApiOperation({ summary: 'Save profile setup progress or complete setup' })
   @ApiOkResponse({ type: SafeUserDto })
   saveSetup(

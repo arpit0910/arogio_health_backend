@@ -142,7 +142,7 @@ describe('signup, setup and Google HTTP journeys', () => {
     await request(app.getHttpServer()).get('/api/v1/ready').expect(200);
     const account = {
       email: ' Full-Flow@Example.com ',
-      password: 'SyntheticPassword123',
+      password: 'Health1!',
       fullName: 'Synthetic Test User',
     };
     const registration = await request(app.getHttpServer())

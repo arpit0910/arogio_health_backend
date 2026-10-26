@@ -34,9 +34,9 @@ __decorate([
     __metadata("design:type", String)
 ], RegisterDto.prototype, "email", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ minLength: 12, maxLength: 128, writeOnly: true }),
+    (0, swagger_1.ApiProperty)({ minLength: 8, maxLength: 128, writeOnly: true }),
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(12),
+    (0, class_validator_1.MinLength)(8),
     (0, class_validator_1.MaxLength)(128),
     (0, class_validator_1.Matches)(/[a-z]/, { message: 'password must contain a lowercase letter' }),
     (0, class_validator_1.Matches)(/[A-Z]/, { message: 'password must contain an uppercase letter' }),

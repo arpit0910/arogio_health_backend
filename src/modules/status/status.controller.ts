@@ -7,13 +7,13 @@ import { RequestActivityService } from './request-activity.service';
 export class StatusController {
   constructor(private readonly activity: RequestActivityService) {}
 
-  @Get('diagnostics')
+  @Get(['monitoring/requests', 'diagnostics'])
   @Header('Cache-Control', 'no-store')
   diagnostics() {
     return this.activity.snapshot();
   }
 
-  @Get('diagnostics/ping')
+  @Get(['monitoring/ping', 'diagnostics/ping'])
   @Header('Cache-Control', 'no-store')
   ping() {
     return { service: 'arogio-health-api', status: 'ok', timestamp: new Date().toISOString() };

@@ -1,4 +1,5 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -169,6 +170,47 @@ describe('application API', () => {
       weightValue: 150.8,
       weightUnit: 'lb',
     });
+  });
+
+  it('rejects seven-character passwords before registration', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ email: 'boundary@example.com', password: 'Short1!' })
+      .expect(400)
+      .expect(({ body }) => {
+        expect(body.error.details.password).toContain(
+          'password must be longer than or equal to 8 characters',
+        );
+      });
+    expect(auth.register).not.toHaveBeenCalled();
+  });
+
+  it('logs a wrapped database error code without SQL, parameters or credentials', async () => {
+    const log = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+    try {
+      auth.login.mockRejectedValueOnce({
+        message: 'SQL query with private-email@example.invalid',
+        cause: { code: '42703', message: 'password=private-value' },
+      });
+      await request(app.getHttpServer())
+        .post('/api/v1/auth/login')
+        .send({ email: 'diagnostic@example.invalid', password: 'Health1!' })
+        .expect(500)
+        .expect(({ body }) => {
+          expect(body.error.code).toBe('INTERNAL_ERROR');
+          expect(JSON.stringify(body)).not.toContain('42703');
+          expect(JSON.stringify(body)).not.toContain('private-');
+        });
+      expect(log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'unhandled_api_error',
+          databaseErrorCode: '42703',
+        }),
+      );
+      expect(JSON.stringify(log.mock.calls)).not.toContain('private-');
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it('rejects unsafe health measurements before calling the registration service', async () => {
