@@ -80,8 +80,10 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 .output
+
+# Shared hosting pulls the compiled Nest application from Git. Keep dist tracked;
+# native dependencies, private environment files and *.tsbuildinfo stay ignored.
 
 # Gatsby files
 .cache/

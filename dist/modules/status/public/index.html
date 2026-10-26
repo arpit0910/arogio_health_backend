@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Arogio · Backend status</title>
+    <link rel="stylesheet" href="/status-assets/status.css" />
+    <script src="/status-assets/status.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Arogio backend status</h1>
+          <p>Check connectivity and see requests reaching the API.</p>
+        </div>
+        <span class="connection" id="connection" role="status">Connecting…</span>
+      </header>
+      <div class="notice" id="connection-error" role="alert" hidden></div>
+      <section aria-labelledby="checks-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="checks-heading">Connection checks</h2>
+            <p>These requests use the same host as this page.</p>
+          </div>
+          <button id="check" type="button">Run connection checks</button>
+        </div>
+        <dl class="details">
+          <div>
+            <dt>API base URL</dt>
+            <dd><code id="base-url">Loading…</code></dd>
+          </div>
+          <div>
+            <dt>Last monitor update</dt>
+            <dd id="updated">Waiting for a response</dd>
+          </div>
+        </dl>
+        <div class="table-scroll" tabindex="0" aria-label="Connection check results">
+          <table class="checks-table">
+            <thead>
+              <tr>
+                <th scope="col">Check</th>
+                <th scope="col">Endpoint</th>
+                <th scope="col">Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">API process</th>
+                <td><code>GET /api/v1/health</code></td>
+                <td id="health">Not checked</td>
+              </tr>
+              <tr>
+                <th scope="row">Database</th>
+                <td><code>GET /api/v1/ready</code></td>
+                <td id="ready">Not checked</td>
+              </tr>
+              <tr>
+                <th scope="row">Test request</th>
+                <td><code>GET /api/v1/diagnostics/ping</code></td>
+                <td id="ping">Not checked</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="help" id="check-message" role="status">
+          Run checks to test the API process, database readiness and a safe test request.
+        </p>
+      </section>
+      <section aria-labelledby="activity-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="activity-heading">Requests reaching this backend</h2>
+            <p>Keep this page open, then try an action in the APK.</p>
+          </div>
+          <label class="toggle"
+            ><input type="checkbox" id="include-probes" />Include diagnostic probes</label
+          >
+        </div>
+        <dl class="totals">
+          <div>
+            <dt>Application API requests</dt>
+            <dd id="api-count">—</dd>
+          </div>
+          <div>
+            <dt>Client errors · 4xx</dt>
+            <dd id="client-errors">—</dd>
+          </div>
+          <div>
+            <dt>Server errors · 5xx</dt>
+            <dd id="server-errors">—</dd>
+          </div>
+          <div>
+            <dt>Diagnostic probes</dt>
+            <dd id="probe-count">—</dd>
+          </div>
+        </dl>
+        <div class="table-scroll" tabindex="0" aria-label="Recent API requests">
+          <table>
+            <caption>
+              Latest 50 requests retained by this process, newest first
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Time</th>
+                <th scope="col">Method</th>
+                <th scope="col">Route</th>
+                <th scope="col">HTTP status</th>
+                <th scope="col">Duration</th>
+              </tr>
+            </thead>
+            <tbody id="requests">
+              <tr>
+                <td colspan="5" class="empty">Waiting for the request monitor…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="help">
+          A 4xx or 5xx response still confirms the request reached the API. If an APK action adds no
+          row, check its API URL, network access and hosting route. Requests from all clients are
+          included; this feed cannot identify a particular phone.
+        </p>
+      </section>
+      <section class="notes" aria-labelledby="notes-heading">
+        <h2 id="notes-heading">How to read this page</h2>
+        <ul>
+          <li>
+            API process passes, database fails: check the database configuration and migrations.
+          </li>
+          <li>
+            HTML, a hosting 404 or a Node welcome page at an API URL: the domain is not serving the
+            Nest API at that route.
+          </li>
+          <li>
+            Successful test request, but no row for an app action: compare the APK’s base URL with
+            the API base URL above.
+          </li>
+        </ul>
+        <p>
+          No passwords, tokens, request bodies, user identifiers, query strings or IP addresses are
+          shown. Counts reset on restart and belong to one process. Multiple workers have separate
+          feeds; this is a temporary connectivity aid, not a persistent access log.
+        </p>
+        <p id="instance">Instance information will appear when connected.</p>
+      </section>
+      <noscript
+        ><p class="notice">
+          JavaScript is required for live checks. Open <a href="/api/v1/health">API health</a> and
+          <a href="/api/v1/ready">database readiness</a> directly.
+        </p></noscript
+      >
+      <footer>Arogio Health · Refreshes every 5 seconds while this tab is visible</footer>
+    </main>
+  </body>
+</html>

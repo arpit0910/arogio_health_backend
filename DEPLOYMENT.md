@@ -4,6 +4,26 @@ The Android APK calls `https://backend.arogio.com/api/v1`. The domain must route
 
 ## Build and start
 
+### Deploy through Git (shared hosting)
+
+The compiled `dist/` folder is included in Git so the shared host does not need the Nest CLI or a build step. Private `.env` files, `node_modules/` and TypeScript build caches remain ignored.
+
+After changing backend source, build locally, commit the updated source **and `dist/`**, then push your deployment branch. The current working branch is `project-setup-branch`; make sure the hosting repository checks out that same branch.
+
+```powershell
+npm.cmd run build
+git add dist .gitignore DEPLOYMENT.md SHARED_HOSTING.md
+# Include any source/config/migration changes in the same commit.
+git commit -m "Include compiled backend for shared-hosting deployment"
+git push
+```
+
+In the hosting Git manager, pull/deploy the latest commit into the Node application's root. If using its terminal, run `git pull --ff-only` in that repository. Then install Linux runtime dependencies with `npm ci --omit=dev` (or use the panel's **Run NPM Install**) and restart the Node app with startup file `app.js`. No manual file upload or server-side `npm run build` is needed. Apply new reviewed database migrations as described below before restarting a release that requires them.
+
+This makes compiled files available through Git; it does not configure automatic GitHub-to-host deployment. If the host's Git checkout and Node application root differ, its deployment task must copy the checkout into the configured application root. Confirm these paths in the hosting panel rather than guessing a deployment destination.
+
+### Rebuild locally when needed
+
 From the backend project root, install build dependencies and compile:
 
 ```sh

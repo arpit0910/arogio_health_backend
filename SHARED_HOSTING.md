@@ -16,8 +16,8 @@ app.js starts dist/main.js after setting the working directory to the applicatio
 
 ## Build and configure
 
-1. Upload the backend project, including package-lock.json, app.js, src, migrations and build configuration. Do not upload Windows node_modules. Install dependencies on the Linux host so native Argon2 modules match its platform.
-2. In the application's terminal/environment, run npm ci followed by npm run build. Build requires dev dependencies. If the host cannot build, upload the locally built dist directory and run npm ci --omit=dev on the host.
+1. Pull/deploy the backend Git repository into the configured Node application root. The compiled `dist` folder, including the status homepage assets, is now included in Git. Use the same branch as the pushed changes (currently `project-setup-branch`). Do not transfer Windows node_modules. See [DEPLOYMENT.md](./DEPLOYMENT.md) for the Git workflow.
+2. Run `npm ci --omit=dev` in the application's Linux terminal/environment, or use the panel's **Run NPM Install**, then restart the Node app. A server-side build is not required when using the committed `dist` files. For future code changes, build locally and commit both source and compiled output before pushing. Stop local validation/dev servers before a local `npm ci`, because Windows locks loaded native Argon2 files.
 3. Set the required variables using the hosting panel or a private .env file in the application root. Existing .env.production is not automatically loaded by Nest's default configuration. Never place environment files in a public document directory.
 4. Configure DATABASE_URL, JWT_ACCESS_SECRET (at least 32 characters), CORS_ORIGINS, NODE_ENV=production and GOOGLE_CLIENT_IDS. Preserve production database and signing secrets; do not replace them with example values.
 5. GOOGLE_CLIENT_IDS must include 987857172312-fil8ani3esi0j9gsg095c6tg1utcbm2j.apps.googleusercontent.com. Multiple accepted audiences use commas. No Google client secret is needed for ID-token verification.
