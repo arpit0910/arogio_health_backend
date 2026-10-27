@@ -12,13 +12,14 @@ const auth_module_1 = require("../auth/auth.module");
 const users_controller_1 = require("./users.controller");
 const users_repository_1 = require("./users.repository");
 const users_service_1 = require("./users.service");
+const profile_controller_1 = require("./profile.controller");
 let UsersModule = class UsersModule {
 };
 exports.UsersModule = UsersModule;
 exports.UsersModule = UsersModule = __decorate([
     (0, common_1.Module)({
         imports: [auth_module_1.AuthModule],
-        controllers: [users_controller_1.UsersController],
+        controllers: [profile_controller_1.ProfileController, users_controller_1.UsersController],
         providers: [users_service_1.UsersService, users_repository_1.UsersRepository],
     })
 ], UsersModule);

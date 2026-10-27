@@ -75,7 +75,17 @@ __decorate([
     (0, class_validator_1.ValidateIf)((_object, value) => value !== undefined),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ArrayUnique)(),
-    (0, class_validator_1.IsIn)(['weight_management', 'fitness_activity', 'better_eating', 'improve_sleep', 'manage_stress'], { each: true }),
+    (0, class_validator_1.IsIn)([
+        'weight_management',
+        'fitness_activity',
+        'lose_weight',
+        'gain_weight',
+        'stay_fit',
+        'manage_condition',
+        'better_eating',
+        'improve_sleep',
+        'manage_stress',
+    ], { each: true }),
     __metadata("design:type", Array)
 ], ProfileSetupDto.prototype, "healthGoals", void 0);
 __decorate([

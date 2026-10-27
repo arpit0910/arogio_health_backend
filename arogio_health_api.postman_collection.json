@@ -1101,7 +1101,7 @@
       "description": "Authenticated profile retrieval and update endpoints.",
       "item": [
         {
-          "name": "Get Current User Profile",
+          "name": "View Profile",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1121,14 +1121,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/users/me",
+              "raw": "{{baseUrl}}{{apiPrefix}}/profile/view",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "{{apiPrefix}}",
-                "users",
-                "me"
+                "profile",
+                "view"
               ]
             },
             "description": "Fetch the authenticated user's profile details using the Bearer access token."
@@ -1260,7 +1260,7 @@
           ]
         },
         {
-          "name": "Update Current User Profile",
+          "name": "Update Profile",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1288,14 +1288,14 @@
               "raw": "{\n  \"fullName\": \"Arogio Health Champion\",\n  \"username\": \"health_champion\",\n  \"heightValue\": 175,\n  \"heightUnit\": \"cm\",\n  \"weightValue\": 70.5,\n  \"weightUnit\": \"kg\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/users/me",
+              "raw": "{{baseUrl}}{{apiPrefix}}/profile/update",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "{{apiPrefix}}",
-                "users",
-                "me"
+                "profile",
+                "update"
               ]
             },
             "description": "Update permitted current-user profile fields: fullName (2-100 chars), username (3-30 lowercase alphanumeric + underscores), height (with unit cm/in), and weight (with unit kg/lb). BMI is automatically re-calculated."
@@ -1498,6 +1498,44 @@
               "body": "{\n  \"error\": {\n    \"code\": \"USERNAME_TAKEN\",\n    \"message\": \"This username is unavailable\",\n    \"requestId\": \"91827364-1829-4718-a918-716253481928\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/users/me\"\n  }\n}"
             }
           ]
+        },
+        {
+          "name": "Create Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/profile/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "profile",
+                "create"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"step\": 1,\n  \"healthGoals\": []\n}"
+            },
+            "description": "Create initial profile setup. Requires the collection Bearer token; retries preserve an existing profile.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
         }
       ]
     }

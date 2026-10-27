@@ -13,10 +13,24 @@ exports.UpdateProfileDto = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
+const profile_setup_dto_1 = require("./profile-setup.dto");
 const trim = ({ value }) => typeof value === 'string' ? value.trim() : value;
 const normalizeUsername = ({ value }) => typeof value === 'string' ? value.trim().toLowerCase() : value;
 const number = ({ value }) => typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
-class UpdateProfileDto {
+class UpdateProfileDto extends (0, swagger_1.PickType)(profile_setup_dto_1.ProfileSetupDto, [
+    'dateOfBirth',
+    'gender',
+    'location',
+    'healthGoals',
+    'activityLevel',
+    'referralSource',
+    'healthReminders',
+    'tipsAndInsights',
+    'productUpdates',
+    'step',
+    'complete',
+]) {
+    photo;
     fullName;
     username;
     heightValue;
@@ -25,6 +39,16 @@ class UpdateProfileDto {
     weightUnit;
 }
 exports.UpdateProfileDto = UpdateProfileDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Compressed JPEG avatar as a data URL; maximum 160 KB decoded',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(220000),
+    (0, class_validator_1.Matches)(/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/),
+    __metadata("design:type", String)
+], UpdateProfileDto.prototype, "photo", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ minLength: 2, maxLength: 100 }),
     (0, class_transformer_1.Transform)(trim),

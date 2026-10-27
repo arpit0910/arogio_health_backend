@@ -275,6 +275,76 @@ describe('signup, setup and Google HTTP journeys', () => {
     expect(conflict.body.error.code).toBe('ACCOUNT_LINK_REQUIRED');
   });
 
+  it('edits a completed profile atomically and keeps setup completion and other preferences', async () => {
+    const registered = await request(app.getHttpServer())
+      .post('/api/v1/auth/email/register')
+      .send({
+        email: 'profile-editor@example.com',
+        password: 'SyntheticPassword123',
+        fullName: 'Original Name',
+      })
+      .expect(201);
+    const token = registered.body.accessToken as string;
+    await request(app.getHttpServer()).get('/api/v1/profile/view').expect(401);
+    await request(app.getHttpServer())
+      .post('/api/v1/profile/create')
+      .auth(token, { type: 'bearer' })
+      .send({ step: 1, healthGoals: [] })
+      .expect(201);
+    const completed = await finishSetup(token);
+    const edited = await request(app.getHttpServer())
+      .patch('/api/v1/profile/update')
+      .auth(token, { type: 'bearer' })
+      .send({
+        fullName: 'Arpit Vijay',
+        dateOfBirth: '2001-03-17',
+        gender: 'male',
+        location: 'Jaipur, Rajasthan',
+        weightValue: 70,
+        weightUnit: 'kg',
+        heightValue: 170,
+        heightUnit: 'cm',
+        healthGoals: ['lose_weight', 'better_eating'],
+        activityLevel: 'moderately_active',
+      })
+      .expect(200);
+    expect(edited.body).toMatchObject({
+      fullName: 'Arpit Vijay',
+      bmi: 24.2,
+      profileCompletedAt: completed.profileCompletedAt,
+      profileSetup: {
+        step: 7,
+        gender: 'male',
+        location: 'Jaipur, Rajasthan',
+        healthGoals: ['lose_weight', 'better_eating'],
+        activityLevel: 'moderately_active',
+        referralSource: 'Friend',
+      },
+    });
+    await request(app.getHttpServer())
+      .patch('/api/v1/profile/update')
+      .auth(token, { type: 'bearer' })
+      .send({ dateOfBirth: '2001-02-29', fullName: 'Must Not Save' })
+      .expect(400);
+    await request(app.getHttpServer())
+      .patch('/api/v1/profile/update')
+      .auth(token, { type: 'bearer' })
+      .send({ healthGoals: [] })
+      .expect(400);
+    const reloaded = await request(app.getHttpServer())
+      .get('/api/v1/profile/view')
+      .auth(token, { type: 'bearer' })
+      .expect(200);
+    const retried = await request(app.getHttpServer())
+      .post('/api/v1/profile/create')
+      .auth(token, { type: 'bearer' })
+      .send({ step: 0 })
+      .expect(201);
+    expect(retried.body.profileSetup.step).toBe(7);
+    expect(reloaded.body.fullName).toBe('Arpit Vijay');
+    expect(reloaded.body.profileSetup.healthGoals).toEqual(['lose_weight', 'better_eating']);
+  });
+
   it('passes the release smoke script against a real local HTTP listener', async () => {
     await app.listen(0, '127.0.0.1');
     const baseUrl = `${await app.getUrl()}/api/v1`;

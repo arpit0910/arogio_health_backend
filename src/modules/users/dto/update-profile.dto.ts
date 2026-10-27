@@ -10,7 +10,8 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional, PickType } from '@nestjs/swagger';
+import { ProfileSetupDto } from './profile-setup.dto';
 
 const trim = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim() : value;
@@ -21,7 +22,27 @@ const normalizeUsername = ({ value }: { value: unknown }): unknown =>
 const number = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
 
-export class UpdateProfileDto {
+export class UpdateProfileDto extends PickType(ProfileSetupDto, [
+  'dateOfBirth',
+  'gender',
+  'location',
+  'healthGoals',
+  'activityLevel',
+  'referralSource',
+  'healthReminders',
+  'tipsAndInsights',
+  'productUpdates',
+  'step',
+  'complete',
+] as const) {
+  @ApiPropertyOptional({
+    description: 'Compressed JPEG avatar as a data URL; maximum 160 KB decoded',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(220000)
+  @Matches(/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/)
+  photo?: string;
   @ApiPropertyOptional({ minLength: 2, maxLength: 100 })
   @Transform(trim)
   @IsOptional()

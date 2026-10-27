@@ -48,7 +48,17 @@ export class ProfileSetupDto {
   @IsArray()
   @ArrayUnique()
   @IsIn(
-    ['weight_management', 'fitness_activity', 'better_eating', 'improve_sleep', 'manage_stress'],
+    [
+      'weight_management',
+      'fitness_activity',
+      'lose_weight',
+      'gain_weight',
+      'stay_fit',
+      'manage_condition',
+      'better_eating',
+      'improve_sleep',
+      'manage_stress',
+    ],
     { each: true },
   )
   healthGoals?: string[];

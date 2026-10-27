@@ -1,5 +1,11 @@
 import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiExcludeController,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
 import type { RequestUser } from '../../common/auth/request-user';
@@ -9,6 +15,7 @@ import { ProfileSetupDto } from './dto/profile-setup.dto';
 import { UsersService } from './users.service';
 
 @ApiTags('users')
+@ApiExcludeController()
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('users')

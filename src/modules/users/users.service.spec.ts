@@ -102,4 +102,56 @@ describe('UsersService', () => {
       status: HttpStatus.CONFLICT,
     });
   });
+
+  it('saves personal details and measurements together without resetting setup or preferences', async () => {
+    const existing = {
+      ...user,
+      profileSetup: { step: 7, healthReminders: false, healthGoals: ['weight_management'] },
+      profileCompletedAt: new Date('2026-01-02'),
+    };
+    repository.findById.mockResolvedValue(existing);
+    repository.updateProfile.mockResolvedValue(existing);
+    await service.updateMe(user.id, {
+      fullName: 'Arpit Vijay',
+      dateOfBirth: '2001-03-17',
+      location: 'Jaipur, Rajasthan',
+      gender: 'male',
+      weightValue: 70,
+      weightUnit: 'kg',
+    });
+    expect(repository.updateProfile).toHaveBeenCalledWith(
+      user.id,
+      expect.objectContaining({
+        fullName: 'Arpit Vijay',
+        weightValue: 70,
+        weightKg: 70,
+        profileSetup: {
+          ...existing.profileSetup,
+          dateOfBirth: '2001-03-17',
+          location: 'Jaipur, Rajasthan',
+          gender: 'male',
+        },
+      }),
+    );
+    expect(repository.updateProfile.mock.calls[0]?.[1]).not.toHaveProperty('profileCompletedAt');
+  });
+
+  it('rejects invalid birthdays before updating any fields', async () => {
+    repository.findById.mockResolvedValue(user);
+    await expect(
+      service.updateMe(user.id, { fullName: 'New Name', dateOfBirth: '2001-02-29' }),
+    ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+    expect(repository.updateProfile).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid avatar content and empty goals', async () => {
+    repository.findById.mockResolvedValue({ ...user, profileCompletedAt: new Date() });
+    await expect(
+      service.updateMe(user.id, { photo: 'data:image/jpeg;base64,aGVsbG8=' }),
+    ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+    await expect(service.updateMe(user.id, { healthGoals: [] })).rejects.toMatchObject({
+      code: 'VALIDATION_FAILED',
+    });
+    expect(repository.updateProfile).not.toHaveBeenCalled();
+  });
 });
