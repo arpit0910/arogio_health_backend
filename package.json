@@ -5,12 +5,15 @@
   "description": "Arogio Health API",
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.9.0"
   },
   "scripts": {
     "build": "nest build",
-    "start": "node dist/main.js",
-    "start:dev": "nest start --watch",
+    "start": "node --env-file-if-exists=.env.production app.js",
+    "start:dev": "npm run start:local",
+    "start:postgres:dev": "nest start --watch",
+    "prestart:local": "npm run build",
+    "start:local": "node scripts/start-local-validation.cjs --persist",
     "start:debug": "nest start --debug --watch",
     "format": "prettier --write \"{src,test}/**/*.ts\" \"*.{json,md,ts,mjs}\"",
     "format:check": "prettier --check \"{src,test}/**/*.ts\" \"*.{json,md,ts,mjs}\"",
@@ -23,8 +26,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/database/migrate.ts",
     "db:check": "drizzle-kit check",
-    "db:migrate:production": "node dist/database/migrate.js",
-    "db:diagnose": "node scripts/check-database.cjs",
+    "db:migrate:production": "node --env-file-if-exists=.env.production dist/database/migrate.js",
+    "db:diagnose": "node --env-file-if-exists=.env.production scripts/check-database.cjs",
     "start:local:validation": "node scripts/start-local-validation.cjs"
   },
   "dependencies": {

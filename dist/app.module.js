@@ -25,7 +25,14 @@ exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            config_1.ConfigModule.forRoot({ isGlobal: true, cache: true, validate: env_schema_1.validateEnvironment }),
+            config_1.ConfigModule.forRoot({
+                isGlobal: true,
+                cache: true,
+                envFilePath: process.env.NODE_ENV === 'production'
+                    ? ['.env.production', '.env']
+                    : ['.env.local', '.env'],
+                validate: env_schema_1.validateEnvironment,
+            }),
             nestjs_pino_1.LoggerModule.forRootAsync({
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],

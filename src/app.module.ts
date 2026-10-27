@@ -13,7 +13,15 @@ import { StatusModule } from './modules/status/status.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, cache: true, validate: validateEnvironment }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      cache: true,
+      envFilePath:
+        process.env.NODE_ENV === 'production'
+          ? ['.env.production', '.env']
+          : ['.env.local', '.env'],
+      validate: validateEnvironment,
+    }),
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
