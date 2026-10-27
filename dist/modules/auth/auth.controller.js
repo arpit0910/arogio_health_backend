@@ -42,7 +42,7 @@ let AuthController = class AuthController {
 };
 exports.AuthController = AuthController;
 __decorate([
-    (0, common_1.Post)('register'),
+    (0, common_1.Post)(['email/register', 'register']),
     (0, throttler_1.Throttle)({ default: { limit: 5, ttl: 60_000 } }),
     (0, swagger_1.ApiOperation)({ summary: 'Register with email and password' }),
     (0, swagger_1.ApiCreatedResponse)({ type: auth_response_dto_1.AuthResponseDto }),
@@ -52,7 +52,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "register", null);
 __decorate([
-    (0, common_1.Post)('login'),
+    (0, common_1.Post)(['email/login', 'login']),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, throttler_1.Throttle)({ default: { limit: 10, ttl: 60_000 } }),
     (0, swagger_1.ApiOperation)({ summary: 'Sign in with email and password' }),
@@ -63,7 +63,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
 __decorate([
-    (0, common_1.Post)('google'),
+    (0, common_1.Post)(['google/login', 'google']),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, throttler_1.Throttle)({ default: { limit: 10, ttl: 60_000 } }),
     (0, swagger_1.ApiOperation)({ summary: 'Sign in or register with a Google ID token' }),
@@ -74,7 +74,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "google", null);
 __decorate([
-    (0, common_1.Post)('refresh'),
+    (0, common_1.Post)(['tokens/refresh', 'refresh']),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, throttler_1.Throttle)({ default: { limit: 20, ttl: 60_000 } }),
     (0, swagger_1.ApiOperation)({ summary: 'Rotate a refresh token' }),

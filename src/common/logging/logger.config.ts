@@ -8,9 +8,8 @@ export function createLoggerConfig(config: ConfigService): Params {
     pinoHttp: {
       level: config.getOrThrow<string>('LOG_LEVEL'),
       genReqId(request, response) {
-        const incoming = request.headers['x-request-id'];
-        const requestId =
-          typeof incoming === 'string' && incoming.length <= 128 ? incoming : randomUUID();
+        // Correlation IDs must be server-generated before they enter the public monitor.
+        const requestId = randomUUID();
         response.setHeader('x-request-id', requestId);
         return requestId;
       },

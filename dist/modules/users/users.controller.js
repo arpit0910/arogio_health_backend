@@ -57,7 +57,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateMe", null);
 __decorate([
-    (0, common_1.Patch)('me/setup'),
+    (0, common_1.Patch)(['me/profile-setup', 'me/setup']),
     (0, swagger_1.ApiOperation)({ summary: 'Save profile setup progress or complete setup' }),
     (0, swagger_1.ApiOkResponse)({ type: auth_response_dto_1.SafeUserDto }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),

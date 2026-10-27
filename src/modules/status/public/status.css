@@ -255,6 +255,37 @@ footer {
   color: var(--muted);
   margin-top: 32px;
 }
+.response-summary {
+  min-width: 240px;
+  max-width: 360px;
+}
+.response-summary p {
+  font-size: 0.8125rem;
+}
+summary {
+  color: var(--teal);
+  cursor: pointer;
+  margin-top: 8px;
+  text-underline-offset: 3px;
+}
+summary:hover {
+  text-decoration: underline;
+}
+summary:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 3px;
+}
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 320px;
+  overflow: auto;
+  padding: 12px;
+  background: var(--background);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
 @media (max-width: 700px) {
   main {
     padding: 28px 16px;
@@ -321,6 +352,53 @@ footer {
   }
   .checks-table td code {
     white-space: normal;
+  }
+  .requests-table,
+  .requests-table tbody {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+  .requests-table caption {
+    display: block;
+  }
+  .requests-table thead {
+    display: none;
+  }
+  .requests-table tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .requests-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .requests-table td::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 400;
+    margin-bottom: 2px;
+  }
+  .requests-table td:nth-child(3) {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .requests-table td:nth-child(6),
+  .requests-table .empty {
+    grid-column: 1 / -1;
+    min-width: 0;
+    max-width: none;
+  }
+  .requests-table .empty::before {
+    content: none;
   }
   .notes {
     padding: 4px 0;

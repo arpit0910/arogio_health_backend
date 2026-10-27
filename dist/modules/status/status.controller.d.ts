@@ -21,6 +21,12 @@ export declare class StatusController {
             status: number;
             durationMs: number;
             kind: "api" | "probe";
+            requestId: string;
+            authentication: "absent" | "provided" | "authenticated";
+            source: "client" | "monitor" | "labelled-smoke-test";
+            response: import("../../common/logging/response-summary").ResponseSummary;
+            contentType: string;
+            responseBytes: number | null;
         }[];
     };
     ping(): {

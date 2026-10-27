@@ -103,6 +103,58 @@ describe('application API', () => {
     expect(recent.every((event) => event.kind === 'probe')).toBe(true);
   });
 
+  it('serves canonical health/monitoring routes and keeps installed APK aliases working', async () => {
+    for (const path of [
+      '/api/v1/health/liveness',
+      '/api/v1/health/readiness',
+      '/api/v1/monitoring/ping',
+      '/api/v1/monitoring/requests',
+    ]) {
+      await request(app.getHttpServer()).get(path).expect(200);
+    }
+    const failed = await request(app.getHttpServer()).get('/api/v1/users/me').expect(401);
+    expect(failed.body.error.code).toBe('ACCESS_TOKEN_REQUIRED');
+    await request(app.getHttpServer())
+      .patch('/api/v1/users/me/profile-setup')
+      .send({ step: 1 })
+      .expect(401);
+    await request(app.getHttpServer()).post('/api/v1/auth/email/login').send({}).expect(400);
+    await request(app.getHttpServer()).post('/api/v1/auth/google/login').send({}).expect(400);
+    await request(app.getHttpServer()).post('/api/v1/auth/tokens/refresh').send({}).expect(400);
+    await request(app.getHttpServer())
+      .get('/api/v1/users/me')
+      .set('authorization', 'Bearer invalid-test-token')
+      .expect(401)
+      .expect(({ body }) => expect(body.error.code).toBe('INVALID_ACCESS_TOKEN'));
+    const feed = await request(app.getHttpServer()).get('/api/v1/monitoring/requests').expect(200);
+    expect(feed.body.recent).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          requestId: failed.headers['x-request-id'],
+          authentication: 'absent',
+          response: expect.objectContaining({ code: 'ACCESS_TOKEN_REQUIRED', outcome: 'error' }),
+        }),
+      ]),
+    );
+    expect(JSON.stringify(feed.body)).not.toContain('invalid-test-token');
+  });
+
+  it('separates labelled smoke tests from application errors', async () => {
+    const before = await request(app.getHttpServer()).get('/api/v1/monitoring/requests');
+    await request(app.getHttpServer())
+      .get('/api/v1/users/me')
+      .set('x-arogio-diagnostic', 'smoke-test')
+      .expect(401);
+    const after = await request(app.getHttpServer()).get('/api/v1/monitoring/requests');
+    expect(after.body.counts.apiRequests).toBe(before.body.counts.apiRequests);
+    expect(after.body.counts.probes).toBe(before.body.counts.probes + 1);
+    expect(after.body.recent[0]).toMatchObject({
+      source: 'labelled-smoke-test',
+      kind: 'probe',
+      status: 401,
+    });
+  });
+
   it('separates liveness from database readiness', async () => {
     await request(app.getHttpServer())
       .get('/api/v1/health')
@@ -150,7 +202,7 @@ describe('application API', () => {
   it('normalizes valid registration input at the API boundary', async () => {
     auth.register.mockResolvedValueOnce({ ok: true });
     await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
+      .post('/api/v1/auth/email/register')
       .send({
         email: '  USER@Example.COM ',
         password: 'SecurePassword1',
@@ -208,6 +260,15 @@ describe('application API', () => {
         }),
       );
       expect(JSON.stringify(log.mock.calls)).not.toContain('private-');
+      const feed = await request(app.getHttpServer())
+        .get('/api/v1/monitoring/requests')
+        .expect(200);
+      expect(feed.body.recent[0]).toMatchObject({
+        status: 500,
+        response: { code: 'INTERNAL_ERROR', databaseCode: '42703' },
+      });
+      expect(feed.body.recent[0].response.reason).toContain('column is missing');
+      expect(JSON.stringify(feed.body)).not.toContain('private-');
     } finally {
       log.mockRestore();
     }

@@ -9,7 +9,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.JwtAuthGuard = void 0;
 const common_1 = require("@nestjs/common");
 const passport_1 = require("@nestjs/passport");
+const api_error_1 = require("../errors/api-error");
 let JwtAuthGuard = class JwtAuthGuard extends (0, passport_1.AuthGuard)('jwt') {
+    handleRequest(error, user, info, context) {
+        if (error)
+            throw error instanceof Error ? error : new Error('Authentication failed');
+        if (user)
+            return user;
+        const request = context.switchToHttp().getRequest();
+        if (!/^Bearer\s+\S+/i.test(request.headers.authorization ?? '')) {
+            throw new api_error_1.ApiError('ACCESS_TOKEN_REQUIRED', 'Sign in and provide a Bearer access token.', common_1.HttpStatus.UNAUTHORIZED);
+        }
+        if (info?.name === 'TokenExpiredError') {
+            throw new api_error_1.ApiError('ACCESS_TOKEN_EXPIRED', 'Your access token has expired. Refresh your session or sign in again.', common_1.HttpStatus.UNAUTHORIZED);
+        }
+        throw new api_error_1.ApiError('INVALID_ACCESS_TOKEN', 'The access token is invalid. Sign in again.', common_1.HttpStatus.UNAUTHORIZED);
+    }
 };
 exports.JwtAuthGuard = JwtAuthGuard;
 exports.JwtAuthGuard = JwtAuthGuard = __decorate([

@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RequestActivityService = void 0;
 const node_crypto_1 = require("node:crypto");
 const common_1 = require("@nestjs/common");
+const response_summary_1 = require("../../common/logging/response-summary");
 let RequestActivityService = class RequestActivityService {
     instanceId = (0, node_crypto_1.randomUUID)();
     startedAt = new Date().toISOString();
@@ -19,14 +20,25 @@ let RequestActivityService = class RequestActivityService {
     probes = 0;
     middleware = (request, response, next) => {
         response.setHeader('x-arogio-service', 'arogio-health-api');
+        const requestId = (0, node_crypto_1.randomUUID)();
+        request.id = requestId;
+        response.setHeader('x-request-id', requestId);
         const started = performance.now();
         const path = request.path.replace(/\/+$/, '');
         response.on('finish', () => {
-            if (!path.startsWith('/api/v1/') || path === '/api/v1/diagnostics')
+            if (!path.startsWith('/api/v1/') ||
+                ['/api/v1/diagnostics', '/api/v1/monitoring/requests'].includes(path))
                 return;
-            const kind = ['/api/v1/health', '/api/v1/ready', '/api/v1/diagnostics/ping'].includes(path)
-                ? 'probe'
-                : 'api';
+            const smokeTest = request.headers['x-arogio-diagnostic'] === 'smoke-test';
+            const monitor = [
+                '/api/v1/health',
+                '/api/v1/ready',
+                '/api/v1/diagnostics/ping',
+                '/api/v1/health/liveness',
+                '/api/v1/health/readiness',
+                '/api/v1/monitoring/ping',
+            ].includes(path);
+            const kind = monitor || smokeTest ? 'probe' : 'api';
             const registered = request.route?.path;
             const route = typeof registered === 'string' && !registered.includes('*')
                 ? registered
@@ -50,6 +62,21 @@ let RequestActivityService = class RequestActivityService {
                 status: response.statusCode,
                 durationMs: Math.round((performance.now() - started) * 10) / 10,
                 kind,
+                requestId,
+                authentication: request.user
+                    ? 'authenticated'
+                    : /^Bearer\s+\S+/i.test(request.headers.authorization ?? '')
+                        ? 'provided'
+                        : 'absent',
+                source: smokeTest ? 'labelled-smoke-test' : monitor ? 'monitor' : 'client',
+                response: response.locals.requestDiagnostic ??
+                    (response.statusCode >= 400
+                        ? (0, response_summary_1.summarizeError)(response.statusCode, `HTTP_${response.statusCode}`, undefined, undefined)
+                        : (0, response_summary_1.summarizeSuccess)(response.statusCode)),
+                contentType: String(response.getHeader('content-type') ?? '').slice(0, 100),
+                responseBytes: response.getHeader('content-length') === undefined
+                    ? null
+                    : Number(response.getHeader('content-length')),
             });
             this.recent.length = Math.min(this.recent.length, 50);
         });

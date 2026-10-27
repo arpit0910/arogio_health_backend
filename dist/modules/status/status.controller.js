@@ -27,14 +27,14 @@ let StatusController = class StatusController {
 };
 exports.StatusController = StatusController;
 __decorate([
-    (0, common_1.Get)('diagnostics'),
+    (0, common_1.Get)(['monitoring/requests', 'diagnostics']),
     (0, common_1.Header)('Cache-Control', 'no-store'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], StatusController.prototype, "diagnostics", null);
 __decorate([
-    (0, common_1.Get)('diagnostics/ping'),
+    (0, common_1.Get)(['monitoring/ping', 'diagnostics/ping']),
     (0, common_1.Header)('Cache-Control', 'no-store'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),

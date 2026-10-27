@@ -27,7 +27,7 @@ let HealthController = class HealthController {
 };
 exports.HealthController = HealthController;
 __decorate([
-    (0, common_1.Get)('health'),
+    (0, common_1.Get)(['health/liveness', 'health']),
     (0, swagger_1.ApiOperation)({ summary: 'Process liveness check' }),
     (0, swagger_1.ApiOkResponse)({ description: 'The API process is alive' }),
     __metadata("design:type", Function),
@@ -35,7 +35,7 @@ __decorate([
     __metadata("design:returntype", Object)
 ], HealthController.prototype, "healthCheck", null);
 __decorate([
-    (0, common_1.Get)('ready'),
+    (0, common_1.Get)(['health/readiness', 'ready']),
     (0, swagger_1.ApiOperation)({ summary: 'Dependency readiness check' }),
     (0, swagger_1.ApiOkResponse)({ description: 'The API and required dependencies are ready' }),
     __metadata("design:type", Function),

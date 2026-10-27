@@ -47,17 +47,17 @@
             <tbody>
               <tr>
                 <th scope="row">API process</th>
-                <td><code>GET /api/v1/health</code></td>
+                <td><code>GET /api/v1/health/liveness</code></td>
                 <td id="health">Not checked</td>
               </tr>
               <tr>
                 <th scope="row">Database</th>
-                <td><code>GET /api/v1/ready</code></td>
+                <td><code>GET /api/v1/health/readiness</code></td>
                 <td id="ready">Not checked</td>
               </tr>
               <tr>
                 <th scope="row">Test request</th>
-                <td><code>GET /api/v1/diagnostics/ping</code></td>
+                <td><code>GET /api/v1/monitoring/ping</code></td>
                 <td id="ping">Not checked</td>
               </tr>
             </tbody>
@@ -96,7 +96,7 @@
           </div>
         </dl>
         <div class="table-scroll" tabindex="0" aria-label="Recent API requests">
-          <table>
+          <table class="requests-table" role="table">
             <caption>
               Latest 50 requests retained by this process, newest first
             </caption>
@@ -107,11 +107,12 @@
                 <th scope="col">Route</th>
                 <th scope="col">HTTP status</th>
                 <th scope="col">Duration</th>
+                <th scope="col">Sanitized response</th>
               </tr>
             </thead>
             <tbody id="requests">
               <tr>
-                <td colspan="5" class="empty">Waiting for the request monitor…</td>
+                <td colspan="6" class="empty">Waiting for the request monitor…</td>
               </tr>
             </tbody>
           </table>
@@ -119,7 +120,9 @@
         <p class="help">
           A 4xx or 5xx response still confirms the request reached the API. If an APK action adds no
           row, check its API URL, network access and hosting route. Requests from all clients are
-          included; this feed cannot identify a particular phone.
+          included; this feed cannot identify a particular phone. Expand response details for the
+          server-generated request ID, authentication state, safe error code and reason. Smoke tests
+          identify themselves with a client label and are grouped with diagnostic probes.
         </p>
       </section>
       <section class="notes" aria-labelledby="notes-heading">

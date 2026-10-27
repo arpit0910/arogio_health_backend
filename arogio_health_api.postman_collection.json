@@ -53,7 +53,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/health",
+              "raw": "{{baseUrl}}{{apiPrefix}}/health/liveness",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -76,7 +76,7 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/health",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/health/liveness",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -114,7 +114,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/ready",
+              "raw": "{{baseUrl}}{{apiPrefix}}/health/readiness",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -137,7 +137,7 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/ready",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/health/readiness",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -173,7 +173,7 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/ready",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/health/readiness",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -196,7 +196,7 @@
                   "value": "d4f3b067-1111-4775-9e1f-827c89ba7631"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"SERVICE_NOT_READY\",\n    \"message\": \"Database is not reachable\",\n    \"requestId\": \"d4f3b067-1111-4775-9e1f-827c89ba7631\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/ready\"\n  }\n}"
+              "body": "{\n  \"error\": {\n    \"code\": \"SERVICE_NOT_READY\",\n    \"message\": \"Database is not reachable\",\n    \"requestId\": \"d4f3b067-1111-4775-9e1f-827c89ba7631\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/health/readiness\"\n  }\n}"
             }
           ]
         }
@@ -246,7 +246,7 @@
               "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"fullName\": \"Arogio User\",\n  \"heightValue\": 68,\n  \"heightUnit\": \"in\",\n  \"weightValue\": 150.8,\n  \"weightUnit\": \"lb\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/auth/register",
+              "raw": "{{baseUrl}}{{apiPrefix}}/auth/email/register",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -278,7 +278,7 @@
                   "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"fullName\": \"Arogio User\",\n  \"heightValue\": 68,\n  \"heightUnit\": \"in\",\n  \"weightValue\": 150.8,\n  \"weightUnit\": \"lb\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/register",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/email/register",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -323,7 +323,7 @@
                   "raw": "{\n  \"email\": \"invalid-email\",\n  \"password\": \"short\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/register",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/email/register",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -347,7 +347,7 @@
                   "value": "3ca9d54e-e112-4cf3-bf5b-c2e7b51b75d0"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_FAILED\",\n    \"message\": \"Request validation failed\",\n    \"details\": {\n      \"email\": [\n        \"email must be an email\"\n      ],\n      \"password\": [\n        \"password must be longer than or equal to 8 characters\",\n        \"password must contain an uppercase letter\",\n        \"password must contain a number\"\n      ]\n    },\n    \"requestId\": \"3ca9d54e-e112-4cf3-bf5b-c2e7b51b75d0\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/register\"\n  }\n}"
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_FAILED\",\n    \"message\": \"Request validation failed\",\n    \"details\": {\n      \"email\": [\n        \"email must be an email\"\n      ],\n      \"password\": [\n        \"password must be longer than or equal to 8 characters\",\n        \"password must contain an uppercase letter\",\n        \"password must contain a number\"\n      ]\n    },\n    \"requestId\": \"3ca9d54e-e112-4cf3-bf5b-c2e7b51b75d0\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/email/register\"\n  }\n}"
             },
             {
               "name": "400 Bad Request - Height/Weight Value and Unit Mismatch",
@@ -368,7 +368,7 @@
                   "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"heightValue\": 68\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/register",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/email/register",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -392,7 +392,7 @@
                   "value": "6612d41a-a128-44fb-b148-36e788bc1142"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_FAILED\",\n    \"message\": \"Height value and unit must be provided together\",\n    \"requestId\": \"6612d41a-a128-44fb-b148-36e788bc1142\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/register\"\n  }\n}"
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_FAILED\",\n    \"message\": \"Height value and unit must be provided together\",\n    \"requestId\": \"6612d41a-a128-44fb-b148-36e788bc1142\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/email/register\"\n  }\n}"
             },
             {
               "name": "409 Conflict - Email Already Registered",
@@ -413,7 +413,7 @@
                   "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/register",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/email/register",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -437,7 +437,7 @@
                   "value": "2b93df98-e7c1-4b7f-8561-12f7194689aa"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"EMAIL_ALREADY_REGISTERED\",\n    \"message\": \"An account with this email already exists\",\n    \"requestId\": \"2b93df98-e7c1-4b7f-8561-12f7194689aa\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/register\"\n  }\n}"
+              "body": "{\n  \"error\": {\n    \"code\": \"EMAIL_ALREADY_REGISTERED\",\n    \"message\": \"An account with this email already exists\",\n    \"requestId\": \"2b93df98-e7c1-4b7f-8561-12f7194689aa\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/email/register\"\n  }\n}"
             },
             {
               "name": "429 Too Many Requests - Throttled",
@@ -458,7 +458,7 @@
                   "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/register",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/email/register",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -486,7 +486,7 @@
                   "value": "11aa22bb-33cc-44dd-55ee-66ff77889900"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"HTTP_429\",\n    \"message\": \"ThrottlerException: Too Many Requests\",\n    \"requestId\": \"11aa22bb-33cc-44dd-55ee-66ff77889900\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/register\"\n  }\n}"
+              "body": "{\n  \"error\": {\n    \"code\": \"HTTP_429\",\n    \"message\": \"ThrottlerException: Too Many Requests\",\n    \"requestId\": \"11aa22bb-33cc-44dd-55ee-66ff77889900\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/email/register\"\n  }\n}"
             }
           ]
         },
@@ -530,7 +530,7 @@
               "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/auth/login",
+              "raw": "{{baseUrl}}{{apiPrefix}}/auth/email/login",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -562,7 +562,7 @@
                   "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/login",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/email/login",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -607,7 +607,7 @@
                   "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"WrongPassword999!\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/login",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/email/login",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -631,7 +631,7 @@
                   "value": "9e120f38-6623-4482-9602-0e3a65c276b1"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"message\": \"Invalid email or password\",\n    \"requestId\": \"9e120f38-6623-4482-9602-0e3a65c276b1\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/login\"\n  }\n}"
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"message\": \"Invalid email or password\",\n    \"requestId\": \"9e120f38-6623-4482-9602-0e3a65c276b1\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/email/login\"\n  }\n}"
             }
           ]
         },
@@ -675,7 +675,7 @@
               "raw": "{\n  \"idToken\": \"{{googleIdToken}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/auth/google",
+              "raw": "{{baseUrl}}{{apiPrefix}}/auth/google/login",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -707,7 +707,7 @@
                   "raw": "{\n  \"idToken\": \"sample-valid-google-id-token\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/google",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/google/login",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -752,7 +752,7 @@
                   "raw": "{\n  \"idToken\": \"invalid-or-expired-token\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/google",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/google/login",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -776,7 +776,7 @@
                   "value": "54a10e82-273b-4899-b148-7389201948ae"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_GOOGLE_TOKEN\",\n    \"message\": \"Google authentication failed\",\n    \"requestId\": \"54a10e82-273b-4899-b148-7389201948ae\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/google\"\n  }\n}"
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_GOOGLE_TOKEN\",\n    \"message\": \"Google authentication failed\",\n    \"requestId\": \"54a10e82-273b-4899-b148-7389201948ae\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/google/login\"\n  }\n}"
             },
             {
               "name": "409 Conflict - Account Linking Required",
@@ -797,7 +797,7 @@
                   "raw": "{\n  \"idToken\": \"valid-token-for-existing-password-email\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/google",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/google/login",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -821,7 +821,7 @@
                   "value": "d6391458-7e21-4fa3-b672-038294a5e317"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"ACCOUNT_LINK_REQUIRED\",\n    \"message\": \"Sign in with the existing method before linking Google\",\n    \"requestId\": \"d6391458-7e21-4fa3-b672-038294a5e317\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/google\"\n  }\n}"
+              "body": "{\n  \"error\": {\n    \"code\": \"ACCOUNT_LINK_REQUIRED\",\n    \"message\": \"Sign in with the existing method before linking Google\",\n    \"requestId\": \"d6391458-7e21-4fa3-b672-038294a5e317\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/google/login\"\n  }\n}"
             }
           ]
         },
@@ -865,7 +865,7 @@
               "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}{{apiPrefix}}/auth/refresh",
+              "raw": "{{baseUrl}}{{apiPrefix}}/auth/tokens/refresh",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -897,7 +897,7 @@
                   "raw": "{\n  \"refreshToken\": \"7nQ8fX2a_81aLd0zPq9kM3rYtWxUvBzO9xKlMnO2PqR\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/refresh",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/tokens/refresh",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -942,7 +942,7 @@
                   "raw": "{\n  \"refreshToken\": \"already-used-or-invalid-refresh-token-string\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/refresh",
+                  "raw": "{{baseUrl}}{{apiPrefix}}/auth/tokens/refresh",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -966,7 +966,7 @@
                   "value": "450918b3-1994-4cd7-bca2-91823719283a"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_REFRESH_TOKEN\",\n    \"message\": \"Refresh token is invalid or expired\",\n    \"requestId\": \"450918b3-1994-4cd7-bca2-91823719283a\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/refresh\"\n  }\n}"
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_REFRESH_TOKEN\",\n    \"message\": \"Refresh token is invalid or expired\",\n    \"requestId\": \"450918b3-1994-4cd7-bca2-91823719283a\",\n    \"timestamp\": \"2026-10-24T12:00:00.000Z\",\n    \"path\": \"/api/v1/auth/tokens/refresh\"\n  }\n}"
             }
           ]
         },

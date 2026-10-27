@@ -9,6 +9,7 @@ import {
 import type { Request, Response } from 'express';
 import { ApiError } from './api-error';
 import { getDatabaseErrorCode } from './database-error';
+import { summarizeError } from '../logging/response-summary';
 
 interface ValidationExceptionBody {
   code?: string;
@@ -46,6 +47,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     }
 
     const requestId = request.id ?? response.getHeader('x-request-id') ?? 'unknown';
+    response.locals.requestDiagnostic = summarizeError(status, code, details, exception);
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR && !(exception instanceof ApiError)) {
       this.logger.error({
         event: 'unhandled_api_error',

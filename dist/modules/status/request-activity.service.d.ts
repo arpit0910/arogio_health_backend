@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { type ResponseSummary } from '../../common/logging/response-summary';
 export declare class RequestActivityService {
     private readonly instanceId;
     private readonly startedAt;
@@ -27,6 +28,12 @@ export declare class RequestActivityService {
             status: number;
             durationMs: number;
             kind: "api" | "probe";
+            requestId: string;
+            authentication: "absent" | "provided" | "authenticated";
+            source: "client" | "monitor" | "labelled-smoke-test";
+            response: ResponseSummary;
+            contentType: string;
+            responseBytes: number | null;
         }[];
     };
 }

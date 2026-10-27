@@ -4,6 +4,8 @@ NestJS, TypeScript, PostgreSQL, and Drizzle backend foundation for Arogio Health
 
 See [IMPLEMENTATION.md](./IMPLEMENTATION.md) for the architecture, scope, and delivery decisions.
 
+See [API_ROUTES.md](./API_ROUTES.md) for canonical URLs, compatibility aliases, response summaries and error-code explanations.
+
 ## Implemented
 
 - Versioned REST API at `/api/v1`.

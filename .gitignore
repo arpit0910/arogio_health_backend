@@ -149,3 +149,6 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Local verification artifacts and isolated browser profiles
+/.tmp/

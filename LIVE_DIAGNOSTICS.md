@@ -1,5 +1,7 @@
 # Live account test results and next checks
 
+**Update after production migrations:** live email signup returned HTTP 201, login HTTP 200, and logout HTTP 204. The full app-transport test also passed saved setup/resume, all setup steps, review edits, completion, profile retrieval, login, refresh, logout and revoked-token rejection. All test sessions were revoked; generated test accounts remain. The failures below describe the earlier state before migrations. The exact earlier PostgreSQL error code was not retrieved, so no particular missing table/column is claimed. Native Google authorization remains unverified. See [API_ROUTES.md](./API_ROUTES.md) for the new canonical routes and monitor details.
+
 The production API was tested with generated, isolated credentials. The personal credentials visible in the user's screenshot were not used or copied into source.
 
 ## Confirmed results

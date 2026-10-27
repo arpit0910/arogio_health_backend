@@ -13,7 +13,7 @@ for (const check of checks) {
   try {
     const response = await fetch(`${baseUrl}${check.path}`, {
       method: check.method ?? 'GET',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'x-arogio-diagnostic': 'smoke-test' },
       ...(check.body ? { body: JSON.stringify(check.body) } : {}),
       signal: AbortSignal.timeout(15000),
     });
@@ -22,7 +22,7 @@ for (const check of checks) {
     const pass = response.status === check.status && json &&
       (!check.field || body?.[check.field] === check.value) &&
       (check.status < 400 || typeof body?.error?.code === 'string');
-    console.log(JSON.stringify({ path: check.path, expected: check.status, actual: response.status, json: Boolean(json), pass: Boolean(pass) }));
+    console.log(JSON.stringify({ path: check.path, expected: check.status, actual: response.status, json: Boolean(json), code: body?.error?.code, requestId: response.headers.get('x-request-id'), pass: Boolean(pass) }));
     if (!pass) process.exitCode = 1;
   } catch (error) {
     console.log(JSON.stringify({ path: check.path, pass: false, error: error.message }));

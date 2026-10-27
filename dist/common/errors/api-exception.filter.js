@@ -11,6 +11,7 @@ exports.ApiExceptionFilter = void 0;
 const common_1 = require("@nestjs/common");
 const api_error_1 = require("./api-error");
 const database_error_1 = require("./database-error");
+const response_summary_1 = require("../logging/response-summary");
 let ApiExceptionFilter = ApiExceptionFilter_1 = class ApiExceptionFilter {
     logger = new common_1.Logger(ApiExceptionFilter_1.name);
     catch(exception, host) {
@@ -39,6 +40,7 @@ let ApiExceptionFilter = ApiExceptionFilter_1 = class ApiExceptionFilter {
             }
         }
         const requestId = request.id ?? response.getHeader('x-request-id') ?? 'unknown';
+        response.locals.requestDiagnostic = (0, response_summary_1.summarizeError)(status, code, details, exception);
         if (status >= common_1.HttpStatus.INTERNAL_SERVER_ERROR && !(exception instanceof api_error_1.ApiError)) {
             this.logger.error({
                 event: 'unhandled_api_error',

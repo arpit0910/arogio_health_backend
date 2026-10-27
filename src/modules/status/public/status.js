@@ -10,7 +10,7 @@ async function api(path) {
   const response = await fetch(`/api/v1/${path}`, {
     headers: { Accept: 'application/json' },
     cache: 'no-store',
-    signal: AbortSignal.timeout(path === 'ready' ? 15000 : 8000),
+    signal: AbortSignal.timeout(path === 'health/readiness' ? 15000 : 8000),
   });
   if (!response.headers.get('content-type')?.includes('application/json')) {
     throw new Error(
@@ -36,11 +36,15 @@ function render() {
     (event) => byId('include-probes').checked || event.kind === 'api',
   );
   const body = byId('requests');
+  const opened = new Set(
+    Array.from(body.querySelectorAll('details[open]')).map((item) => item.dataset.requestId),
+  );
+  const focused = document.activeElement?.closest('details')?.dataset.requestId;
   body.replaceChildren();
   if (!events.length) {
     const row = body.insertRow();
     const cell = row.insertCell();
-    cell.colSpan = 5;
+    cell.colSpan = 6;
     cell.className = 'empty';
     cell.textContent =
       'No matching requests retained yet. Try an action in the APK; include diagnostic probes to see connection checks.';
@@ -55,9 +59,42 @@ function render() {
       event.status,
       `${event.durationMs} ms`,
     ]) {
-      row.insertCell().textContent = String(value);
+      const cell = row.insertCell();
+      cell.dataset.label = ['Time', 'Method', 'Route', 'HTTP status', 'Duration'][cell.cellIndex];
+      cell.textContent = String(value);
     }
     row.cells[3].className = event.status >= 400 ? 'fail' : 'pass';
+    const cell = row.insertCell();
+    cell.dataset.label = 'Sanitized response';
+    cell.className = 'response-summary';
+    const reason = document.createElement('p');
+    reason.textContent = event.response?.reason || 'Response details unavailable for this entry.';
+    cell.append(reason);
+    const details = document.createElement('details');
+    details.dataset.requestId = event.requestId;
+    details.open = opened.has(event.requestId);
+    const summary = document.createElement('summary');
+    summary.textContent = `${event.response?.code || `HTTP_${event.status}`} · View details`;
+    const pre = document.createElement('pre');
+    pre.textContent = JSON.stringify(
+      {
+        requestId: event.requestId,
+        source: event.source,
+        authentication: event.authentication,
+        method: event.method,
+        route: event.route,
+        status: event.status,
+        durationMs: event.durationMs,
+        contentType: event.contentType,
+        responseBytes: event.responseBytes,
+        response: event.response,
+      },
+      null,
+      2,
+    );
+    details.append(summary, pre);
+    cell.append(details);
+    if (focused && focused === event.requestId) summary.focus({ preventScroll: true });
   }
 }
 
@@ -65,7 +102,7 @@ async function refresh() {
   if (polling || document.hidden) return;
   polling = true;
   try {
-    const { response, data } = await api('diagnostics');
+    const { response, data } = await api('monitoring/requests');
     if (
       !response.ok ||
       data.service !== 'arogio-health-api' ||
@@ -105,7 +142,12 @@ async function checkConnections() {
       cell.textContent = 'Checking…';
       cell.className = '';
       try {
-        const { response, data } = await api(id === 'ping' ? 'diagnostics/ping' : id);
+        const paths = {
+          health: 'health/liveness',
+          ready: 'health/readiness',
+          ping: 'monitoring/ping',
+        };
+        const { response, data } = await api(paths[id]);
         const valid =
           id === 'ready'
             ? data.status === 'ready' && data.checks?.database === 'up'
