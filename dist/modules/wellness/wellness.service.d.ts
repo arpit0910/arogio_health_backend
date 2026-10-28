@@ -1,0 +1,338 @@
+import { DatabaseService } from '../../database/database.service';
+export declare class WellnessService {
+    private readonly database;
+    constructor(database: DatabaseService);
+    private parse;
+    private uuid;
+    private mutate;
+    snapshot(userId: string): Promise<{
+        waterPlan: import("./domain").WaterPlan | null;
+        cycleSettings: import("./domain").CycleSettings | null;
+        waterLogs: {
+            id: string;
+            amountMl: number;
+            loggedAt: string;
+            day: string;
+            targetMl: number;
+            taskId: string | null;
+        }[];
+        waterTasks: {
+            taskId: string;
+            day: string;
+            status: "pending" | "skipped";
+            snoozedUntil: string | null;
+        }[];
+        periods: {
+            id: string;
+            startDate: string;
+            endDate: string | null;
+        }[];
+        cycleEntries: {
+            day: string;
+            flow: string;
+            symptoms: string[];
+            mood: string | null;
+            notes: string;
+        }[];
+    }>;
+    savePlan(userId: string, body: unknown): Promise<{
+        waterPlan: import("./domain").WaterPlan | null;
+        cycleSettings: import("./domain").CycleSettings | null;
+        waterLogs: {
+            id: string;
+            amountMl: number;
+            loggedAt: string;
+            day: string;
+            targetMl: number;
+            taskId: string | null;
+        }[];
+        waterTasks: {
+            taskId: string;
+            day: string;
+            status: "pending" | "skipped";
+            snoozedUntil: string | null;
+        }[];
+        periods: {
+            id: string;
+            startDate: string;
+            endDate: string | null;
+        }[];
+        cycleEntries: {
+            day: string;
+            flow: string;
+            symptoms: string[];
+            mood: string | null;
+            notes: string;
+        }[];
+    }>;
+    saveLog(userId: string, id: string, body: unknown): Promise<{
+        waterPlan: import("./domain").WaterPlan | null;
+        cycleSettings: import("./domain").CycleSettings | null;
+        waterLogs: {
+            id: string;
+            amountMl: number;
+            loggedAt: string;
+            day: string;
+            targetMl: number;
+            taskId: string | null;
+        }[];
+        waterTasks: {
+            taskId: string;
+            day: string;
+            status: "pending" | "skipped";
+            snoozedUntil: string | null;
+        }[];
+        periods: {
+            id: string;
+            startDate: string;
+            endDate: string | null;
+        }[];
+        cycleEntries: {
+            day: string;
+            flow: string;
+            symptoms: string[];
+            mood: string | null;
+            notes: string;
+        }[];
+    }>;
+    deleteLog(userId: string, id: string): Promise<{
+        waterPlan: import("./domain").WaterPlan | null;
+        cycleSettings: import("./domain").CycleSettings | null;
+        waterLogs: {
+            id: string;
+            amountMl: number;
+            loggedAt: string;
+            day: string;
+            targetMl: number;
+            taskId: string | null;
+        }[];
+        waterTasks: {
+            taskId: string;
+            day: string;
+            status: "pending" | "skipped";
+            snoozedUntil: string | null;
+        }[];
+        periods: {
+            id: string;
+            startDate: string;
+            endDate: string | null;
+        }[];
+        cycleEntries: {
+            day: string;
+            flow: string;
+            symptoms: string[];
+            mood: string | null;
+            notes: string;
+        }[];
+    }>;
+    saveTask(userId: string, taskId: string, body: unknown): Promise<{
+        waterPlan: import("./domain").WaterPlan | null;
+        cycleSettings: import("./domain").CycleSettings | null;
+        waterLogs: {
+            id: string;
+            amountMl: number;
+            loggedAt: string;
+            day: string;
+            targetMl: number;
+            taskId: string | null;
+        }[];
+        waterTasks: {
+            taskId: string;
+            day: string;
+            status: "pending" | "skipped";
+            snoozedUntil: string | null;
+        }[];
+        periods: {
+            id: string;
+            startDate: string;
+            endDate: string | null;
+        }[];
+        cycleEntries: {
+            day: string;
+            flow: string;
+            symptoms: string[];
+            mood: string | null;
+            notes: string;
+        }[];
+    }>;
+    saveCycleSettings(userId: string, body: unknown): Promise<{
+        waterPlan: import("./domain").WaterPlan | null;
+        cycleSettings: import("./domain").CycleSettings | null;
+        waterLogs: {
+            id: string;
+            amountMl: number;
+            loggedAt: string;
+            day: string;
+            targetMl: number;
+            taskId: string | null;
+        }[];
+        waterTasks: {
+            taskId: string;
+            day: string;
+            status: "pending" | "skipped";
+            snoozedUntil: string | null;
+        }[];
+        periods: {
+            id: string;
+            startDate: string;
+            endDate: string | null;
+        }[];
+        cycleEntries: {
+            day: string;
+            flow: string;
+            symptoms: string[];
+            mood: string | null;
+            notes: string;
+        }[];
+    }>;
+    savePeriod(userId: string, id: string, body: unknown): Promise<{
+        waterPlan: import("./domain").WaterPlan | null;
+        cycleSettings: import("./domain").CycleSettings | null;
+        waterLogs: {
+            id: string;
+            amountMl: number;
+            loggedAt: string;
+            day: string;
+            targetMl: number;
+            taskId: string | null;
+        }[];
+        waterTasks: {
+            taskId: string;
+            day: string;
+            status: "pending" | "skipped";
+            snoozedUntil: string | null;
+        }[];
+        periods: {
+            id: string;
+            startDate: string;
+            endDate: string | null;
+        }[];
+        cycleEntries: {
+            day: string;
+            flow: string;
+            symptoms: string[];
+            mood: string | null;
+            notes: string;
+        }[];
+    }>;
+    deletePeriod(userId: string, id: string): Promise<{
+        waterPlan: import("./domain").WaterPlan | null;
+        cycleSettings: import("./domain").CycleSettings | null;
+        waterLogs: {
+            id: string;
+            amountMl: number;
+            loggedAt: string;
+            day: string;
+            targetMl: number;
+            taskId: string | null;
+        }[];
+        waterTasks: {
+            taskId: string;
+            day: string;
+            status: "pending" | "skipped";
+            snoozedUntil: string | null;
+        }[];
+        periods: {
+            id: string;
+            startDate: string;
+            endDate: string | null;
+        }[];
+        cycleEntries: {
+            day: string;
+            flow: string;
+            symptoms: string[];
+            mood: string | null;
+            notes: string;
+        }[];
+    }>;
+    saveEntry(userId: string, day: string, body: unknown): Promise<{
+        waterPlan: import("./domain").WaterPlan | null;
+        cycleSettings: import("./domain").CycleSettings | null;
+        waterLogs: {
+            id: string;
+            amountMl: number;
+            loggedAt: string;
+            day: string;
+            targetMl: number;
+            taskId: string | null;
+        }[];
+        waterTasks: {
+            taskId: string;
+            day: string;
+            status: "pending" | "skipped";
+            snoozedUntil: string | null;
+        }[];
+        periods: {
+            id: string;
+            startDate: string;
+            endDate: string | null;
+        }[];
+        cycleEntries: {
+            day: string;
+            flow: string;
+            symptoms: string[];
+            mood: string | null;
+            notes: string;
+        }[];
+    }>;
+    deleteEntry(userId: string, day: string): Promise<{
+        waterPlan: import("./domain").WaterPlan | null;
+        cycleSettings: import("./domain").CycleSettings | null;
+        waterLogs: {
+            id: string;
+            amountMl: number;
+            loggedAt: string;
+            day: string;
+            targetMl: number;
+            taskId: string | null;
+        }[];
+        waterTasks: {
+            taskId: string;
+            day: string;
+            status: "pending" | "skipped";
+            snoozedUntil: string | null;
+        }[];
+        periods: {
+            id: string;
+            startDate: string;
+            endDate: string | null;
+        }[];
+        cycleEntries: {
+            day: string;
+            flow: string;
+            symptoms: string[];
+            mood: string | null;
+            notes: string;
+        }[];
+    }>;
+    clear(userId: string, feature: 'water' | 'cycle'): Promise<{
+        waterPlan: import("./domain").WaterPlan | null;
+        cycleSettings: import("./domain").CycleSettings | null;
+        waterLogs: {
+            id: string;
+            amountMl: number;
+            loggedAt: string;
+            day: string;
+            targetMl: number;
+            taskId: string | null;
+        }[];
+        waterTasks: {
+            taskId: string;
+            day: string;
+            status: "pending" | "skipped";
+            snoozedUntil: string | null;
+        }[];
+        periods: {
+            id: string;
+            startDate: string;
+            endDate: string | null;
+        }[];
+        cycleEntries: {
+            day: string;
+            flow: string;
+            symptoms: string[];
+            mood: string | null;
+            notes: string;
+        }[];
+    }>;
+}

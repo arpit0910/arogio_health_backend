@@ -37,7 +37,7 @@ export function configureApplication(app: NestExpressApplication): void {
   app.enableCors({
     origin: config.getOrThrow<string[]>('CORS_ORIGINS'),
     credentials: true,
-    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(

@@ -17,4 +17,5 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./auth-identities.schema"), exports);
 __exportStar(require("./auth-sessions.schema"), exports);
 __exportStar(require("./users.schema"), exports);
+__exportStar(require("./wellness.schema"), exports);
 //# sourceMappingURL=index.js.map

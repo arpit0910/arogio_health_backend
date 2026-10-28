@@ -26,7 +26,13 @@ export function createLoggerConfig(config: ConfigService): Params {
       },
       serializers: {
         req(request: IncomingMessage & { id?: string }) {
-          return { id: request.id, method: request.method, url: request.url };
+          return {
+            id: request.id,
+            method: request.method,
+            url: request.url?.startsWith('/api/v1/wellness')
+              ? '/api/v1/wellness/[private]'
+              : request.url,
+          };
         },
       },
     },

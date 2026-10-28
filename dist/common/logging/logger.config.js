@@ -24,7 +24,13 @@ function createLoggerConfig(config) {
             },
             serializers: {
                 req(request) {
-                    return { id: request.id, method: request.method, url: request.url };
+                    return {
+                        id: request.id,
+                        method: request.method,
+                        url: request.url?.startsWith('/api/v1/wellness')
+                            ? '/api/v1/wellness/[private]'
+                            : request.url,
+                    };
                 },
             },
         },

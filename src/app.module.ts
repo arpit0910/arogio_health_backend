@@ -10,6 +10,7 @@ import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { StatusModule } from './modules/status/status.module';
+import { WellnessModule } from './modules/wellness/wellness.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { StatusModule } from './modules/status/status.module';
     StatusModule,
     AuthModule,
     UsersModule,
+    WellnessModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

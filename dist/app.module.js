@@ -19,6 +19,7 @@ const health_module_1 = require("./modules/health/health.module");
 const auth_module_1 = require("./modules/auth/auth.module");
 const users_module_1 = require("./modules/users/users.module");
 const status_module_1 = require("./modules/status/status.module");
+const wellness_module_1 = require("./modules/wellness/wellness.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -44,6 +45,7 @@ exports.AppModule = AppModule = __decorate([
             status_module_1.StatusModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
+            wellness_module_1.WellnessModule,
         ],
         providers: [{ provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard }],
     })
