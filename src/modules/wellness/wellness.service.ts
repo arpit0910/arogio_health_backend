@@ -16,7 +16,15 @@ import {
   cyclePeriods as periods,
   cycleEntries as entries,
 } from '../../database/schema';
-import { addDays, localDay, validDay, waterDay, waterSchedule, waterWindow } from './domain';
+import {
+  APP_TIMEZONE,
+  addDays,
+  localDay,
+  validDay,
+  waterDay,
+  waterSchedule,
+  waterWindow,
+} from './domain';
 import * as input from './wellness.input';
 
 @Injectable()
@@ -48,7 +56,7 @@ export class WellnessService {
   }
   async snapshot(userId: string) {
     const db = this.database.db,
-      cutoff = addDays(localDay(new Date(), 'UTC'), -90);
+      cutoff = addDays(localDay(new Date(), APP_TIMEZONE), -90);
     const [preferences, water, states, history, daily] = await Promise.all([
       db.select().from(settings).where(eq(settings.userId, userId)),
       db
@@ -70,8 +78,13 @@ export class WellnessService {
         .limit(730),
     ]);
     return {
-      waterPlan: preferences[0]?.waterPlan ?? null,
-      cycleSettings: preferences[0]?.cycleSettings ?? null,
+      medicines: preferences[0]?.medicines ?? [],
+      waterPlan: preferences[0]?.waterPlan
+        ? { ...preferences[0].waterPlan, timezone: APP_TIMEZONE }
+        : null,
+      cycleSettings: preferences[0]?.cycleSettings
+        ? { ...preferences[0].cycleSettings, timezone: APP_TIMEZONE }
+        : null,
       waterLogs: water.map((row) => ({
         id: row.id,
         amountMl: row.amountMl,
@@ -99,6 +112,34 @@ export class WellnessService {
         notes: row.notes,
       })),
     };
+  }
+  saveMedicine(userId: string, id: string, body: unknown) {
+    this.uuid(id);
+    const medicine = this.parse(input.medicineInput, body);
+    return this.mutate(userId, async (tx) => {
+      const [row] = await tx.select().from(settings).where(eq(settings.userId, userId));
+      const current = row?.medicines ?? [];
+      if (current.length >= 30 && !current.some((m) => m.id === id))
+        throw new BadRequestException('You can save up to 30 medicines.');
+      const medicines = [...current.filter((m) => m.id !== id), { id, ...medicine }];
+      await tx
+        .insert(settings)
+        .values({ userId, medicines })
+        .onConflictDoUpdate({ target: settings.userId, set: { medicines, updatedAt: new Date() } });
+    });
+  }
+  deleteMedicine(userId: string, id: string) {
+    this.uuid(id);
+    return this.mutate(userId, async (tx) => {
+      const [row] = await tx.select().from(settings).where(eq(settings.userId, userId));
+      await tx
+        .update(settings)
+        .set({
+          medicines: (row?.medicines ?? []).filter((m) => m.id !== id),
+          updatedAt: new Date(),
+        })
+        .where(eq(settings.userId, userId));
+    });
   }
   savePlan(userId: string, body: unknown) {
     const plan = this.parse(input.planInput, body);
@@ -224,7 +265,7 @@ export class WellnessService {
       const [preferences] = await tx.select().from(settings).where(eq(settings.userId, userId));
       if (!preferences?.cycleSettings)
         throw new BadRequestException('Set up cycle tracking first.');
-      const today = localDay(new Date(), preferences.cycleSettings.timezone);
+      const today = localDay(new Date(), APP_TIMEZONE);
       if (
         period.startDate > today ||
         (period.endDate && (period.endDate < period.startDate || period.endDate > today))
@@ -285,7 +326,7 @@ export class WellnessService {
     const entry = this.parse(input.entryInput, body);
     return this.mutate(userId, async (tx) => {
       const [row] = await tx.select().from(settings).where(eq(settings.userId, userId));
-      if (!row?.cycleSettings || day > localDay(new Date(), row.cycleSettings.timezone))
+      if (!row?.cycleSettings || day > localDay(new Date(), APP_TIMEZONE))
         throw new BadRequestException('Choose today or an earlier date.');
       await tx
         .insert(entries)

@@ -1,11 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.entryInput = exports.periodInput = exports.taskInput = exports.logInput = exports.cycleInput = exports.planInput = void 0;
+exports.medicineInput = exports.entryInput = exports.periodInput = exports.taskInput = exports.logInput = exports.cycleInput = exports.planInput = void 0;
 const zod_1 = require("zod");
 const domain_1 = require("./domain");
 const clock = zod_1.z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const day = zod_1.z.string().refine(domain_1.validDay, 'Use a valid calendar date.');
-const timezone = zod_1.z.string().refine(domain_1.validTimezone, 'Choose a valid timezone.');
+const timezone = zod_1.z
+    .string()
+    .refine(domain_1.validTimezone, 'Choose a valid timezone.')
+    .transform(() => domain_1.APP_TIMEZONE);
 exports.planInput = zod_1.z
     .object({
     wakeTime: clock,
@@ -54,6 +57,18 @@ exports.entryInput = zod_1.z
         .refine((a) => new Set(a).size === a.length),
     mood: zod_1.z.enum(domain_1.moods).nullable(),
     notes: zod_1.z.string().max(1000),
+})
+    .strict();
+exports.medicineInput = zod_1.z
+    .object({
+    name: zod_1.z.string().trim().min(1).max(80),
+    notes: zod_1.z.string().trim().max(1000),
+    enabled: zod_1.z.boolean(),
+    doses: zod_1.z
+        .array(zod_1.z.object({ time: clock, amount: zod_1.z.string().trim().min(1).max(80) }).strict())
+        .min(1)
+        .max(12)
+        .refine((doses) => new Set(doses.map((d) => d.time)).size === doses.length, 'Choose a different time for each dose.'),
 })
     .strict();
 //# sourceMappingURL=wellness.input.js.map

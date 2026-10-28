@@ -21,6 +21,18 @@ export const wellnessSettings = pgTable('wellness_settings', {
     .references(() => users.id, { onDelete: 'cascade' }),
   waterPlan: jsonb('water_plan').$type<WaterPlan>(),
   cycleSettings: jsonb('cycle_settings').$type<CycleSettings>(),
+  medicines: jsonb('medicines')
+    .$type<
+      {
+        id: string;
+        name: string;
+        notes: string;
+        enabled: boolean;
+        doses: { time: string; amount: string }[];
+      }[]
+    >()
+    .notNull()
+    .default([]),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 export const waterLogs = pgTable(

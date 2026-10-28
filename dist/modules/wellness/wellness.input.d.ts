@@ -4,7 +4,7 @@ export declare const planInput: z.ZodObject<{
     sleepTime: z.ZodString;
     targetMl: z.ZodNumber;
     servingMl: z.ZodNumber;
-    timezone: z.ZodString;
+    timezone: z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>;
     remindersEnabled: z.ZodBoolean;
     pausedUntil: z.ZodNullable<z.ZodISODateTime>;
 }, z.core.$strict>;
@@ -16,7 +16,7 @@ export declare const cycleInput: z.ZodObject<{
     discreet: z.ZodBoolean;
     reminderDaysBefore: z.ZodNumber;
     reminderTime: z.ZodString;
-    timezone: z.ZodString;
+    timezone: z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>;
 }, z.core.$strict>;
 export declare const logInput: z.ZodObject<{
     amountMl: z.ZodNumber;
@@ -61,4 +61,13 @@ export declare const entryInput: z.ZodObject<{
         anxious: "anxious";
     }>>;
     notes: z.ZodString;
+}, z.core.$strict>;
+export declare const medicineInput: z.ZodObject<{
+    name: z.ZodString;
+    notes: z.ZodString;
+    enabled: z.ZodBoolean;
+    doses: z.ZodArray<z.ZodObject<{
+        time: z.ZodString;
+        amount: z.ZodString;
+    }, z.core.$strict>>;
 }, z.core.$strict>;

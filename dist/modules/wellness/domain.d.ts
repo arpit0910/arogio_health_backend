@@ -1,3 +1,4 @@
+export declare const APP_TIMEZONE = "Asia/Kolkata";
 export type WaterPlan = {
     version: string;
     wakeTime: string;

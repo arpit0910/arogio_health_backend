@@ -11,6 +11,7 @@ import { configureApplication } from '../src/bootstrap/configure-application';
 import { DatabaseService } from '../src/database/database.service';
 import * as schema from '../src/database/schema';
 import {
+  APP_TIMEZONE,
   addDays,
   defaultCycleSettings,
   localDay,
@@ -58,6 +59,42 @@ describe('Account-owned wellness HTTP journeys', () => {
       .auth(auth ?? token, { type: 'bearer' })
       .send(body);
   };
+  it('saves multiple medicines and doses, validates schedules and isolates accounts', async () => {
+    const id = randomUUID(),
+      second = randomUUID();
+    const medicine = {
+      name: 'Example medicine',
+      notes: 'After food',
+      enabled: true,
+      doses: [
+        { time: '08:00', amount: '1 tablet' },
+        { time: '20:00', amount: '2 tablets' },
+      ],
+    };
+    const created = await call('put', `/medicines/${id}`, medicine).expect(200);
+    expect(created.body.medicines).toEqual([{ id, ...medicine }]);
+    await call('put', `/medicines/${second}`, { ...medicine, name: 'Second' }).expect(200);
+    const isolated = await call('get', '', undefined, other).expect(200);
+    expect(isolated.body.medicines).toEqual([]);
+    await call('delete', `/medicines/${id}`, undefined, other).expect(200);
+    await call('put', `/medicines/${id}`, {
+      ...medicine,
+      doses: [medicine.doses[0], medicine.doses[0]],
+    }).expect(400);
+    await call('put', `/medicines/${id}`, {
+      ...medicine,
+      doses: [{ time: '25:00', amount: '' }],
+    }).expect(400);
+    const updated = await call('put', `/medicines/${id}`, { ...medicine, enabled: false }).expect(
+      200,
+    );
+    expect(updated.body.medicines).toHaveLength(2);
+    const savedMedicines = updated.body.medicines as { id: string; enabled: boolean }[];
+    expect(savedMedicines.find(m => m.id === id)?.enabled).toBe(false);
+    const deleted = await call('delete', `/medicines/${id}`).expect(200);
+    expect(deleted.body.medicines).toHaveLength(1);
+    await call('delete', `/medicines/${second}`).expect(200);
+  });
   it('requires authentication and rejects invalid settings or extra properties', async () => {
     await request(app.getHttpServer()).get('/api/v1/wellness').expect(401);
     await call('put', '/water/plan', { wakeTime: '24:00' }).expect(400);
@@ -78,6 +115,7 @@ describe('Account-owned wellness HTTP journeys', () => {
     };
     const response = await call('put', '/water/plan', body).expect(200);
     const plan = response.body.waterPlan as typeof body & { version: string };
+    expect(plan.timezone).toBe(APP_TIMEZONE);
     const unchanged = await call('put', '/water/plan', { ...body, remindersEnabled: false }).expect(
       200,
     );
@@ -90,6 +128,7 @@ describe('Account-owned wellness HTTP journeys', () => {
       };
     const logged = await call('put', `/water/logs/${id}`, log).expect(200);
     expect(logged.body.waterLogs).toHaveLength(1);
+    expect(logged.body.waterLogs[0].day).toBe(waterDay(plan, new Date(log.loggedAt)));
     await call('put', `/water/logs/${id}`, log).expect(200);
     const duplicate = await call('put', `/water/logs/${randomUUID()}`, log).expect(200);
     expect(duplicate.body.waterLogs).toHaveLength(1);
@@ -107,8 +146,11 @@ describe('Account-owned wellness HTTP journeys', () => {
     }).expect(400);
   });
   it('rejects future/overlapping periods, supports check-ins and deletes features independently', async () => {
-    await call('put', '/cycle/settings', defaultCycleSettings('UTC')).expect(200);
-    const today = localDay(new Date(), 'UTC'),
+    const configured = await call('put', '/cycle/settings', defaultCycleSettings('UTC')).expect(
+      200,
+    );
+    expect(configured.body.cycleSettings.timezone).toBe(APP_TIMEZONE);
+    const today = localDay(new Date(), APP_TIMEZONE),
       id = randomUUID();
     await call('put', `/cycle/periods/${id}`, {
       startDate: addDays(today, -4),

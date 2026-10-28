@@ -73,7 +73,7 @@ let WellnessService = class WellnessService {
         return this.snapshot(userId);
     }
     async snapshot(userId) {
-        const db = this.database.db, cutoff = (0, domain_1.addDays)((0, domain_1.localDay)(new Date(), 'UTC'), -90);
+        const db = this.database.db, cutoff = (0, domain_1.addDays)((0, domain_1.localDay)(new Date(), domain_1.APP_TIMEZONE), -90);
         const [preferences, water, states, history, daily] = await Promise.all([
             db.select().from(schema_1.wellnessSettings).where((0, drizzle_orm_1.eq)(schema_1.wellnessSettings.userId, userId)),
             db
@@ -95,8 +95,13 @@ let WellnessService = class WellnessService {
                 .limit(730),
         ]);
         return {
-            waterPlan: preferences[0]?.waterPlan ?? null,
-            cycleSettings: preferences[0]?.cycleSettings ?? null,
+            medicines: preferences[0]?.medicines ?? [],
+            waterPlan: preferences[0]?.waterPlan
+                ? { ...preferences[0].waterPlan, timezone: domain_1.APP_TIMEZONE }
+                : null,
+            cycleSettings: preferences[0]?.cycleSettings
+                ? { ...preferences[0].cycleSettings, timezone: domain_1.APP_TIMEZONE }
+                : null,
             waterLogs: water.map((row) => ({
                 id: row.id,
                 amountMl: row.amountMl,
@@ -124,6 +129,34 @@ let WellnessService = class WellnessService {
                 notes: row.notes,
             })),
         };
+    }
+    saveMedicine(userId, id, body) {
+        this.uuid(id);
+        const medicine = this.parse(input.medicineInput, body);
+        return this.mutate(userId, async (tx) => {
+            const [row] = await tx.select().from(schema_1.wellnessSettings).where((0, drizzle_orm_1.eq)(schema_1.wellnessSettings.userId, userId));
+            const current = row?.medicines ?? [];
+            if (current.length >= 30 && !current.some((m) => m.id === id))
+                throw new common_1.BadRequestException('You can save up to 30 medicines.');
+            const medicines = [...current.filter((m) => m.id !== id), { id, ...medicine }];
+            await tx
+                .insert(schema_1.wellnessSettings)
+                .values({ userId, medicines })
+                .onConflictDoUpdate({ target: schema_1.wellnessSettings.userId, set: { medicines, updatedAt: new Date() } });
+        });
+    }
+    deleteMedicine(userId, id) {
+        this.uuid(id);
+        return this.mutate(userId, async (tx) => {
+            const [row] = await tx.select().from(schema_1.wellnessSettings).where((0, drizzle_orm_1.eq)(schema_1.wellnessSettings.userId, userId));
+            await tx
+                .update(schema_1.wellnessSettings)
+                .set({
+                medicines: (row?.medicines ?? []).filter((m) => m.id !== id),
+                updatedAt: new Date(),
+            })
+                .where((0, drizzle_orm_1.eq)(schema_1.wellnessSettings.userId, userId));
+        });
     }
     savePlan(userId, body) {
         const plan = this.parse(input.planInput, body);
@@ -234,7 +267,7 @@ let WellnessService = class WellnessService {
             const [preferences] = await tx.select().from(schema_1.wellnessSettings).where((0, drizzle_orm_1.eq)(schema_1.wellnessSettings.userId, userId));
             if (!preferences?.cycleSettings)
                 throw new common_1.BadRequestException('Set up cycle tracking first.');
-            const today = (0, domain_1.localDay)(new Date(), preferences.cycleSettings.timezone);
+            const today = (0, domain_1.localDay)(new Date(), domain_1.APP_TIMEZONE);
             if (period.startDate > today ||
                 (period.endDate && (period.endDate < period.startDate || period.endDate > today)))
                 throw new common_1.BadRequestException('Recorded dates must be in the past or today, with the end after the start.');
@@ -278,7 +311,7 @@ let WellnessService = class WellnessService {
         const entry = this.parse(input.entryInput, body);
         return this.mutate(userId, async (tx) => {
             const [row] = await tx.select().from(schema_1.wellnessSettings).where((0, drizzle_orm_1.eq)(schema_1.wellnessSettings.userId, userId));
-            if (!row?.cycleSettings || day > (0, domain_1.localDay)(new Date(), row.cycleSettings.timezone))
+            if (!row?.cycleSettings || day > (0, domain_1.localDay)(new Date(), domain_1.APP_TIMEZONE))
                 throw new common_1.BadRequestException('Choose today or an earlier date.');
             await tx
                 .insert(schema_1.cycleEntries)

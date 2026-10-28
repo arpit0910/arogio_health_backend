@@ -1,8 +1,19 @@
 import { z } from 'zod';
-import { awakeMinutes, flows, moods, symptoms, validDay, validTimezone } from './domain';
+import {
+  APP_TIMEZONE,
+  awakeMinutes,
+  flows,
+  moods,
+  symptoms,
+  validDay,
+  validTimezone,
+} from './domain';
 const clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const day = z.string().refine(validDay, 'Use a valid calendar date.');
-const timezone = z.string().refine(validTimezone, 'Choose a valid timezone.');
+const timezone = z
+  .string()
+  .refine(validTimezone, 'Choose a valid timezone.')
+  .transform(() => APP_TIMEZONE);
 export const planInput = z
   .object({
     wakeTime: clock,
@@ -54,5 +65,21 @@ export const entryInput = z
       .refine((a) => new Set(a).size === a.length),
     mood: z.enum(moods).nullable(),
     notes: z.string().max(1000),
+  })
+  .strict();
+
+export const medicineInput = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    notes: z.string().trim().max(1000),
+    enabled: z.boolean(),
+    doses: z
+      .array(z.object({ time: clock, amount: z.string().trim().min(1).max(80) }).strict())
+      .min(1)
+      .max(12)
+      .refine(
+        (doses) => new Set(doses.map((d) => d.time)).size === doses.length,
+        'Choose a different time for each dose.',
+      ),
   })
   .strict();

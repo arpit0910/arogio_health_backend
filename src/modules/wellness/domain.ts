@@ -1,3 +1,4 @@
+export const APP_TIMEZONE = 'Asia/Kolkata';
 /** Calendar dates are plain ISO dates, never UTC-serialized local midnights. */
 export type WaterPlan = {
   version: string;
@@ -129,10 +130,7 @@ function zonedParts(date: Date, timezone: string) {
     time: `${get('hour')}:${get('minute')}`,
   };
 }
-export function localDay(
-  date = new Date(),
-  timezone = Intl.DateTimeFormat().resolvedOptions().timeZone,
-): string {
+export function localDay(date = new Date(), timezone = APP_TIMEZONE): string {
   return zonedParts(date, timezone).day;
 }
 export function clockMinutes(time: string): number {
@@ -181,7 +179,7 @@ export function zonedInstant(day: string, time: string, timezone: string): Date 
   return new Date(best.instant);
 }
 export function waterDay(plan: WaterPlan, now = new Date()): string {
-  const parts = zonedParts(now, plan.timezone);
+  const parts = zonedParts(now, APP_TIMEZONE);
   return clockMinutes(plan.sleepTime) < clockMinutes(plan.wakeTime) &&
     clockMinutes(parts.time) < clockMinutes(plan.sleepTime)
     ? addDays(parts.day, -1)
@@ -190,8 +188,8 @@ export function waterDay(plan: WaterPlan, now = new Date()): string {
 export function waterWindow(plan: WaterPlan, day: string) {
   const endDay = plan.sleepTime <= plan.wakeTime ? addDays(day, 1) : day;
   return {
-    start: zonedInstant(day, plan.wakeTime, plan.timezone),
-    end: zonedInstant(endDay, plan.sleepTime, plan.timezone),
+    start: zonedInstant(day, plan.wakeTime, APP_TIMEZONE),
+    end: zonedInstant(endDay, plan.sleepTime, APP_TIMEZONE),
   };
 }
 export function waterSchedule(

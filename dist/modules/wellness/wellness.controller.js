@@ -23,6 +23,12 @@ let WellnessController = class WellnessController {
     constructor(service) {
         this.service = service;
     }
+    medicine(u, id, body) {
+        return this.service.saveMedicine(u.userId, id, body);
+    }
+    removeMedicine(u, id) {
+        return this.service.deleteMedicine(u.userId, id);
+    }
     get(u) {
         return this.service.snapshot(u.userId);
     }
@@ -61,6 +67,23 @@ let WellnessController = class WellnessController {
     }
 };
 exports.WellnessController = WellnessController;
+__decorate([
+    (0, common_1.Put)('medicines/:id'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], WellnessController.prototype, "medicine", null);
+__decorate([
+    (0, common_1.Delete)('medicines/:id'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], WellnessController.prototype, "removeMedicine", null);
 __decorate([
     (0, common_1.Get)(),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),

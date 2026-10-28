@@ -3,9 +3,153 @@ import { WellnessService } from './wellness.service';
 export declare class WellnessController {
     private readonly service;
     constructor(service: WellnessService);
+    medicine(u: RequestUser, id: string, body: unknown): Promise<{
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
+        waterLogs: {
+            id: string;
+            amountMl: number;
+            loggedAt: string;
+            day: string;
+            targetMl: number;
+            taskId: string | null;
+        }[];
+        waterTasks: {
+            taskId: string;
+            day: string;
+            status: "pending" | "skipped";
+            snoozedUntil: string | null;
+        }[];
+        periods: {
+            id: string;
+            startDate: string;
+            endDate: string | null;
+        }[];
+        cycleEntries: {
+            day: string;
+            flow: string;
+            symptoms: string[];
+            mood: string | null;
+            notes: string;
+        }[];
+    }>;
+    removeMedicine(u: RequestUser, id: string): Promise<{
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
+        waterLogs: {
+            id: string;
+            amountMl: number;
+            loggedAt: string;
+            day: string;
+            targetMl: number;
+            taskId: string | null;
+        }[];
+        waterTasks: {
+            taskId: string;
+            day: string;
+            status: "pending" | "skipped";
+            snoozedUntil: string | null;
+        }[];
+        periods: {
+            id: string;
+            startDate: string;
+            endDate: string | null;
+        }[];
+        cycleEntries: {
+            day: string;
+            flow: string;
+            symptoms: string[];
+            mood: string | null;
+            notes: string;
+        }[];
+    }>;
     get(u: RequestUser): Promise<{
-        waterPlan: import("./domain").WaterPlan | null;
-        cycleSettings: import("./domain").CycleSettings | null;
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
         waterLogs: {
             id: string;
             amountMl: number;
@@ -34,8 +178,36 @@ export declare class WellnessController {
         }[];
     }>;
     plan(u: RequestUser, body: unknown): Promise<{
-        waterPlan: import("./domain").WaterPlan | null;
-        cycleSettings: import("./domain").CycleSettings | null;
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
         waterLogs: {
             id: string;
             amountMl: number;
@@ -64,8 +236,36 @@ export declare class WellnessController {
         }[];
     }>;
     log(u: RequestUser, id: string, body: unknown): Promise<{
-        waterPlan: import("./domain").WaterPlan | null;
-        cycleSettings: import("./domain").CycleSettings | null;
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
         waterLogs: {
             id: string;
             amountMl: number;
@@ -94,8 +294,36 @@ export declare class WellnessController {
         }[];
     }>;
     removeLog(u: RequestUser, id: string): Promise<{
-        waterPlan: import("./domain").WaterPlan | null;
-        cycleSettings: import("./domain").CycleSettings | null;
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
         waterLogs: {
             id: string;
             amountMl: number;
@@ -124,8 +352,36 @@ export declare class WellnessController {
         }[];
     }>;
     task(u: RequestUser, id: string, body: unknown): Promise<{
-        waterPlan: import("./domain").WaterPlan | null;
-        cycleSettings: import("./domain").CycleSettings | null;
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
         waterLogs: {
             id: string;
             amountMl: number;
@@ -154,8 +410,36 @@ export declare class WellnessController {
         }[];
     }>;
     clearWater(u: RequestUser): Promise<{
-        waterPlan: import("./domain").WaterPlan | null;
-        cycleSettings: import("./domain").CycleSettings | null;
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
         waterLogs: {
             id: string;
             amountMl: number;
@@ -184,8 +468,36 @@ export declare class WellnessController {
         }[];
     }>;
     cycle(u: RequestUser, body: unknown): Promise<{
-        waterPlan: import("./domain").WaterPlan | null;
-        cycleSettings: import("./domain").CycleSettings | null;
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
         waterLogs: {
             id: string;
             amountMl: number;
@@ -214,8 +526,36 @@ export declare class WellnessController {
         }[];
     }>;
     period(u: RequestUser, id: string, body: unknown): Promise<{
-        waterPlan: import("./domain").WaterPlan | null;
-        cycleSettings: import("./domain").CycleSettings | null;
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
         waterLogs: {
             id: string;
             amountMl: number;
@@ -244,8 +584,36 @@ export declare class WellnessController {
         }[];
     }>;
     removePeriod(u: RequestUser, id: string): Promise<{
-        waterPlan: import("./domain").WaterPlan | null;
-        cycleSettings: import("./domain").CycleSettings | null;
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
         waterLogs: {
             id: string;
             amountMl: number;
@@ -274,8 +642,36 @@ export declare class WellnessController {
         }[];
     }>;
     entry(u: RequestUser, day: string, body: unknown): Promise<{
-        waterPlan: import("./domain").WaterPlan | null;
-        cycleSettings: import("./domain").CycleSettings | null;
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
         waterLogs: {
             id: string;
             amountMl: number;
@@ -304,8 +700,36 @@ export declare class WellnessController {
         }[];
     }>;
     removeEntry(u: RequestUser, day: string): Promise<{
-        waterPlan: import("./domain").WaterPlan | null;
-        cycleSettings: import("./domain").CycleSettings | null;
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
         waterLogs: {
             id: string;
             amountMl: number;
@@ -334,8 +758,36 @@ export declare class WellnessController {
         }[];
     }>;
     clearCycle(u: RequestUser): Promise<{
-        waterPlan: import("./domain").WaterPlan | null;
-        cycleSettings: import("./domain").CycleSettings | null;
+        medicines: {
+            id: string;
+            name: string;
+            notes: string;
+            enabled: boolean;
+            doses: {
+                time: string;
+                amount: string;
+            }[];
+        }[];
+        waterPlan: {
+            timezone: string;
+            version: string;
+            wakeTime: string;
+            sleepTime: string;
+            targetMl: number;
+            servingMl: number;
+            remindersEnabled: boolean;
+            pausedUntil: string | null;
+        } | null;
+        cycleSettings: {
+            timezone: string;
+            cycleLength: number;
+            periodLength: number;
+            predictionsEnabled: boolean;
+            remindersEnabled: boolean;
+            discreet: boolean;
+            reminderDaysBefore: number;
+            reminderTime: string;
+        } | null;
         waterLogs: {
             id: string;
             amountMl: number;

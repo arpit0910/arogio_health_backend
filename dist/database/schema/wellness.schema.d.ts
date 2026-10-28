@@ -58,6 +58,43 @@ export declare const wellnessSettings: import("drizzle-orm/pg-core").PgTableWith
         }, {}, {
             $type: CycleSettings;
         }>;
+        medicines: import("drizzle-orm/pg-core").PgColumn<{
+            name: "medicines";
+            tableName: "wellness_settings";
+            dataType: "json";
+            columnType: "PgJsonb";
+            data: {
+                id: string;
+                name: string;
+                notes: string;
+                enabled: boolean;
+                doses: {
+                    time: string;
+                    amount: string;
+                }[];
+            }[];
+            driverParam: unknown;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            $type: {
+                id: string;
+                name: string;
+                notes: string;
+                enabled: boolean;
+                doses: {
+                    time: string;
+                    amount: string;
+                }[];
+            }[];
+        }>;
         updatedAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "updated_at";
             tableName: "wellness_settings";

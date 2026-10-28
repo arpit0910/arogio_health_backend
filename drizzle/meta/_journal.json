@@ -43,6 +43,13 @@
       "when": 1793148949240,
       "tag": "0005_majestic_skreet",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793195508885,
+      "tag": "0006_icy_skin",
+      "breakpoints": true
     }
   ]
 }

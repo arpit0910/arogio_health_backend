@@ -10,6 +10,16 @@ import { WellnessService } from './wellness.service';
 @Controller('wellness')
 export class WellnessController {
   constructor(private readonly service: WellnessService) {}
+  @Put('medicines/:id') medicine(
+    @CurrentUser() u: RequestUser,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.service.saveMedicine(u.userId, id, body);
+  }
+  @Delete('medicines/:id') removeMedicine(@CurrentUser() u: RequestUser, @Param('id') id: string) {
+    return this.service.deleteMedicine(u.userId, id);
+  }
   @Get() get(@CurrentUser() u: RequestUser) {
     return this.service.snapshot(u.userId);
   }

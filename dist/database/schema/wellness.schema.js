@@ -10,6 +10,10 @@ exports.wellnessSettings = (0, pg_core_1.pgTable)('wellness_settings', {
         .references(() => users_schema_1.users.id, { onDelete: 'cascade' }),
     waterPlan: (0, pg_core_1.jsonb)('water_plan').$type(),
     cycleSettings: (0, pg_core_1.jsonb)('cycle_settings').$type(),
+    medicines: (0, pg_core_1.jsonb)('medicines')
+        .$type()
+        .notNull()
+        .default([]),
     updatedAt: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 exports.waterLogs = (0, pg_core_1.pgTable)('water_logs', {

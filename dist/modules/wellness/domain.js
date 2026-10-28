@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.defaultCycleSettings = exports.emptyWellness = exports.flows = exports.moods = exports.symptoms = void 0;
+exports.defaultCycleSettings = exports.emptyWellness = exports.flows = exports.moods = exports.symptoms = exports.APP_TIMEZONE = void 0;
 exports.validDay = validDay;
 exports.addDays = addDays;
 exports.daysBetween = daysBetween;
@@ -13,6 +13,7 @@ exports.waterDay = waterDay;
 exports.waterWindow = waterWindow;
 exports.waterSchedule = waterSchedule;
 exports.cycleForecast = cycleForecast;
+exports.APP_TIMEZONE = 'Asia/Kolkata';
 exports.symptoms = [
     'cramps',
     'bloating',
@@ -83,7 +84,7 @@ function zonedParts(date, timezone) {
         time: `${get('hour')}:${get('minute')}`,
     };
 }
-function localDay(date = new Date(), timezone = Intl.DateTimeFormat().resolvedOptions().timeZone) {
+function localDay(date = new Date(), timezone = exports.APP_TIMEZONE) {
     return zonedParts(date, timezone).day;
 }
 function clockMinutes(time) {
@@ -128,7 +129,7 @@ function zonedInstant(day, time, timezone) {
     return new Date(best.instant);
 }
 function waterDay(plan, now = new Date()) {
-    const parts = zonedParts(now, plan.timezone);
+    const parts = zonedParts(now, exports.APP_TIMEZONE);
     return clockMinutes(plan.sleepTime) < clockMinutes(plan.wakeTime) &&
         clockMinutes(parts.time) < clockMinutes(plan.sleepTime)
         ? addDays(parts.day, -1)
@@ -137,8 +138,8 @@ function waterDay(plan, now = new Date()) {
 function waterWindow(plan, day) {
     const endDay = plan.sleepTime <= plan.wakeTime ? addDays(day, 1) : day;
     return {
-        start: zonedInstant(day, plan.wakeTime, plan.timezone),
-        end: zonedInstant(endDay, plan.sleepTime, plan.timezone),
+        start: zonedInstant(day, plan.wakeTime, exports.APP_TIMEZONE),
+        end: zonedInstant(endDay, plan.sleepTime, exports.APP_TIMEZONE),
     };
 }
 function waterSchedule(plan, day, logs = [], states = [], now = new Date()) {
