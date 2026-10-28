@@ -33,6 +33,17 @@ const envSchema = z.object({
         .split(',')
         .map((clientId) => clientId.trim())
         .filter(Boolean),
+    )
+    .refine(
+      (ids) =>
+        ids.length > 0 &&
+        ids.every((id) =>
+          /^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*\.apps\.googleusercontent\.com$/.test(id),
+        ),
+      {
+        message:
+          'GOOGLE_CLIENT_IDS must contain comma-separated Google OAuth client IDs, not secrets, JSON or quoted values.',
+      },
     ),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   SWAGGER_ENABLED: booleanFromString,

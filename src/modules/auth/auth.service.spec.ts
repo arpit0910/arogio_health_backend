@@ -1,3 +1,4 @@
+import { ApiError } from '../../common/errors/api-error';
 import { HttpStatus } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { JwtService } from '@nestjs/jwt';
@@ -160,6 +161,18 @@ describe('AuthService', () => {
     await expect(
       service.googleLogin({ idToken: 'invalid-google-token-value' }),
     ).rejects.toMatchObject({ code: 'INVALID_GOOGLE_TOKEN', status: HttpStatus.UNAUTHORIZED });
+  });
+
+  it('preserves safe provider and audience errors from the verifier', async () => {
+    const unavailable = new ApiError(
+      'GOOGLE_VERIFICATION_UNAVAILABLE',
+      'Google is unavailable',
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
+    google.verify.mockRejectedValue(unavailable);
+    await expect(service.googleLogin({ idToken: 'invalid-google-token-value' })).rejects.toBe(
+      unavailable,
+    );
   });
 
   it('rotates a valid refresh session', async () => {

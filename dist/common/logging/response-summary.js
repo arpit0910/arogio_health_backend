@@ -9,6 +9,7 @@ const reasons = {
     INVALID_ACCESS_TOKEN: 'The Bearer access token is invalid. Sign in again.',
     INVALID_CREDENTIALS: 'Email/password authentication failed.',
     INVALID_GOOGLE_TOKEN: 'Google ID-token verification failed. Check token audience, issuer and expiry.',
+    GOOGLE_VERIFICATION_UNAVAILABLE: 'The API could not retrieve Google verification keys. Check outbound HTTPS, DNS, TLS trust and server time.',
     INVALID_REFRESH_TOKEN: 'The refresh token is invalid, expired, revoked or already used.',
     VALIDATION_FAILED: 'Request validation failed. Correct the indicated fields.',
     EMAIL_ALREADY_REGISTERED: 'The email address is already registered.',
@@ -53,7 +54,22 @@ const validationFields = new Set([
 function summarizeError(status, code, details, error) {
     const databaseCode = (0, database_error_1.getDatabaseErrorCode)(error);
     const knownCode = code === 'INTERNAL_ERROR' || Object.hasOwn(reasons, code);
-    const reason = (databaseCode && databaseReasons[databaseCode]) ||
+    const googleReasons = {
+        AUDIENCE_MISMATCH: 'Google ID-token audience does not match the deployed GOOGLE_CLIENT_IDS. Configure the shared Web client ID on the server.',
+        EXPIRED: 'Google ID token has expired. Obtain a fresh Google sign-in token.',
+        CLOCK_SKEW: 'Google ID token is not valid yet. Check the API server clock.',
+        INVALID_TOKEN: 'Google ID-token signature, issuer or format could not be verified.',
+    };
+    const googleReason = code === 'INVALID_GOOGLE_TOKEN' &&
+        typeof details === 'object' &&
+        details !== null &&
+        'googleReason' in details &&
+        typeof details.googleReason === 'string' &&
+        Object.hasOwn(googleReasons, details.googleReason)
+        ? details.googleReason
+        : undefined;
+    const reason = (googleReason && googleReasons[googleReason]) ||
+        (databaseCode && databaseReasons[databaseCode]) ||
         (Object.hasOwn(reasons, code) ? reasons[code] : undefined) ||
         (status === 401
             ? 'Authentication is required or failed.'

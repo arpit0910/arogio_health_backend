@@ -18,6 +18,19 @@ describe('validateEnvironment', () => {
     expect(environment.GOOGLE_CLIENT_IDS).toHaveLength(2);
   });
 
+  it('rejects empty, quoted and non-client Google audiences', () => {
+    for (const value of [
+      ' , ',
+      '"web.apps.googleusercontent.com"',
+      '{"client_id":"web.apps.googleusercontent.com"}',
+      'client-secret',
+    ]) {
+      expect(() => validateEnvironment({ ...valid, GOOGLE_CLIENT_IDS: value })).toThrow(
+        'GOOGLE_CLIENT_IDS',
+      );
+    }
+  });
+
   it('rejects short secrets and wildcard-like origins', () => {
     expect(() =>
       validateEnvironment({ ...valid, JWT_ACCESS_SECRET: 'short', CORS_ORIGINS: '*' }),

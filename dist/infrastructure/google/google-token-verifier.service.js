@@ -13,6 +13,8 @@ exports.GoogleTokenVerifierService = exports.GoogleTokenVerifier = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const google_auth_library_1 = require("google-auth-library");
+const api_error_1 = require("../../common/errors/api-error");
+const common_2 = require("@nestjs/common");
 class GoogleTokenVerifier {
 }
 exports.GoogleTokenVerifier = GoogleTokenVerifier;
@@ -23,7 +25,36 @@ let GoogleTokenVerifierService = class GoogleTokenVerifierService {
         this.audiences = config.getOrThrow('GOOGLE_CLIENT_IDS');
     }
     async verify(idToken) {
-        const ticket = await this.client.verifyIdToken({ idToken, audience: this.audiences });
+        let ticket;
+        try {
+            ticket = await this.client.verifyIdToken({ idToken, audience: this.audiences });
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : '';
+            const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
+            if (/Wrong recipient/.test(message)) {
+                throw new api_error_1.ApiError('INVALID_GOOGLE_TOKEN', 'Google sign-in is not configured for this app version. Please use email sign-in while setup is corrected.', common_2.HttpStatus.UNAUTHORIZED, { googleReason: 'AUDIENCE_MISMATCH' });
+            }
+            if (/Token used too late/.test(message)) {
+                throw new api_error_1.ApiError('INVALID_GOOGLE_TOKEN', 'Google sign-in expired. Please choose your Google account again.', common_2.HttpStatus.UNAUTHORIZED, { googleReason: 'EXPIRED' });
+            }
+            if (/Token used too early/.test(message)) {
+                throw new api_error_1.ApiError('INVALID_GOOGLE_TOKEN', 'Google sign-in could not verify the sign-in time. Please try again.', common_2.HttpStatus.UNAUTHORIZED, { googleReason: 'CLOCK_SKEW' });
+            }
+            if (/Failed to retrieve verification certificates/.test(message) ||
+                [
+                    'ENOTFOUND',
+                    'ECONNRESET',
+                    'ETIMEDOUT',
+                    'ECONNREFUSED',
+                    'EAI_AGAIN',
+                    'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+                    'CERT_HAS_EXPIRED',
+                ].includes(code)) {
+                throw new api_error_1.ApiError('GOOGLE_VERIFICATION_UNAVAILABLE', 'Google sign-in is temporarily unavailable. Please try again or sign in with email.', common_2.HttpStatus.SERVICE_UNAVAILABLE);
+            }
+            throw new api_error_1.ApiError('INVALID_GOOGLE_TOKEN', 'Google authentication failed. Please choose your Google account again.', common_2.HttpStatus.UNAUTHORIZED, { googleReason: 'INVALID_TOKEN' });
+        }
         const payload = ticket.getPayload();
         if (!payload?.sub)
             throw new Error('Google token has no subject');

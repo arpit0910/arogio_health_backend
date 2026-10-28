@@ -71,7 +71,9 @@ let AuthService = class AuthService {
         try {
             identity = await this.google.verify(input.idToken);
         }
-        catch {
+        catch (error) {
+            if (error instanceof api_error_1.ApiError)
+                throw error;
             throw new api_error_1.ApiError('INVALID_GOOGLE_TOKEN', 'Google authentication failed', common_1.HttpStatus.UNAUTHORIZED);
         }
         let user = await this.repository.findGoogleUser(identity.subject);

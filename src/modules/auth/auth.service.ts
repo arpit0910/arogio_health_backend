@@ -71,7 +71,8 @@ export class AuthService {
     let identity;
     try {
       identity = await this.google.verify(input.idToken);
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
       throw new ApiError(
         'INVALID_GOOGLE_TOKEN',
         'Google authentication failed',
