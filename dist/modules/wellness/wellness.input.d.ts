@@ -71,3 +71,23 @@ export declare const medicineInput: z.ZodObject<{
         amount: z.ZodString;
     }, z.core.$strict>>;
 }, z.core.$strict>;
+export declare const activityGoalsInput: z.ZodObject<{
+    goals: z.ZodObject<{
+        Steps: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        ActiveCaloriesBurned: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        Distance: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        ExerciseSession: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        SleepSession: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        Nutrition: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    }, z.core.$strict>;
+}, z.core.$strict>;
+export declare const activityDayInput: z.ZodObject<{
+    values: z.ZodObject<{
+        Steps: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        ActiveCaloriesBurned: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        Distance: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        ExerciseSession: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        SleepSession: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        Nutrition: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    }, z.core.$strict>;
+}, z.core.$strict>;

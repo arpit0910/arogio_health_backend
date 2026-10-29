@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.defaultCycleSettings = exports.emptyWellness = exports.flows = exports.moods = exports.symptoms = exports.APP_TIMEZONE = void 0;
+exports.defaultCycleSettings = exports.emptyWellness = exports.flows = exports.moods = exports.symptoms = exports.APP_TIMEZONE = exports.activityMetricKeys = void 0;
 exports.validDay = validDay;
 exports.addDays = addDays;
 exports.daysBetween = daysBetween;
@@ -13,6 +13,14 @@ exports.waterDay = waterDay;
 exports.waterWindow = waterWindow;
 exports.waterSchedule = waterSchedule;
 exports.cycleForecast = cycleForecast;
+exports.activityMetricKeys = [
+    'Steps',
+    'ActiveCaloriesBurned',
+    'Distance',
+    'ExerciseSession',
+    'SleepSession',
+    'Nutrition',
+];
 exports.APP_TIMEZONE = 'Asia/Kolkata';
 exports.symptoms = [
     'cramps',

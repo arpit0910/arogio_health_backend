@@ -10,6 +10,19 @@ import { WellnessService } from './wellness.service';
 @Controller('wellness')
 export class WellnessController {
   constructor(private readonly service: WellnessService) {}
+  @Put('activity/goals') activityGoals(@CurrentUser() u: RequestUser, @Body() body: unknown) {
+    return this.service.saveActivityGoals(u.userId, body);
+  }
+  @Put('activity/days/:day') activityDay(
+    @CurrentUser() u: RequestUser,
+    @Param('day') day: string,
+    @Body() body: unknown,
+  ) {
+    return this.service.saveActivityDay(u.userId, day, body);
+  }
+  @Delete('activity/data') clearActivity(@CurrentUser() u: RequestUser) {
+    return this.service.clearActivity(u.userId);
+  }
   @Put('medicines/:id') medicine(
     @CurrentUser() u: RequestUser,
     @Param('id') id: string,

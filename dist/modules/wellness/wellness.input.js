@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.medicineInput = exports.entryInput = exports.periodInput = exports.taskInput = exports.logInput = exports.cycleInput = exports.planInput = void 0;
+exports.activityDayInput = exports.activityGoalsInput = exports.medicineInput = exports.entryInput = exports.periodInput = exports.taskInput = exports.logInput = exports.cycleInput = exports.planInput = void 0;
 const zod_1 = require("zod");
 const domain_1 = require("./domain");
 const clock = zod_1.z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
@@ -71,4 +71,22 @@ exports.medicineInput = zod_1.z
         .refine((doses) => new Set(doses.map((d) => d.time)).size === doses.length, 'Choose a different time for each dose.'),
 })
     .strict();
+const activityValues = zod_1.z
+    .object({
+    Steps: zod_1.z.number().int().min(0).max(200000).nullable().optional(),
+    ActiveCaloriesBurned: zod_1.z.number().min(0).max(20000).nullable().optional(),
+    Distance: zod_1.z.number().min(0).max(500).nullable().optional(),
+    ExerciseSession: zod_1.z.number().min(0).max(1440).nullable().optional(),
+    SleepSession: zod_1.z.number().min(0).max(24).nullable().optional(),
+    Nutrition: zod_1.z.number().min(0).max(20000).nullable().optional(),
+})
+    .strict();
+exports.activityGoalsInput = zod_1.z
+    .object({ goals: activityValues })
+    .strict()
+    .refine((value) => Object.values(value.goals).every((goal) => goal == null || goal > 0), 'Targets must be positive, or null to remove them.');
+exports.activityDayInput = zod_1.z
+    .object({ values: activityValues })
+    .strict()
+    .refine((value) => Object.keys(value.values).length > 0, 'Include at least one reading.');
 //# sourceMappingURL=wellness.input.js.map

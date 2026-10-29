@@ -83,3 +83,25 @@ export const medicineInput = z
       ),
   })
   .strict();
+
+const activityValues = z
+  .object({
+    Steps: z.number().int().min(0).max(200000).nullable().optional(),
+    ActiveCaloriesBurned: z.number().min(0).max(20000).nullable().optional(),
+    Distance: z.number().min(0).max(500).nullable().optional(),
+    ExerciseSession: z.number().min(0).max(1440).nullable().optional(),
+    SleepSession: z.number().min(0).max(24).nullable().optional(),
+    Nutrition: z.number().min(0).max(20000).nullable().optional(),
+  })
+  .strict();
+export const activityGoalsInput = z
+  .object({ goals: activityValues })
+  .strict()
+  .refine(
+    (value) => Object.values(value.goals).every((goal) => goal == null || goal > 0),
+    'Targets must be positive, or null to remove them.',
+  );
+export const activityDayInput = z
+  .object({ values: activityValues })
+  .strict()
+  .refine((value) => Object.keys(value.values).length > 0, 'Include at least one reading.');

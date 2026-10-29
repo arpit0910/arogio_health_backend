@@ -1,4 +1,4 @@
-import type { WaterPlan, CycleSettings } from '../../modules/wellness/domain';
+import type { WaterPlan, CycleSettings, ActivityTracking } from '../../modules/wellness/domain';
 export declare const wellnessSettings: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "wellness_settings";
     schema: undefined;
@@ -20,6 +20,25 @@ export declare const wellnessSettings: import("drizzle-orm/pg-core").PgTableWith
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        activityTracking: import("drizzle-orm/pg-core").PgColumn<{
+            name: "activity_tracking";
+            tableName: "wellness_settings";
+            dataType: "json";
+            columnType: "PgJsonb";
+            data: ActivityTracking;
+            driverParam: unknown;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            $type: ActivityTracking;
+        }>;
         waterPlan: import("drizzle-orm/pg-core").PgColumn<{
             name: "water_plan";
             tableName: "wellness_settings";

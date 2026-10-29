@@ -13,12 +13,16 @@ import {
   check,
 } from 'drizzle-orm/pg-core';
 import { users } from './users.schema';
-import type { WaterPlan, CycleSettings } from '../../modules/wellness/domain';
+import type { WaterPlan, CycleSettings, ActivityTracking } from '../../modules/wellness/domain';
 
 export const wellnessSettings = pgTable('wellness_settings', {
   userId: uuid('user_id')
     .primaryKey()
     .references(() => users.id, { onDelete: 'cascade' }),
+  activityTracking: jsonb('activity_tracking')
+    .$type<ActivityTracking>()
+    .notNull()
+    .default({ goals: {}, days: [] }),
   waterPlan: jsonb('water_plan').$type<WaterPlan>(),
   cycleSettings: jsonb('cycle_settings').$type<CycleSettings>(),
   medicines: jsonb('medicines')

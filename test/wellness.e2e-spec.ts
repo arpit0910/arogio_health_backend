@@ -59,6 +59,55 @@ describe('Account-owned wellness HTTP journeys', () => {
       .auth(auth ?? token, { type: 'bearer' })
       .send(body);
   };
+  it('keeps daily targets and entered totals account-owned, distinct and idempotent', async () => {
+    const day = localDay(new Date(), APP_TIMEZONE);
+    const goals = {
+      Steps: 8000,
+      ActiveCaloriesBurned: 400,
+      Nutrition: 2100,
+      Distance: 5.5,
+      ExerciseSession: 30,
+      SleepSession: 7.5,
+    };
+    const created = await call('put', '/activity/goals', { goals }).expect(200);
+    expect(created.body.activityTracking.goals).toEqual(goals);
+    await call('put', `/activity/days/${day}`, {
+      values: { Steps: 3200, ActiveCaloriesBurned: 150, Nutrition: 650 },
+    }).expect(200);
+    const repeated = await call('put', `/activity/days/${day}`, {
+      values: { Steps: 3200, ActiveCaloriesBurned: 150, Nutrition: 650 },
+    }).expect(200);
+    expect(repeated.body.activityTracking.days).toEqual([
+      { day, values: { Steps: 3200, ActiveCaloriesBurned: 150, Nutrition: 650 } },
+    ]);
+    const updated = await call('put', `/activity/days/${day}`, {
+      values: { Distance: 2.2, Steps: 0, Nutrition: null },
+    }).expect(200);
+    expect(updated.body.activityTracking.days[0].values).toEqual({
+      Steps: 0,
+      ActiveCaloriesBurned: 150,
+      Distance: 2.2,
+    });
+    const isolated = await call('get', '', undefined, other).expect(200);
+    expect(isolated.body.activityTracking).toEqual({ goals: {}, days: [] });
+    await call('delete', '/activity/data', undefined, other).expect(200);
+    const unchanged = await call('get', '').expect(200);
+    expect(unchanged.body.activityTracking.goals).toEqual(goals);
+    const clearedGoal = await call('put', '/activity/goals', { goals: { Steps: null } }).expect(
+      200,
+    );
+    expect(clearedGoal.body.activityTracking.goals.Steps).toBeUndefined();
+    expect(clearedGoal.body.activityTracking.goals.Nutrition).toBe(2100);
+    await call('put', '/activity/goals', { goals: { Steps: 0 } }).expect(400);
+    await call('put', '/activity/goals', { goals: { Steps: 1.5 } }).expect(400);
+    await call('put', '/activity/goals', { goals: { Unknown: 1 } }).expect(400);
+    await call('put', `/activity/days/${day}`, { values: { SleepSession: 25 } }).expect(400);
+    await call('put', `/activity/days/${addDays(day, 1)}`, { values: { Steps: 10 } }).expect(400);
+    await call('put', `/activity/days/${addDays(day, -90)}`, { values: { Steps: 10 } }).expect(400);
+    await call('put', '/activity/days/2026-02-30', { values: { Steps: 10 } }).expect(400);
+    const cleared = await call('delete', '/activity/data').expect(200);
+    expect(cleared.body.activityTracking).toEqual({ goals: {}, days: [] });
+  });
   it('saves multiple medicines and doses, validates schedules and isolates accounts', async () => {
     const id = randomUUID(),
       second = randomUUID();
@@ -90,7 +139,7 @@ describe('Account-owned wellness HTTP journeys', () => {
     );
     expect(updated.body.medicines).toHaveLength(2);
     const savedMedicines = updated.body.medicines as { id: string; enabled: boolean }[];
-    expect(savedMedicines.find(m => m.id === id)?.enabled).toBe(false);
+    expect(savedMedicines.find((m) => m.id === id)?.enabled).toBe(false);
     const deleted = await call('delete', `/medicines/${id}`).expect(200);
     expect(deleted.body.medicines).toHaveLength(1);
     await call('delete', `/medicines/${second}`).expect(200);

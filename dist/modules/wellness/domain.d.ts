@@ -1,3 +1,13 @@
+export declare const activityMetricKeys: readonly ["Steps", "ActiveCaloriesBurned", "Distance", "ExerciseSession", "SleepSession", "Nutrition"];
+export type ActivityMetric = (typeof activityMetricKeys)[number];
+export type ActivityDay = {
+    day: string;
+    values: Partial<Record<ActivityMetric, number>>;
+};
+export type ActivityTracking = {
+    goals: Partial<Record<ActivityMetric, number>>;
+    days: ActivityDay[];
+};
 export declare const APP_TIMEZONE = "Asia/Kolkata";
 export type WaterPlan = {
     version: string;

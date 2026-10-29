@@ -1,3 +1,17 @@
+export const activityMetricKeys = [
+  'Steps',
+  'ActiveCaloriesBurned',
+  'Distance',
+  'ExerciseSession',
+  'SleepSession',
+  'Nutrition',
+] as const;
+export type ActivityMetric = (typeof activityMetricKeys)[number];
+export type ActivityDay = { day: string; values: Partial<Record<ActivityMetric, number>> };
+export type ActivityTracking = {
+  goals: Partial<Record<ActivityMetric, number>>;
+  days: ActivityDay[];
+};
 export const APP_TIMEZONE = 'Asia/Kolkata';
 /** Calendar dates are plain ISO dates, never UTC-serialized local midnights. */
 export type WaterPlan = {

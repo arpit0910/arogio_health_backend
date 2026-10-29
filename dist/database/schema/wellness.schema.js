@@ -8,6 +8,10 @@ exports.wellnessSettings = (0, pg_core_1.pgTable)('wellness_settings', {
     userId: (0, pg_core_1.uuid)('user_id')
         .primaryKey()
         .references(() => users_schema_1.users.id, { onDelete: 'cascade' }),
+    activityTracking: (0, pg_core_1.jsonb)('activity_tracking')
+        .$type()
+        .notNull()
+        .default({ goals: {}, days: [] }),
     waterPlan: (0, pg_core_1.jsonb)('water_plan').$type(),
     cycleSettings: (0, pg_core_1.jsonb)('cycle_settings').$type(),
     medicines: (0, pg_core_1.jsonb)('medicines')

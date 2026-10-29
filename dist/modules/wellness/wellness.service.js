@@ -95,6 +95,7 @@ let WellnessService = class WellnessService {
                 .limit(730),
         ]);
         return {
+            activityTracking: preferences[0]?.activityTracking ?? { goals: {}, days: [] },
             medicines: preferences[0]?.medicines ?? [],
             waterPlan: preferences[0]?.waterPlan
                 ? { ...preferences[0].waterPlan, timezone: domain_1.APP_TIMEZONE }
@@ -129,6 +130,70 @@ let WellnessService = class WellnessService {
                 notes: row.notes,
             })),
         };
+    }
+    saveActivityGoals(userId, body) {
+        const { goals } = this.parse(input.activityGoalsInput, body);
+        return this.mutate(userId, async (tx) => {
+            const [row] = await tx.select().from(schema_1.wellnessSettings).where((0, drizzle_orm_1.eq)(schema_1.wellnessSettings.userId, userId));
+            const current = row?.activityTracking ?? { goals: {}, days: [] };
+            const merged = { ...current.goals };
+            for (const key of Object.keys(goals)) {
+                const value = goals[key];
+                if (value == null)
+                    delete merged[key];
+                else
+                    merged[key] = value;
+            }
+            const activityTracking = { ...current, goals: merged };
+            await tx
+                .insert(schema_1.wellnessSettings)
+                .values({ userId, activityTracking })
+                .onConflictDoUpdate({
+                target: schema_1.wellnessSettings.userId,
+                set: { activityTracking, updatedAt: new Date() },
+            });
+        });
+    }
+    saveActivityDay(userId, day, body) {
+        this.parse(zod_1.z.string().refine(domain_1.validDay), day);
+        const today = (0, domain_1.localDay)(new Date(), domain_1.APP_TIMEZONE);
+        if (day > today || day < (0, domain_1.addDays)(today, -89))
+            throw new common_1.BadRequestException('Record activity within the last 90 days, through today.');
+        const { values } = this.parse(input.activityDayInput, body);
+        return this.mutate(userId, async (tx) => {
+            const [row] = await tx.select().from(schema_1.wellnessSettings).where((0, drizzle_orm_1.eq)(schema_1.wellnessSettings.userId, userId));
+            const current = row?.activityTracking ?? { goals: {}, days: [] };
+            const merged = { ...current.days.find((entry) => entry.day === day)?.values };
+            for (const key of Object.keys(values)) {
+                const value = values[key];
+                if (value == null)
+                    delete merged[key];
+                else
+                    merged[key] = value;
+            }
+            const days = [
+                ...current.days.filter((entry) => entry.day !== day && entry.day >= (0, domain_1.addDays)(today, -89)),
+                ...(Object.keys(merged).length ? [{ day, values: merged }] : []),
+            ]
+                .sort((a, b) => b.day.localeCompare(a.day))
+                .slice(0, 90);
+            const activityTracking = { ...current, days };
+            await tx
+                .insert(schema_1.wellnessSettings)
+                .values({ userId, activityTracking })
+                .onConflictDoUpdate({
+                target: schema_1.wellnessSettings.userId,
+                set: { activityTracking, updatedAt: new Date() },
+            });
+        });
+    }
+    clearActivity(userId) {
+        return this.mutate(userId, async (tx) => {
+            await tx
+                .update(schema_1.wellnessSettings)
+                .set({ activityTracking: { goals: {}, days: [] }, updatedAt: new Date() })
+                .where((0, drizzle_orm_1.eq)(schema_1.wellnessSettings.userId, userId));
+        });
     }
     saveMedicine(userId, id, body) {
         this.uuid(id);

@@ -23,6 +23,15 @@ let WellnessController = class WellnessController {
     constructor(service) {
         this.service = service;
     }
+    activityGoals(u, body) {
+        return this.service.saveActivityGoals(u.userId, body);
+    }
+    activityDay(u, day, body) {
+        return this.service.saveActivityDay(u.userId, day, body);
+    }
+    clearActivity(u) {
+        return this.service.clearActivity(u.userId);
+    }
     medicine(u, id, body) {
         return this.service.saveMedicine(u.userId, id, body);
     }
@@ -67,6 +76,30 @@ let WellnessController = class WellnessController {
     }
 };
 exports.WellnessController = WellnessController;
+__decorate([
+    (0, common_1.Put)('activity/goals'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], WellnessController.prototype, "activityGoals", null);
+__decorate([
+    (0, common_1.Put)('activity/days/:day'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('day')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], WellnessController.prototype, "activityDay", null);
+__decorate([
+    (0, common_1.Delete)('activity/data'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], WellnessController.prototype, "clearActivity", null);
 __decorate([
     (0, common_1.Put)('medicines/:id'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
