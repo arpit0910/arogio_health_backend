@@ -44,6 +44,9 @@ let UsersService = class UsersService {
     async deleteAccount(userId, confirmed) {
         if (confirmed !== true)
             throw new api_error_1.ApiError('CONFIRMATION_REQUIRED', 'Confirm account deletion first', common_1.HttpStatus.BAD_REQUEST);
+        const account = await this.activeUser(userId);
+        if (account.role === 'super_admin')
+            throw new api_error_1.ApiError('ADMIN_ACCOUNT_PROTECTED', 'Manage administrator accounts through the seeder', common_1.HttpStatus.FORBIDDEN);
         const result = await this.repository.softDelete(userId);
         if (!result)
             throw new api_error_1.ApiError('USER_NOT_FOUND', 'User is unavailable', common_1.HttpStatus.NOT_FOUND);

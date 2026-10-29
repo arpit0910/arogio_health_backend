@@ -28,7 +28,9 @@
     "db:check": "drizzle-kit check",
     "db:migrate:production": "node --env-file-if-exists=.env.production dist/database/migrate.js",
     "db:diagnose": "node --env-file-if-exists=.env.production scripts/check-database.cjs",
-    "start:local:validation": "node scripts/start-local-validation.cjs"
+    "start:local:validation": "node scripts/start-local-validation.cjs",
+    "seed:super-admin": "node --env-file-if-exists=.env.local --import tsx src/database/seed-super-admin.ts",
+    "seed:super-admin:production": "node --env-file-if-exists=.env.production dist/database/seed-super-admin.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.7",
@@ -52,6 +54,7 @@
     "pino": "^10.4.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "sharp": "^0.35.5",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -61,6 +64,7 @@
     "@nestjs/testing": "^11.2.7",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.3.0",
     "@types/node": "^24.10.0",
     "@types/passport-jwt": "^4.0.1",
     "@types/pg": "^8.15.5",

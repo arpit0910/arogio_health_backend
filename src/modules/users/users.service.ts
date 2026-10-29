@@ -45,6 +45,13 @@ export class UsersService {
         'Confirm account deletion first',
         HttpStatus.BAD_REQUEST,
       );
+    const account = await this.activeUser(userId);
+    if (account.role === 'super_admin')
+      throw new ApiError(
+        'ADMIN_ACCOUNT_PROTECTED',
+        'Manage administrator accounts through the seeder',
+        HttpStatus.FORBIDDEN,
+      );
     const result = await this.repository.softDelete(userId);
     if (!result) throw new ApiError('USER_NOT_FOUND', 'User is unavailable', HttpStatus.NOT_FOUND);
     return result;

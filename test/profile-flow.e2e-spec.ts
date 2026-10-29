@@ -1,3 +1,6 @@
+import sharp from 'sharp';
+import { seedSuperAdmin } from '../src/database/seed-super-admin';
+import { PasswordService } from '../src/modules/auth/password.service';
 import { getStorageToken, ThrottlerStorageService } from '@nestjs/throttler';
 import { createSign, generateKeyPairSync } from 'node:crypto';
 import { execFile } from 'node:child_process';
@@ -144,6 +147,167 @@ describe('signup, setup and Google HTTP journeys', () => {
     );
     expect(retained.rows[0]).toEqual({ email: credentials.email, status: 'disabled' });
   });
+
+  it('seeds an idempotent super admin, enforces roles, audits actions and publishes validated banners', async () => {
+    const seed = {
+      SUPER_ADMIN_EMAIL: 'seed-admin@example.test',
+      SUPER_ADMIN_PASSWORD: 'SecureAdminSeed2026!',
+      SUPER_ADMIN_NAME: 'Seeded Administrator',
+    };
+    const db = app.get(DatabaseService),
+      passwords = new PasswordService();
+    const first = await seedSuperAdmin(db, passwords, seed);
+    expect(first.created).toBe(true);
+    expect(
+      await seedSuperAdmin(db, passwords, {
+        ...seed,
+        SUPER_ADMIN_PASSWORD: 'MustNotResetPassword!',
+      }),
+    ).toEqual({ id: first.id, created: false });
+    await request(app.getHttpServer()).get('/api/v1/admin/analytics').expect(401);
+    const ordinary = await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ email: 'ordinary-admin-test@example.test', password: 'Health1!' })
+      .expect(201);
+    await request(app.getHttpServer())
+      .get('/api/v1/admin/me')
+      .auth(ordinary.body.accessToken as string, { type: 'bearer' })
+      .expect(403);
+    const logged = await request(app.getHttpServer())
+      .post('/api/v1/auth/email/login')
+      .send({ email: seed.SUPER_ADMIN_EMAIL, password: seed.SUPER_ADMIN_PASSWORD })
+      .expect(200);
+    expect(logged.body.user.role).toBe('super_admin');
+    const token = logged.body.accessToken as string,
+      auth = { Authorization: `Bearer ${token}` };
+    await request(app.getHttpServer()).get('/admin').expect(200).expect('content-type', /html/);
+    await request(app.getHttpServer()).get('/api/v1/admin/analytics').set(auth).expect(200);
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/admin/users')
+      .set(auth)
+      .send({
+        email: 'admin-created@example.test',
+        fullName: 'Created by admin',
+        password: 'StrongInitial2026!',
+      })
+      .expect(201);
+    const id = created.body.id as string;
+    expect(created.body.passwordHash).toBeUndefined();
+    expect(created.body.role).toBe('user');
+    await request(app.getHttpServer())
+      .patch(`/api/v1/admin/users/${id}`)
+      .set(auth)
+      .send({ fullName: 'Updated person', location: 'Jaipur' })
+      .expect(200);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/users/${id}/tracking`)
+      .set(auth)
+      .send({
+        path: 'activity/goals',
+        method: 'PUT',
+        body: { goals: { Steps: 8000 } },
+        confirm: true,
+      })
+      .expect(201);
+    const detail = await request(app.getHttpServer())
+      .get(`/api/v1/admin/users/${id}`)
+      .set(auth)
+      .expect(200);
+    expect(detail.body.wellness.activityTracking.goals.Steps).toBe(8000);
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/banners')
+      .set(auth)
+      .field('title', 'Bad')
+      .field('alt', 'Bad image')
+      .attach('image', Buffer.from('<svg/>'), { filename: 'bad.png', contentType: 'image/png' })
+      .expect(400);
+    const image = await sharp({
+      create: { width: 112, height: 40, channels: 3, background: '#ccddaa' },
+    })
+      .png()
+      .toBuffer();
+    const upload = await request(app.getHttpServer())
+      .post('/api/v1/admin/banners')
+      .set(auth)
+      .field('title', 'Home banner')
+      .field('alt', 'A calm lake')
+      .field('route', '/water')
+      .attach('image', image, { filename: 'banner.png', contentType: 'image/png' })
+      .expect(201);
+    const bannerId = upload.body.id as string;
+    await request(app.getHttpServer()).get(`/api/v1/home/banners/${bannerId}/image`).expect(404);
+    await request(app.getHttpServer())
+      .get(`/api/v1/admin/banners/${bannerId}/image`)
+      .set(auth)
+      .expect(200)
+      .expect('content-type', /webp/);
+    await request(app.getHttpServer())
+      .patch(`/api/v1/admin/banners/${bannerId}`)
+      .set(auth)
+      .send({ published: true })
+      .expect(200);
+    const published = await request(app.getHttpServer()).get('/api/v1/home/banners').expect(200);
+    expect(published.body).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: bannerId, alt: 'A calm lake' })]),
+    );
+    await request(app.getHttpServer()).get(`/api/v1/home/banners/${bannerId}/image`).expect(200);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/users/${first.id}/action`)
+      .set(auth)
+      .send({ action: 'delete', confirm: true })
+      .expect(400);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/users/${id}/action`)
+      .set(auth)
+      .send({ action: 'delete', confirm: true })
+      .expect(201);
+    const beforeDisable = await request(app.getHttpServer())
+      .get(`/api/v1/admin/users/${id}`)
+      .set(auth)
+      .expect(200);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/users/${id}/action`)
+      .set(auth)
+      .send({ action: 'disable', confirm: true })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/users/${id}/action`)
+      .set(auth)
+      .send({ action: 'delete', confirm: true })
+      .expect(201);
+    const afterDisable = await request(app.getHttpServer())
+      .get(`/api/v1/admin/users/${id}`)
+      .set(auth)
+      .expect(200);
+    expect(afterDisable.body.deletionRequestedAt).toBe(beforeDisable.body.deletionRequestedAt);
+    expect(afterDisable.body.recoverableUntil).toBe(beforeDisable.body.recoverableUntil);
+    await request(app.getHttpServer())
+      .delete('/api/v1/profile')
+      .set(auth)
+      .send({ confirm: true })
+      .expect(403);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/users/${id}/action`)
+      .set(auth)
+      .send({ action: 'restore', confirm: true })
+      .expect(201);
+    const audit = await request(app.getHttpServer())
+      .get('/api/v1/admin/audit')
+      .set(auth)
+      .expect(200);
+    expect(audit.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ action: 'banner.upload', outcome: 'failed' }),
+        expect.objectContaining({ action: 'tracking.change', outcome: 'succeeded' }),
+      ]),
+    );
+    expect(JSON.stringify(audit.body)).not.toContain('StrongInitial2026');
+    await request(app.getHttpServer())
+      .get('/api/v1/home/weather')
+      .set(auth)
+      .expect(200)
+      .expect(({ body }) => expect(body.available).toBe(false));
+  }, 30000);
 
   beforeEach(() => {
     // Give each journey an independent rate-limit window; limits still apply within a test.

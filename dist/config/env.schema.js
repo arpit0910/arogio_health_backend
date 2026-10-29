@@ -7,6 +7,7 @@ const booleanFromString = zod_1.z
     .default('false')
     .transform((value) => value === 'true');
 const envSchema = zod_1.z.object({
+    OPENWEATHER_API_KEY: zod_1.z.string().min(1).optional(),
     NODE_ENV: zod_1.z.enum(['development', 'test', 'production']).default('development'),
     PORT: zod_1.z.coerce.number().int().min(1).max(65535).default(3000),
     DATABASE_URL: zod_1.z.url().refine((value) => value.startsWith('postgresql://'), {

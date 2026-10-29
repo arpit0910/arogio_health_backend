@@ -1,5 +1,6 @@
 import type { User } from '../../../database/schema';
 export declare class SafeUserDto {
+    role: 'user' | 'super_admin';
     referralCode: string;
     hasReferrer: boolean;
     profileSetup: Record<string, unknown> | null;

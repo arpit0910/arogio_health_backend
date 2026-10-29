@@ -37,6 +37,12 @@ async function main() {
   const module = await Test.createTestingModule({ imports: [AppModule] }).overrideProvider(DatabaseService).useValue({
     db, ping: async () => { await database.query('select 1'); }, onApplicationShutdown: () => database.close(),
   }).compile();
+  if (process.argv.includes('--seed-admin')) {
+    const { seedSuperAdmin } = require('../dist/database/seed-super-admin');
+    const { PasswordService } = require('../dist/modules/auth/password.service');
+    await seedSuperAdmin(module.get(DatabaseService), new PasswordService(), process.env);
+    console.log('Local super-admin seed completed.');
+  }
   const app = module.createNestApplication({ bodyParser: false });
   configureApplication(app);
   await app.listen(Number(process.env.PORT), '127.0.0.1');

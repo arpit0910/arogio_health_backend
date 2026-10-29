@@ -364,6 +364,25 @@ export declare const users: import("drizzle-orm/pg-core").PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        role: import("drizzle-orm/pg-core").PgColumn<{
+            name: "role";
+            tableName: "users";
+            dataType: "string";
+            columnType: "PgText";
+            data: "user" | "super_admin";
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            $type: "user" | "super_admin";
+        }>;
         status: import("drizzle-orm/pg-core").PgColumn<{
             name: "status";
             tableName: "users";

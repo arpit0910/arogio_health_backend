@@ -4,6 +4,15 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "assets": [{ "include": "modules/status/public/**/*", "watchAssets": true }]
+    "assets": [
+      {
+        "include": "modules/status/public/**/*",
+        "watchAssets": true
+      },
+      {
+        "include": "modules/admin/public/**/*",
+        "watchAssets": true
+      }
+    ]
   }
 }

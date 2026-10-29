@@ -15,6 +15,11 @@ let WellnessModule = class WellnessModule {
 };
 exports.WellnessModule = WellnessModule;
 exports.WellnessModule = WellnessModule = __decorate([
-    (0, common_1.Module)({ imports: [auth_module_1.AuthModule], controllers: [wellness_controller_1.WellnessController], providers: [wellness_service_1.WellnessService] })
+    (0, common_1.Module)({
+        exports: [wellness_service_1.WellnessService],
+        imports: [auth_module_1.AuthModule],
+        controllers: [wellness_controller_1.WellnessController],
+        providers: [wellness_service_1.WellnessService],
+    })
 ], WellnessModule);
 //# sourceMappingURL=wellness.module.js.map

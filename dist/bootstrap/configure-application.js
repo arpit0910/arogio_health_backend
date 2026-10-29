@@ -20,6 +20,19 @@ function configureApplication(app) {
     app.enableShutdownHooks();
     app.use((0, helmet_1.default)());
     app.use(app.get(request_activity_service_1.RequestActivityService).middleware);
+    app.useStaticAssets((0, node_path_1.join)(__dirname, '..', 'modules', 'admin', 'public'), {
+        prefix: '/admin-assets/',
+        index: false,
+        maxAge: 0,
+    });
+    app.use((request, response, next) => {
+        if (request.method === 'GET' && (request.path === '/admin' || request.path === '/admin/')) {
+            response.setHeader('Cache-Control', 'no-store');
+            response.sendFile((0, node_path_1.join)(__dirname, '..', 'modules', 'admin', 'public', 'index.html'));
+        }
+        else
+            next();
+    });
     app.useStaticAssets((0, node_path_1.join)(__dirname, '..', 'modules', 'status', 'public'), {
         prefix: '/status-assets/',
         index: false,

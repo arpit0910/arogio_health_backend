@@ -18,6 +18,7 @@ let UsersModule = class UsersModule {
 exports.UsersModule = UsersModule;
 exports.UsersModule = UsersModule = __decorate([
     (0, common_1.Module)({
+        exports: [users_service_1.UsersService],
         imports: [auth_module_1.AuthModule],
         controllers: [profile_controller_1.ProfileController, users_controller_1.UsersController],
         providers: [users_service_1.UsersService, users_repository_1.UsersRepository],

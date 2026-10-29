@@ -13,6 +13,7 @@ exports.AuthResponseDto = exports.TokenPairDto = exports.SafeUserDto = void 0;
 exports.toSafeUser = toSafeUser;
 const swagger_1 = require("@nestjs/swagger");
 class SafeUserDto {
+    role;
     referralCode;
     hasReferrer;
     profileSetup;
@@ -32,6 +33,10 @@ class SafeUserDto {
     updatedAt;
 }
 exports.SafeUserDto = SafeUserDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ enum: ['user', 'super_admin'] }),
+    __metadata("design:type", String)
+], SafeUserDto.prototype, "role", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ description: 'Permanent unique code for inviting friends' }),
     __metadata("design:type", String)
@@ -140,6 +145,7 @@ function toSafeUser(user) {
         ? Math.round((user.weightKg / (user.heightCm / 100) ** 2) * 10) / 10
         : null;
     return {
+        role: user.role,
         referralCode: user.referralCode,
         hasReferrer: Boolean(user.referredByUserId),
         profileSetup: user.profileSetup,

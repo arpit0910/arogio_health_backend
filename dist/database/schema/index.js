@@ -18,4 +18,5 @@ __exportStar(require("./auth-identities.schema"), exports);
 __exportStar(require("./auth-sessions.schema"), exports);
 __exportStar(require("./users.schema"), exports);
 __exportStar(require("./wellness.schema"), exports);
+__exportStar(require("./content.schema"), exports);
 //# sourceMappingURL=index.js.map

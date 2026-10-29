@@ -43,6 +43,7 @@ export const users = pgTable(
     passwordHash: text('password_hash'),
     deletionRequestedAt: timestamp('deletion_requested_at', { withTimezone: true }),
     recoverableUntil: timestamp('recoverable_until', { withTimezone: true }),
+    role: text('role').$type<'user' | 'super_admin'>().notNull().default('user'),
     status: userStatus('status').notNull().default('active'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -57,6 +58,7 @@ export const users = pgTable(
     uniqueIndex('users_email_unique').on(table.email),
     uniqueIndex('users_username_unique').on(table.username),
     uniqueIndex('users_mobile_number_unique').on(table.mobileNumber),
+    check('users_role_values', sql`${table.role} in ('user', 'super_admin')`),
     index('users_status_idx').on(table.status),
     check(
       'users_height_cm_range',

@@ -17,6 +17,17 @@ export function configureApplication(app: NestExpressApplication): void {
   app.enableShutdownHooks();
   app.use(helmet());
   app.use(app.get(RequestActivityService).middleware);
+  app.useStaticAssets(join(__dirname, '..', 'modules', 'admin', 'public'), {
+    prefix: '/admin-assets/',
+    index: false,
+    maxAge: 0,
+  });
+  app.use((request: Request, response: Response, next: NextFunction) => {
+    if (request.method === 'GET' && (request.path === '/admin' || request.path === '/admin/')) {
+      response.setHeader('Cache-Control', 'no-store');
+      response.sendFile(join(__dirname, '..', 'modules', 'admin', 'public', 'index.html'));
+    } else next();
+  });
   app.useStaticAssets(join(__dirname, '..', 'modules', 'status', 'public'), {
     prefix: '/status-assets/',
     index: false,

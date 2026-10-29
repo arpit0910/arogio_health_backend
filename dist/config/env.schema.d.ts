@@ -1,8 +1,9 @@
 import { z } from 'zod';
 declare const envSchema: z.ZodObject<{
+    OPENWEATHER_API_KEY: z.ZodOptional<z.ZodString>;
     NODE_ENV: z.ZodDefault<z.ZodEnum<{
-        development: "development";
         test: "test";
+        development: "development";
         production: "production";
     }>>;
     PORT: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
@@ -17,8 +18,8 @@ declare const envSchema: z.ZodObject<{
     REFRESH_TOKEN_TTL_DAYS: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     GOOGLE_CLIENT_IDS: z.ZodPipe<z.ZodString, z.ZodTransform<string[], string>>;
     LOG_LEVEL: z.ZodDefault<z.ZodEnum<{
-        fatal: "fatal";
         error: "error";
+        fatal: "fatal";
         warn: "warn";
         info: "info";
         debug: "debug";

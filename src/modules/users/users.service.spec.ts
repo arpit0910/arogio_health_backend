@@ -4,6 +4,7 @@ import { UsersService } from './users.service';
 import type { UsersRepository } from './users.repository';
 
 const user: User = {
+  role: 'user',
   referralCode: 'A1B2C3D4E5F6',
   referredByUserId: null,
   referredAt: null,
