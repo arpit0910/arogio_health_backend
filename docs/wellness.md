@@ -36,3 +36,11 @@ Snapshot reads return the last 90 days of water data (up to 3,000 logs), all per
 No hosted migration or deployment is performed by adding these source files. There is no server notification job; notifications are scheduled locally by the app.
 
 HTTP integration verification: `npm run test:e2e -- --testPathPatterns=wellness`. Tests use synthetic accounts and disposable PGlite, never the hosted database.
+
+## Activity targets and entered totals
+
+The snapshot includes `activityTracking: { goals, days }`. Authenticated PUT `/wellness/activity/goals` merges `{goals}`; PUT `/wellness/activity/days/:day` merges `{values}` into that day's totals. Null clears a field; zero remains a reading. Separate metric keys are Steps, ActiveCaloriesBurned, Nutrition (food calories), Distance (km), ExerciseSession (minutes), and SleepSession (hours). DELETE `/wellness/activity/data` clears only activity tracking.
+
+Dates must be within the last 90 days through today in Asia/Kolkata. Entries are replacement totals, not increments. Input limits are storage validation, not recommended health targets. Owner-scoped mutations use the existing user row lock. Connected raw readings and local phone step counts are not uploaded by these routes.
+
+Deploy additive migration `drizzle/0007_daily_activity_targets.sql` before serving this version. No hosted migration or deployment was performed during implementation. Activity HTTP tests cover account isolation, validation, repeated saves, separate calorie fields and deletion using disposable PGlite.
