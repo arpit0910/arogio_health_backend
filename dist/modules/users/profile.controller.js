@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProfileController = void 0;
+const delete_account_dto_1 = require("./dto/delete-account.dto");
 const referral_dto_1 = require("./dto/referral.dto");
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
@@ -28,6 +29,9 @@ let ProfileController = class ProfileController {
     }
     applyReferral(user, input) {
         return this.profiles.applyReferral(user.userId, input.referralCode);
+    }
+    deleteAccount(user, input) {
+        return this.profiles.deleteAccount(user.userId, input.confirm);
     }
     view(user) {
         return this.profiles.getMe(user.userId);
@@ -50,6 +54,17 @@ __decorate([
     __metadata("design:paramtypes", [Object, referral_dto_1.ApplyReferralDto]),
     __metadata("design:returntype", Promise)
 ], ProfileController.prototype, "applyReferral", null);
+__decorate([
+    (0, common_1.Delete)(),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Soft-delete your account; verified sign-in within 30 days restores it',
+    }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, delete_account_dto_1.DeleteAccountDto]),
+    __metadata("design:returntype", void 0)
+], ProfileController.prototype, "deleteAccount", null);
 __decorate([
     (0, common_1.Get)('view'),
     (0, swagger_1.ApiOperation)({ summary: 'View your profile' }),

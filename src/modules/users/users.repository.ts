@@ -1,12 +1,33 @@
 import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { DatabaseService } from '../../database/database.service';
-import { users, type User } from '../../database/schema';
+import { authSessions, users, type User } from '../../database/schema';
 import type { HeightUnit, WeightUnit } from '../../common/health/measurements';
 
 @Injectable()
 export class UsersRepository {
   constructor(private readonly database: DatabaseService) {}
+
+  async softDelete(id: string) {
+    return this.database.db.transaction(async (tx) => {
+      const now = new Date(),
+        recoverableUntil = new Date(now.getTime() + 30 * 86400000);
+      const [user] = await tx
+        .update(users)
+        .set({ status: 'disabled', deletionRequestedAt: now, recoverableUntil, updatedAt: now })
+        .where(and(eq(users.id, id), eq(users.status, 'active')))
+        .returning();
+      if (!user) return undefined;
+      await tx
+        .update(authSessions)
+        .set({ revokedAt: now })
+        .where(and(eq(authSessions.userId, id), isNull(authSessions.revokedAt)));
+      return {
+        deletionRequestedAt: now.toISOString(),
+        recoverableUntil: recoverableUntil.toISOString(),
+      };
+    });
+  }
 
   async findById(id: string): Promise<User | undefined> {
     const [user] = await this.database.db.select().from(users).where(eq(users.id, id)).limit(1);
@@ -62,7 +83,7 @@ export class UsersRepository {
     const [user] = await this.database.db
       .update(users)
       .set({ ...changes, updatedAt: new Date() })
-      .where(eq(users.id, id))
+      .where(and(eq(users.id, id), eq(users.status, 'active')))
       .returning();
     return user;
   }

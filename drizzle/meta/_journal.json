@@ -64,6 +64,13 @@
       "when": 1793257840825,
       "tag": "0008_fine_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793282180765,
+      "tag": "0009_minor_green_goblin",
+      "breakpoints": true
     }
   ]
 }

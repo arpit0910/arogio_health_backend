@@ -1,3 +1,4 @@
+import { AuthRepository } from './auth.repository';
 import { ConfigService } from '@nestjs/config';
 import { Strategy } from 'passport-jwt';
 import type { RequestUser } from '../../common/auth/request-user';
@@ -9,7 +10,8 @@ declare const JwtStrategy_base: new (...args: [opt: import("passport-jwt").Strat
     validate(...args: any[]): unknown;
 };
 export declare class JwtStrategy extends JwtStrategy_base {
-    constructor(config: ConfigService);
-    validate(payload: AccessTokenPayload): RequestUser;
+    private readonly repository;
+    constructor(config: ConfigService, repository: AuthRepository);
+    validate(payload: AccessTokenPayload): Promise<RequestUser>;
 }
 export {};

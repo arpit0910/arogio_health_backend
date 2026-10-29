@@ -19,6 +19,26 @@ let UsersRepository = class UsersRepository {
     constructor(database) {
         this.database = database;
     }
+    async softDelete(id) {
+        return this.database.db.transaction(async (tx) => {
+            const now = new Date(), recoverableUntil = new Date(now.getTime() + 30 * 86400000);
+            const [user] = await tx
+                .update(schema_1.users)
+                .set({ status: 'disabled', deletionRequestedAt: now, recoverableUntil, updatedAt: now })
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.users.id, id), (0, drizzle_orm_1.eq)(schema_1.users.status, 'active')))
+                .returning();
+            if (!user)
+                return undefined;
+            await tx
+                .update(schema_1.authSessions)
+                .set({ revokedAt: now })
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.authSessions.userId, id), (0, drizzle_orm_1.isNull)(schema_1.authSessions.revokedAt)));
+            return {
+                deletionRequestedAt: now.toISOString(),
+                recoverableUntil: recoverableUntil.toISOString(),
+            };
+        });
+    }
     async findById(id) {
         const [user] = await this.database.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, id)).limit(1);
         return user;
@@ -56,7 +76,7 @@ let UsersRepository = class UsersRepository {
         const [user] = await this.database.db
             .update(schema_1.users)
             .set({ ...changes, updatedAt: new Date() })
-            .where((0, drizzle_orm_1.eq)(schema_1.users.id, id))
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.users.id, id), (0, drizzle_orm_1.eq)(schema_1.users.status, 'active')))
             .returning();
         return user;
     }

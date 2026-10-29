@@ -1,6 +1,8 @@
+import { HttpStatus } from '@nestjs/common';
+import { ApiError } from '../../common/errors/api-error';
 import { isUniqueViolation } from '../../common/errors/database-error';
 import { Injectable } from '@nestjs/common';
-import { and, eq, isNull, type InferInsertModel } from 'drizzle-orm';
+import { and, eq, gt, isNull, type InferInsertModel } from 'drizzle-orm';
 import { DatabaseService } from '../../database/database.service';
 import { authIdentities, authSessions, users, type User } from '../../database/schema';
 import type { HeightUnit, WeightUnit } from '../../common/health/measurements';
@@ -18,6 +20,40 @@ export type RotationResult =
 @Injectable()
 export class AuthRepository {
   constructor(private readonly database: DatabaseService) {}
+
+  async isAccessSessionActive(userId: string, sessionId: string): Promise<boolean> {
+    const [session] = await this.database.db
+      .select({ id: authSessions.id })
+      .from(authSessions)
+      .innerJoin(users, eq(users.id, authSessions.userId))
+      .where(
+        and(
+          eq(users.id, userId),
+          eq(users.status, 'active'),
+          eq(authSessions.id, sessionId),
+          isNull(authSessions.revokedAt),
+          gt(authSessions.expiresAt, new Date()),
+        ),
+      )
+      .limit(1);
+    return Boolean(session);
+  }
+
+  async restoreDeletedAccount(id: string): Promise<User | undefined> {
+    const [user] = await this.database.db
+      .update(users)
+      .set({
+        status: 'active',
+        deletionRequestedAt: null,
+        recoverableUntil: null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(users.id, id), eq(users.status, 'disabled'), gt(users.recoverableUntil, new Date())),
+      )
+      .returning();
+    return user;
+  }
 
   async findUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await this.database.db
@@ -136,7 +172,21 @@ export class AuthRepository {
   }
 
   async createSession(session: NewSession): Promise<void> {
-    await this.database.db.insert(authSessions).values(session);
+    await this.database.db.transaction(async (tx) => {
+      const [user] = await tx
+        .select()
+        .from(users)
+        .where(eq(users.id, session.userId))
+        .limit(1)
+        .for('update');
+      if (!user || user.status !== 'active')
+        throw new ApiError(
+          'ACCOUNT_UNAVAILABLE',
+          'This account is unavailable',
+          HttpStatus.FORBIDDEN,
+        );
+      await tx.insert(authSessions).values(session);
+    });
   }
 
   async rotateSession(input: {
@@ -145,6 +195,19 @@ export class AuthRepository {
     now: Date;
   }): Promise<RotationResult> {
     return this.database.db.transaction(async (tx) => {
+      // Account-first locking matches soft deletion, avoiding deadlocks and escaped sessions.
+      const [candidate] = await tx
+        .select()
+        .from(authSessions)
+        .where(eq(authSessions.tokenHash, input.currentTokenHash))
+        .limit(1);
+      if (!candidate) return { kind: 'invalid' };
+      const [user] = await tx
+        .select()
+        .from(users)
+        .where(eq(users.id, candidate.userId))
+        .limit(1)
+        .for('update');
       const [current] = await tx
         .select()
         .from(authSessions)
@@ -170,7 +233,6 @@ export class AuthRepository {
         return { kind: 'expired' };
       }
 
-      const [user] = await tx.select().from(users).where(eq(users.id, current.userId)).limit(1);
       if (!user || user.status !== 'active') {
         await tx
           .update(authSessions)

@@ -7,6 +7,10 @@ export declare class UsersService {
     constructor(repository: UsersRepository);
     private activeUser;
     applyReferral(userId: string, code: string): Promise<SafeUserDto>;
+    deleteAccount(userId: string, confirmed: boolean): Promise<{
+        deletionRequestedAt: string;
+        recoverableUntil: string;
+    }>;
     getMe(userId: string): Promise<SafeUserDto>;
     createProfile(userId: string, input: UpdateProfileDto): Promise<SafeUserDto>;
     updateMe(userId: string, input: UpdateProfileDto): Promise<SafeUserDto>;

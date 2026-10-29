@@ -28,6 +28,8 @@ exports.users = (0, pg_core_1.pgTable)('users', {
     profileSetup: (0, pg_core_1.jsonb)('profile_setup').$type(),
     profileCompletedAt: (0, pg_core_1.timestamp)('profile_completed_at', { withTimezone: true }),
     passwordHash: (0, pg_core_1.text)('password_hash'),
+    deletionRequestedAt: (0, pg_core_1.timestamp)('deletion_requested_at', { withTimezone: true }),
+    recoverableUntil: (0, pg_core_1.timestamp)('recoverable_until', { withTimezone: true }),
     status: (0, exports.userStatus)('status').notNull().default('active'),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).notNull().defaultNow(),

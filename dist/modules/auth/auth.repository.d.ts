@@ -17,6 +17,8 @@ export type RotationResult = {
 export declare class AuthRepository {
     private readonly database;
     constructor(database: DatabaseService);
+    isAccessSessionActive(userId: string, sessionId: string): Promise<boolean>;
+    restoreDeletedAccount(id: string): Promise<User | undefined>;
     findUserByEmail(email: string): Promise<User | undefined>;
     findUserByReferralCode(code: string): Promise<User | undefined>;
     private retryReferralCollision;

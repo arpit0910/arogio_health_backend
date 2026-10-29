@@ -41,6 +41,8 @@ export const users = pgTable(
     profileSetup: jsonb('profile_setup').$type<Record<string, unknown>>(),
     profileCompletedAt: timestamp('profile_completed_at', { withTimezone: true }),
     passwordHash: text('password_hash'),
+    deletionRequestedAt: timestamp('deletion_requested_at', { withTimezone: true }),
+    recoverableUntil: timestamp('recoverable_until', { withTimezone: true }),
     status: userStatus('status').notNull().default('active'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

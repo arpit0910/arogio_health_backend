@@ -41,6 +41,14 @@ let UsersService = class UsersService {
         };
         throw new api_error_1.ApiError('REFERRAL_' + result.kind.replace('-', '_').toUpperCase(), messages[result.kind], result.kind === 'unavailable' ? common_1.HttpStatus.NOT_FOUND : common_1.HttpStatus.BAD_REQUEST);
     }
+    async deleteAccount(userId, confirmed) {
+        if (confirmed !== true)
+            throw new api_error_1.ApiError('CONFIRMATION_REQUIRED', 'Confirm account deletion first', common_1.HttpStatus.BAD_REQUEST);
+        const result = await this.repository.softDelete(userId);
+        if (!result)
+            throw new api_error_1.ApiError('USER_NOT_FOUND', 'User is unavailable', common_1.HttpStatus.NOT_FOUND);
+        return result;
+    }
     async getMe(userId) {
         return (0, auth_response_dto_1.toSafeUser)(await this.activeUser(userId));
     }

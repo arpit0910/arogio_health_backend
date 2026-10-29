@@ -38,6 +38,18 @@ export class UsersService {
     );
   }
 
+  async deleteAccount(userId: string, confirmed: boolean) {
+    if (confirmed !== true)
+      throw new ApiError(
+        'CONFIRMATION_REQUIRED',
+        'Confirm account deletion first',
+        HttpStatus.BAD_REQUEST,
+      );
+    const result = await this.repository.softDelete(userId);
+    if (!result) throw new ApiError('USER_NOT_FOUND', 'User is unavailable', HttpStatus.NOT_FOUND);
+    return result;
+  }
+
   async getMe(userId: string): Promise<SafeUserDto> {
     return toSafeUser(await this.activeUser(userId));
   }

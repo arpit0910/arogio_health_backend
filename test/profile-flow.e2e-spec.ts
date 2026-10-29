@@ -91,6 +91,60 @@ describe('signup, setup and Google HTTP journeys', () => {
     jest.restoreAllMocks();
   });
 
+  it('soft deletes, revokes all sessions, and restores only with verified sign-in before 30 days', async () => {
+    const credentials = { email: 'delete-journey@example.com', password: 'Health1!' };
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send(credentials)
+      .expect(201);
+    const first = created.body as {
+      accessToken: string;
+      refreshToken: string;
+      user: { id: string };
+    };
+    const auth = { Authorization: `Bearer ${first.accessToken}` };
+    await request(app.getHttpServer())
+      .delete('/api/v1/profile')
+      .set(auth)
+      .send({ confirm: false })
+      .expect(400);
+    await request(app.getHttpServer())
+      .delete('/api/v1/profile')
+      .set(auth)
+      .send({ confirm: true })
+      .expect(200);
+    await request(app.getHttpServer()).get('/api/v1/profile/view').set(auth).expect(401);
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/refresh')
+      .send({ refreshToken: first.refreshToken })
+      .expect(401);
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ ...credentials, password: 'wrongpass1!' })
+      .expect(401);
+    const restored = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send(credentials)
+      .expect(200);
+    expect(restored.body.user.id).toBe(first.user.id);
+    await request(app.getHttpServer()).get('/api/v1/profile/view').set(auth).expect(401);
+    await request(app.getHttpServer())
+      .delete('/api/v1/profile')
+      .auth(restored.body.accessToken as string, { type: 'bearer' })
+      .send({ confirm: true })
+      .expect(200);
+    await database.query(
+      "UPDATE users SET recoverable_until = now() - interval '1 second' WHERE id = $1",
+      [first.user.id],
+    );
+    await request(app.getHttpServer()).post('/api/v1/auth/login').send(credentials).expect(403);
+    const retained = await database.query<{ email: string; status: string }>(
+      'SELECT email, status FROM users WHERE id = $1',
+      [first.user.id],
+    );
+    expect(retained.rows[0]).toEqual({ email: credentials.email, status: 'disabled' });
+  });
+
   beforeEach(() => {
     // Give each journey an independent rate-limit window; limits still apply within a test.
     const storage = app.get<ThrottlerStorageService>(getStorageToken());

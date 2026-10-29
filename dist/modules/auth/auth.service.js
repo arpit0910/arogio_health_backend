@@ -67,11 +67,12 @@ let AuthService = class AuthService {
         }
     }
     async login(input) {
-        const user = await this.repository.findUserByEmail(input.email);
+        let user = await this.repository.findUserByEmail(input.email);
         const passwordValid = await this.passwords.verify(user?.passwordHash, input.password);
-        if (!user || !passwordValid || user.status !== 'active') {
+        if (!user || !passwordValid) {
             throw new api_error_1.ApiError('INVALID_CREDENTIALS', 'Invalid email or password', common_1.HttpStatus.UNAUTHORIZED);
         }
+        user = await this.recoverForLogin(user);
         return { ...(await this.createLoginSession(user.id)), user: (0, auth_response_dto_1.toSafeUser)(user) };
     }
     async googleLogin(input) {
@@ -112,10 +113,18 @@ let AuthService = class AuthService {
                 throw error;
             }
         }
-        if (user.status !== 'active') {
-            throw new api_error_1.ApiError('ACCOUNT_UNAVAILABLE', 'This account is unavailable', common_1.HttpStatus.FORBIDDEN);
-        }
+        user = await this.recoverForLogin(user);
         return { ...(await this.createLoginSession(user.id)), user: (0, auth_response_dto_1.toSafeUser)(user) };
+    }
+    async recoverForLogin(user) {
+        if (user.status === 'active')
+            return user;
+        if (user.deletionRequestedAt && user.recoverableUntil && user.recoverableUntil > new Date()) {
+            const restored = await this.repository.restoreDeletedAccount(user.id);
+            if (restored)
+                return restored;
+        }
+        throw new api_error_1.ApiError('ACCOUNT_UNAVAILABLE', 'This account is unavailable. The recovery period may have ended.', common_1.HttpStatus.FORBIDDEN);
     }
     async refresh(input) {
         const refreshToken = (0, node_crypto_1.randomBytes)(32).toString('base64url');

@@ -4,6 +4,10 @@ import type { HeightUnit, WeightUnit } from '../../common/health/measurements';
 export declare class UsersRepository {
     private readonly database;
     constructor(database: DatabaseService);
+    softDelete(id: string): Promise<{
+        deletionRequestedAt: string;
+        recoverableUntil: string;
+    } | undefined>;
     findById(id: string): Promise<User | undefined>;
     applyReferral(userId: string, code: string): Promise<{
         kind: 'saved';

@@ -10,8 +10,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthRepository = void 0;
-const database_error_1 = require("../../common/errors/database-error");
 const common_1 = require("@nestjs/common");
+const api_error_1 = require("../../common/errors/api-error");
+const database_error_1 = require("../../common/errors/database-error");
+const common_2 = require("@nestjs/common");
 const drizzle_orm_1 = require("drizzle-orm");
 const database_service_1 = require("../../database/database.service");
 const schema_1 = require("../../database/schema");
@@ -19,6 +21,28 @@ let AuthRepository = class AuthRepository {
     database;
     constructor(database) {
         this.database = database;
+    }
+    async isAccessSessionActive(userId, sessionId) {
+        const [session] = await this.database.db
+            .select({ id: schema_1.authSessions.id })
+            .from(schema_1.authSessions)
+            .innerJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.users.id, schema_1.authSessions.userId))
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.users.id, userId), (0, drizzle_orm_1.eq)(schema_1.users.status, 'active'), (0, drizzle_orm_1.eq)(schema_1.authSessions.id, sessionId), (0, drizzle_orm_1.isNull)(schema_1.authSessions.revokedAt), (0, drizzle_orm_1.gt)(schema_1.authSessions.expiresAt, new Date())))
+            .limit(1);
+        return Boolean(session);
+    }
+    async restoreDeletedAccount(id) {
+        const [user] = await this.database.db
+            .update(schema_1.users)
+            .set({
+            status: 'active',
+            deletionRequestedAt: null,
+            recoverableUntil: null,
+            updatedAt: new Date(),
+        })
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.users.id, id), (0, drizzle_orm_1.eq)(schema_1.users.status, 'disabled'), (0, drizzle_orm_1.gt)(schema_1.users.recoverableUntil, new Date())))
+            .returning();
+        return user;
     }
     async findUserByEmail(email) {
         const [user] = await this.database.db
@@ -113,10 +137,33 @@ let AuthRepository = class AuthRepository {
         }
     }
     async createSession(session) {
-        await this.database.db.insert(schema_1.authSessions).values(session);
+        await this.database.db.transaction(async (tx) => {
+            const [user] = await tx
+                .select()
+                .from(schema_1.users)
+                .where((0, drizzle_orm_1.eq)(schema_1.users.id, session.userId))
+                .limit(1)
+                .for('update');
+            if (!user || user.status !== 'active')
+                throw new api_error_1.ApiError('ACCOUNT_UNAVAILABLE', 'This account is unavailable', common_1.HttpStatus.FORBIDDEN);
+            await tx.insert(schema_1.authSessions).values(session);
+        });
     }
     async rotateSession(input) {
         return this.database.db.transaction(async (tx) => {
+            const [candidate] = await tx
+                .select()
+                .from(schema_1.authSessions)
+                .where((0, drizzle_orm_1.eq)(schema_1.authSessions.tokenHash, input.currentTokenHash))
+                .limit(1);
+            if (!candidate)
+                return { kind: 'invalid' };
+            const [user] = await tx
+                .select()
+                .from(schema_1.users)
+                .where((0, drizzle_orm_1.eq)(schema_1.users.id, candidate.userId))
+                .limit(1)
+                .for('update');
             const [current] = await tx
                 .select()
                 .from(schema_1.authSessions)
@@ -139,7 +186,6 @@ let AuthRepository = class AuthRepository {
                     .where((0, drizzle_orm_1.eq)(schema_1.authSessions.id, current.id));
                 return { kind: 'expired' };
             }
-            const [user] = await tx.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, current.userId)).limit(1);
             if (!user || user.status !== 'active') {
                 await tx
                     .update(schema_1.authSessions)
@@ -172,7 +218,7 @@ let AuthRepository = class AuthRepository {
 };
 exports.AuthRepository = AuthRepository;
 exports.AuthRepository = AuthRepository = __decorate([
-    (0, common_1.Injectable)(),
+    (0, common_2.Injectable)(),
     __metadata("design:paramtypes", [database_service_1.DatabaseService])
 ], AuthRepository);
 //# sourceMappingURL=auth.repository.js.map

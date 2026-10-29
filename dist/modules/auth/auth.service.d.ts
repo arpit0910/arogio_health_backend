@@ -16,6 +16,7 @@ export declare class AuthService {
     register(input: RegisterDto): Promise<AuthResponseDto>;
     login(input: LoginDto): Promise<AuthResponseDto>;
     googleLogin(input: GoogleLoginDto): Promise<AuthResponseDto>;
+    private recoverForLogin;
     refresh(input: RefreshTokenDto): Promise<TokenPairDto>;
     logout(input: RefreshTokenDto): Promise<void>;
     private createLoginSession;

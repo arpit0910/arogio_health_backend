@@ -1,5 +1,6 @@
+import { DeleteAccountDto } from './dto/delete-account.dto';
 import { ApplyReferralDto } from './dto/referral.dto';
-import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -29,6 +30,14 @@ export class ProfileController {
     @Body() input: ApplyReferralDto,
   ): Promise<SafeUserDto> {
     return this.profiles.applyReferral(user.userId, input.referralCode);
+  }
+
+  @Delete()
+  @ApiOperation({
+    summary: 'Soft-delete your account; verified sign-in within 30 days restores it',
+  })
+  deleteAccount(@CurrentUser() user: RequestUser, @Body() input: DeleteAccountDto) {
+    return this.profiles.deleteAccount(user.userId, input.confirm);
   }
 
   @Get('view')

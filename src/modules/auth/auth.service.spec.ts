@@ -15,6 +15,8 @@ const user: User = {
   referralCode: 'A1B2C3D4E5F6',
   referredByUserId: null,
   referredAt: null,
+  deletionRequestedAt: null,
+  recoverableUntil: null,
   id: '11111111-1111-4111-8111-111111111111',
   fullName: 'Arogio User',
   username: null,
@@ -51,6 +53,7 @@ describe('AuthService', () => {
     findGoogleUser: jest.fn(),
     createGoogleUser: jest.fn(),
     createSession: jest.fn(),
+    restoreDeletedAccount: jest.fn(),
     rotateSession: jest.fn(),
     revokeSession: jest.fn(),
   } as unknown as jest.Mocked<AuthRepository>;
@@ -71,6 +74,44 @@ describe('AuthService', () => {
     jest.clearAllMocks();
     repository.createSession.mockResolvedValue(undefined);
     jwt.signAsync.mockResolvedValue('access-token');
+  });
+
+  it('restores soft-deleted accounts only after password verification and before expiry', async () => {
+    const deleted = {
+      ...user,
+      status: 'disabled' as const,
+      deletionRequestedAt: new Date(),
+      recoverableUntil: new Date(Date.now() + 86400000),
+    };
+    repository.findUserByEmail.mockResolvedValue(deleted);
+    passwords.verify.mockResolvedValue(false);
+    await expect(service.login({ email: user.email!, password: 'bad' })).rejects.toBeInstanceOf(
+      ApiError,
+    );
+    expect(repository.restoreDeletedAccount).not.toHaveBeenCalled();
+    passwords.verify.mockResolvedValue(true);
+    repository.restoreDeletedAccount.mockResolvedValue(user);
+    expect((await service.login({ email: user.email!, password: 'correct' })).user.id).toBe(
+      user.id,
+    );
+    expect(repository.restoreDeletedAccount).toHaveBeenCalledWith(user.id);
+  });
+
+  it('restores Google accounts after verified identity, never ordinary disabled accounts', async () => {
+    const deleted = {
+      ...user,
+      status: 'disabled' as const,
+      deletionRequestedAt: new Date(),
+      recoverableUntil: new Date(Date.now() + 86400000),
+    };
+    google.verify.mockResolvedValue(googleIdentity);
+    repository.findGoogleUser.mockResolvedValue(deleted);
+    repository.restoreDeletedAccount.mockResolvedValue(user);
+    expect((await service.googleLogin({ idToken: 'verified' })).user.id).toBe(user.id);
+    repository.restoreDeletedAccount.mockClear();
+    repository.findGoogleUser.mockResolvedValue({ ...user, status: 'disabled' });
+    await expect(service.googleLogin({ idToken: 'verified' })).rejects.toBeInstanceOf(ApiError);
+    expect(repository.restoreDeletedAccount).not.toHaveBeenCalled();
   });
 
   it('registers a normalized validated password account and omits its hash', async () => {

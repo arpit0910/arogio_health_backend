@@ -69,15 +69,16 @@ export class AuthService {
   }
 
   async login(input: LoginDto): Promise<AuthResponseDto> {
-    const user = await this.repository.findUserByEmail(input.email);
+    let user = await this.repository.findUserByEmail(input.email);
     const passwordValid = await this.passwords.verify(user?.passwordHash, input.password);
-    if (!user || !passwordValid || user.status !== 'active') {
+    if (!user || !passwordValid) {
       throw new ApiError(
         'INVALID_CREDENTIALS',
         'Invalid email or password',
         HttpStatus.UNAUTHORIZED,
       );
     }
+    user = await this.recoverForLogin(user);
     return { ...(await this.createLoginSession(user.id)), user: toSafeUser(user) };
   }
 
@@ -136,14 +137,21 @@ export class AuthService {
       }
     }
 
-    if (user.status !== 'active') {
-      throw new ApiError(
-        'ACCOUNT_UNAVAILABLE',
-        'This account is unavailable',
-        HttpStatus.FORBIDDEN,
-      );
-    }
+    user = await this.recoverForLogin(user);
     return { ...(await this.createLoginSession(user.id)), user: toSafeUser(user) };
+  }
+
+  private async recoverForLogin(user: import('../../database/schema').User) {
+    if (user.status === 'active') return user;
+    if (user.deletionRequestedAt && user.recoverableUntil && user.recoverableUntil > new Date()) {
+      const restored = await this.repository.restoreDeletedAccount(user.id);
+      if (restored) return restored;
+    }
+    throw new ApiError(
+      'ACCOUNT_UNAVAILABLE',
+      'This account is unavailable. The recovery period may have ended.',
+      HttpStatus.FORBIDDEN,
+    );
   }
 
   async refresh(input: RefreshTokenDto): Promise<TokenPairDto> {

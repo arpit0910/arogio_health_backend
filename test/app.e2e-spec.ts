@@ -6,6 +6,7 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApplication } from '../src/bootstrap/configure-application';
 import { DatabaseService } from '../src/database/database.service';
+import { AuthRepository } from '../src/modules/auth/auth.repository';
 import { AuthService } from '../src/modules/auth/auth.service';
 import { UsersService } from '../src/modules/users/users.service';
 
@@ -25,6 +26,8 @@ describe('application API', () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(DatabaseService)
       .useValue(database)
+      .overrideProvider(AuthRepository)
+      .useValue({ isAccessSessionActive: () => Promise.resolve(true) })
       .overrideProvider(AuthService)
       .useValue(auth)
       .overrideProvider(UsersService)
