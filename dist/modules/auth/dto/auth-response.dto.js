@@ -13,6 +13,8 @@ exports.AuthResponseDto = exports.TokenPairDto = exports.SafeUserDto = void 0;
 exports.toSafeUser = toSafeUser;
 const swagger_1 = require("@nestjs/swagger");
 class SafeUserDto {
+    referralCode;
+    hasReferrer;
     profileSetup;
     profileCompletedAt;
     id;
@@ -30,6 +32,14 @@ class SafeUserDto {
     updatedAt;
 }
 exports.SafeUserDto = SafeUserDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Permanent unique code for inviting friends' }),
+    __metadata("design:type", String)
+], SafeUserDto.prototype, "referralCode", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Whether this account has recorded a referrer' }),
+    __metadata("design:type", Boolean)
+], SafeUserDto.prototype, "hasReferrer", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ nullable: true }),
     __metadata("design:type", Object)
@@ -130,6 +140,8 @@ function toSafeUser(user) {
         ? Math.round((user.weightKg / (user.heightCm / 100) ** 2) * 10) / 10
         : null;
     return {
+        referralCode: user.referralCode,
+        hasReferrer: Boolean(user.referredByUserId),
         profileSetup: user.profileSetup,
         profileCompletedAt: user.profileCompletedAt,
         id: user.id,

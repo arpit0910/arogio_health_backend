@@ -1,4 +1,5 @@
 export declare class RegisterDto {
+    referralCode?: string;
     email: string;
     password: string;
     fullName?: string;
@@ -12,6 +13,7 @@ export declare class LoginDto {
     password: string;
 }
 export declare class GoogleLoginDto {
+    referralCode?: string;
     idToken: string;
 }
 export declare class RefreshTokenDto {

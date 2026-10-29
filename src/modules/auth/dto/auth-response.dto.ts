@@ -2,6 +2,12 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { User } from '../../../database/schema';
 
 export class SafeUserDto {
+  @ApiProperty({ description: 'Permanent unique code for inviting friends' })
+  referralCode: string;
+
+  @ApiProperty({ description: 'Whether this account has recorded a referrer' })
+  hasReferrer: boolean;
+
   @ApiPropertyOptional({ nullable: true })
   profileSetup: Record<string, unknown> | null;
 
@@ -77,6 +83,8 @@ export function toSafeUser(user: User): SafeUserDto {
       ? Math.round((user.weightKg / (user.heightCm / 100) ** 2) * 10) / 10
       : null;
   return {
+    referralCode: user.referralCode,
+    hasReferrer: Boolean(user.referredByUserId),
     profileSetup: user.profileSetup,
     profileCompletedAt: user.profileCompletedAt,
     id: user.id,

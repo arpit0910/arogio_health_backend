@@ -13,6 +13,37 @@ export class UsersRepository {
     return user;
   }
 
+  async applyReferral(
+    userId: string,
+    code: string,
+  ): Promise<
+    | { kind: 'saved'; user: User }
+    | { kind: 'unavailable' | 'closed' | 'invalid' | 'self' | 'already-set' }
+  > {
+    return this.database.db.transaction(async (tx) => {
+      const [user] = await tx
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1)
+        .for('update');
+      if (!user || user.status !== 'active') return { kind: 'unavailable' };
+      const [referrer] = await tx.select().from(users).where(eq(users.referralCode, code)).limit(1);
+      if (!referrer || referrer.status !== 'active' || !referrer.profileCompletedAt)
+        return { kind: 'invalid' };
+      if (user.id === referrer.id) return { kind: 'self' };
+      if (user.referredByUserId === referrer.id) return { kind: 'saved', user };
+      if (user.referredByUserId) return { kind: 'already-set' };
+      if (user.profileCompletedAt) return { kind: 'closed' };
+      const [updated] = await tx
+        .update(users)
+        .set({ referredByUserId: referrer.id, referredAt: new Date(), updatedAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning();
+      return { kind: 'saved', user: updated! };
+    });
+  }
+
   async updateProfile(
     id: string,
     changes: {

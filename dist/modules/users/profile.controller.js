@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProfileController = void 0;
+const referral_dto_1 = require("./dto/referral.dto");
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const current_user_decorator_1 = require("../../common/auth/current-user.decorator");
@@ -25,6 +26,9 @@ let ProfileController = class ProfileController {
     constructor(profiles) {
         this.profiles = profiles;
     }
+    applyReferral(user, input) {
+        return this.profiles.applyReferral(user.userId, input.referralCode);
+    }
     view(user) {
         return this.profiles.getMe(user.userId);
     }
@@ -36,6 +40,16 @@ let ProfileController = class ProfileController {
     }
 };
 exports.ProfileController = ProfileController;
+__decorate([
+    (0, common_1.Post)('referral'),
+    (0, swagger_1.ApiOperation)({ summary: 'Record a referrer once, before completing account setup' }),
+    (0, swagger_1.ApiOkResponse)({ type: auth_response_dto_1.SafeUserDto }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, referral_dto_1.ApplyReferralDto]),
+    __metadata("design:returntype", Promise)
+], ProfileController.prototype, "applyReferral", null);
 __decorate([
     (0, common_1.Get)('view'),
     (0, swagger_1.ApiOperation)({ summary: 'View your profile' }),

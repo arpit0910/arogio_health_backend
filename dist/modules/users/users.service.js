@@ -28,6 +28,19 @@ let UsersService = class UsersService {
             throw new api_error_1.ApiError('USER_NOT_FOUND', 'User is unavailable', common_1.HttpStatus.NOT_FOUND);
         return user;
     }
+    async applyReferral(userId, code) {
+        const result = await this.repository.applyReferral(userId, code.trim().toUpperCase());
+        if (result.kind === 'saved')
+            return (0, auth_response_dto_1.toSafeUser)(result.user);
+        const messages = {
+            unavailable: 'User is unavailable',
+            invalid: 'This referral code is not available. Check the code or continue without it.',
+            self: 'You cannot use your own referral code.',
+            'already-set': 'A referrer has already been recorded for this account.',
+            closed: 'Referral codes can only be added before account setup is complete.',
+        };
+        throw new api_error_1.ApiError('REFERRAL_' + result.kind.replace('-', '_').toUpperCase(), messages[result.kind], result.kind === 'unavailable' ? common_1.HttpStatus.NOT_FOUND : common_1.HttpStatus.BAD_REQUEST);
+    }
     async getMe(userId) {
         return (0, auth_response_dto_1.toSafeUser)(await this.activeUser(userId));
     }

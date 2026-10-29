@@ -32,12 +32,26 @@ export class AuthService {
   }
 
   async register(input: RegisterDto): Promise<AuthResponseDto> {
+    let referredByUserId: string | undefined;
+    if (input.referralCode) {
+      const referrer = await this.repository.findUserByReferralCode(
+        input.referralCode.trim().toUpperCase(),
+      );
+      if (!referrer || referrer.status !== 'active' || !referrer.profileCompletedAt)
+        throw new ApiError(
+          'INVALID_REFERRAL_CODE',
+          'This referral code is not available. Check the code or continue without it.',
+          HttpStatus.BAD_REQUEST,
+        );
+      referredByUserId = referrer.id;
+    }
     const passwordHash = await this.passwords.hash(input.password);
     const measurements = normalizeMeasurements(input);
     try {
       const user = await this.repository.createPasswordUser({
         email: input.email,
         passwordHash,
+        referredByUserId,
         fullName: input.fullName,
         ...measurements,
       });
@@ -89,8 +103,22 @@ export class AuthService {
           HttpStatus.CONFLICT,
         );
       }
+      let referredByUserId: string | undefined;
+      if (input.referralCode) {
+        const referrer = await this.repository.findUserByReferralCode(
+          input.referralCode.trim().toUpperCase(),
+        );
+        if (!referrer || referrer.status !== 'active' || !referrer.profileCompletedAt)
+          throw new ApiError(
+            'INVALID_REFERRAL_CODE',
+            'This referral code is not available. Check the code or continue without it.',
+            HttpStatus.BAD_REQUEST,
+          );
+        referredByUserId = referrer.id;
+      }
       try {
         user = await this.repository.createGoogleUser({
+          referredByUserId,
           subject: identity.subject,
           email: identity.email,
           fullName: identity.name,

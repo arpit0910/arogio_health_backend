@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthRepository = void 0;
+const database_error_1 = require("../../common/errors/database-error");
 const common_1 = require("@nestjs/common");
 const drizzle_orm_1 = require("drizzle-orm");
 const database_service_1 = require("../../database/database.service");
@@ -27,14 +28,35 @@ let AuthRepository = class AuthRepository {
             .limit(1);
         return user;
     }
+    async findUserByReferralCode(code) {
+        const [user] = await this.database.db
+            .select()
+            .from(schema_1.users)
+            .where((0, drizzle_orm_1.eq)(schema_1.users.referralCode, code))
+            .limit(1);
+        return user;
+    }
+    async retryReferralCollision(action) {
+        for (let attempt = 0;; attempt++) {
+            try {
+                return await action();
+            }
+            catch (error) {
+                if (attempt >= 4 || !(0, database_error_1.isUniqueViolation)(error, 'users_referral_code_unique'))
+                    throw error;
+            }
+        }
+    }
     async findUserById(id) {
         const [user] = await this.database.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, id)).limit(1);
         return user;
     }
     async createPasswordUser(input) {
-        const [user] = await this.database.db
+        const [user] = await this.retryReferralCollision(() => this.database.db
             .insert(schema_1.users)
             .values({
+            referredByUserId: input.referredByUserId,
+            referredAt: input.referredByUserId ? new Date() : undefined,
             email: input.email,
             passwordHash: input.passwordHash,
             fullName: input.fullName,
@@ -45,7 +67,7 @@ let AuthRepository = class AuthRepository {
             heightCm: input.heightCm,
             weightKg: input.weightKg,
         })
-            .returning();
+            .returning());
         if (!user)
             throw new Error('User insert returned no row');
         return user;
@@ -61,10 +83,12 @@ let AuthRepository = class AuthRepository {
     }
     async createGoogleUser(input) {
         try {
-            return await this.database.db.transaction(async (tx) => {
+            return await this.retryReferralCollision(() => this.database.db.transaction(async (tx) => {
                 const [user] = await tx
                     .insert(schema_1.users)
                     .values({
+                    referredByUserId: input.referredByUserId,
+                    referredAt: input.referredByUserId ? new Date() : undefined,
                     email: input.email,
                     fullName: input.fullName,
                     emailVerifiedAt: input.emailVerified && input.email ? new Date() : null,
@@ -79,7 +103,7 @@ let AuthRepository = class AuthRepository {
                     providerEmail: input.email,
                 });
                 return user;
-            });
+            }));
         }
         catch (error) {
             const existing = await this.findGoogleUser(input.subject);

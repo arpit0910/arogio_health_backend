@@ -1,3 +1,4 @@
+import { normalizeReferralCode } from '../../users/dto/referral.dto';
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
@@ -23,6 +24,13 @@ const number = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
 
 export class RegisterDto {
+  @ApiPropertyOptional({ example: 'A1B2C3D4E5F6' })
+  @Transform(normalizeReferralCode)
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-F0-9]{12}$/)
+  referralCode?: string;
+
   @ApiProperty({ example: 'person@example.com' })
   @Transform(normalizeEmail)
   @IsEmail()
@@ -97,6 +105,13 @@ export class LoginDto {
 }
 
 export class GoogleLoginDto {
+  @ApiPropertyOptional({ description: 'Applied only when creating a new Google account' })
+  @Transform(normalizeReferralCode)
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-F0-9]{12}$/)
+  referralCode?: string;
+
   @ApiProperty({ description: 'Google ID token issued for an allowed client', writeOnly: true })
   @IsString()
   @MinLength(20)

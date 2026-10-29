@@ -23,6 +23,35 @@ let UsersRepository = class UsersRepository {
         const [user] = await this.database.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, id)).limit(1);
         return user;
     }
+    async applyReferral(userId, code) {
+        return this.database.db.transaction(async (tx) => {
+            const [user] = await tx
+                .select()
+                .from(schema_1.users)
+                .where((0, drizzle_orm_1.eq)(schema_1.users.id, userId))
+                .limit(1)
+                .for('update');
+            if (!user || user.status !== 'active')
+                return { kind: 'unavailable' };
+            const [referrer] = await tx.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.referralCode, code)).limit(1);
+            if (!referrer || referrer.status !== 'active' || !referrer.profileCompletedAt)
+                return { kind: 'invalid' };
+            if (user.id === referrer.id)
+                return { kind: 'self' };
+            if (user.referredByUserId === referrer.id)
+                return { kind: 'saved', user };
+            if (user.referredByUserId)
+                return { kind: 'already-set' };
+            if (user.profileCompletedAt)
+                return { kind: 'closed' };
+            const [updated] = await tx
+                .update(schema_1.users)
+                .set({ referredByUserId: referrer.id, referredAt: new Date(), updatedAt: new Date() })
+                .where((0, drizzle_orm_1.eq)(schema_1.users.id, userId))
+                .returning();
+            return { kind: 'saved', user: updated };
+        });
+    }
     async updateProfile(id, changes) {
         const [user] = await this.database.db
             .update(schema_1.users)

@@ -6,6 +6,7 @@ export declare class UsersService {
     private readonly repository;
     constructor(repository: UsersRepository);
     private activeUser;
+    applyReferral(userId: string, code: string): Promise<SafeUserDto>;
     getMe(userId: string): Promise<SafeUserDto>;
     createProfile(userId: string, input: UpdateProfileDto): Promise<SafeUserDto>;
     updateMe(userId: string, input: UpdateProfileDto): Promise<SafeUserDto>;

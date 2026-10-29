@@ -40,12 +40,20 @@ let AuthService = class AuthService {
         this.refreshTtlMs = config.getOrThrow('REFRESH_TOKEN_TTL_DAYS') * 86_400_000;
     }
     async register(input) {
+        let referredByUserId;
+        if (input.referralCode) {
+            const referrer = await this.repository.findUserByReferralCode(input.referralCode.trim().toUpperCase());
+            if (!referrer || referrer.status !== 'active' || !referrer.profileCompletedAt)
+                throw new api_error_1.ApiError('INVALID_REFERRAL_CODE', 'This referral code is not available. Check the code or continue without it.', common_1.HttpStatus.BAD_REQUEST);
+            referredByUserId = referrer.id;
+        }
         const passwordHash = await this.passwords.hash(input.password);
         const measurements = (0, measurements_1.normalizeMeasurements)(input);
         try {
             const user = await this.repository.createPasswordUser({
                 email: input.email,
                 passwordHash,
+                referredByUserId,
                 fullName: input.fullName,
                 ...measurements,
             });
@@ -81,8 +89,16 @@ let AuthService = class AuthService {
             if (identity.email && (await this.repository.findUserByEmail(identity.email))) {
                 throw new api_error_1.ApiError('ACCOUNT_LINK_REQUIRED', 'Sign in with the existing method before linking Google', common_1.HttpStatus.CONFLICT);
             }
+            let referredByUserId;
+            if (input.referralCode) {
+                const referrer = await this.repository.findUserByReferralCode(input.referralCode.trim().toUpperCase());
+                if (!referrer || referrer.status !== 'active' || !referrer.profileCompletedAt)
+                    throw new api_error_1.ApiError('INVALID_REFERRAL_CODE', 'This referral code is not available. Check the code or continue without it.', common_1.HttpStatus.BAD_REQUEST);
+                referredByUserId = referrer.id;
+            }
             try {
                 user = await this.repository.createGoogleUser({
+                    referredByUserId,
                     subject: identity.subject,
                     email: identity.email,
                     fullName: identity.name,

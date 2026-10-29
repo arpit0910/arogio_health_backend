@@ -1,5 +1,7 @@
 import type { User } from '../../../database/schema';
 export declare class SafeUserDto {
+    referralCode: string;
+    hasReferrer: boolean;
     profileSetup: Record<string, unknown> | null;
     profileCompletedAt: Date | null;
     id: string;

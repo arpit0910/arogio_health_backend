@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefreshTokenDto = exports.GoogleLoginDto = exports.LoginDto = exports.RegisterDto = void 0;
+const referral_dto_1 = require("../../users/dto/referral.dto");
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
@@ -17,6 +18,7 @@ const normalizeEmail = ({ value }) => typeof value === 'string' ? value.trim().t
 const trim = ({ value }) => typeof value === 'string' ? value.trim() : value;
 const number = ({ value }) => typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
 class RegisterDto {
+    referralCode;
     email;
     password;
     fullName;
@@ -26,6 +28,14 @@ class RegisterDto {
     weightUnit;
 }
 exports.RegisterDto = RegisterDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'A1B2C3D4E5F6' }),
+    (0, class_transformer_1.Transform)(referral_dto_1.normalizeReferralCode),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Matches)(/^[A-F0-9]{12}$/),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "referralCode", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ example: 'person@example.com' }),
     (0, class_transformer_1.Transform)(normalizeEmail),
@@ -111,9 +121,18 @@ __decorate([
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
 class GoogleLoginDto {
+    referralCode;
     idToken;
 }
 exports.GoogleLoginDto = GoogleLoginDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Applied only when creating a new Google account' }),
+    (0, class_transformer_1.Transform)(referral_dto_1.normalizeReferralCode),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Matches)(/^[A-F0-9]{12}$/),
+    __metadata("design:type", String)
+], GoogleLoginDto.prototype, "referralCode", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ description: 'Google ID token issued for an allowed client', writeOnly: true }),
     (0, class_validator_1.IsString)(),

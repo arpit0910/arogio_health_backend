@@ -1,3 +1,4 @@
+import { getStorageToken, ThrottlerStorageService } from '@nestjs/throttler';
 import { createSign, generateKeyPairSync } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { readFile, readdir } from 'node:fs/promises';
@@ -90,6 +91,13 @@ describe('signup, setup and Google HTTP journeys', () => {
     jest.restoreAllMocks();
   });
 
+  beforeEach(() => {
+    // Give each journey an independent rate-limit window; limits still apply within a test.
+    const storage = app.get<ThrottlerStorageService>(getStorageToken());
+    storage.onApplicationShutdown();
+    storage.storage.clear();
+  });
+
   const personal = {
     dateOfBirth: '2001-03-17',
     heightValue: 170,
@@ -137,6 +145,62 @@ describe('signup, setup and Google HTTP journeys', () => {
     expect(retry.body.profileCompletedAt).toBe(completed.body.profileCompletedAt);
     return completed.body as { profileCompletedAt: string };
   }
+
+  it('attributes email signups and setup referrals and rejects invalid or replacement codes', async () => {
+    const register = (email: string, referralCode?: string) =>
+      request(app.getHttpServer())
+        .post('/api/v1/auth/email/register')
+        .send({ email, password: 'ReferralPass123', ...(referralCode ? { referralCode } : {}) });
+    const inviter = await register('invite-owner@example.test').expect(201);
+    await finishSetup(inviter.body.accessToken as string);
+    const code = inviter.body.user.referralCode as string;
+    expect(code).toMatch(/^[A-F0-9]{12}$/);
+    const friend = await register('referred-friend@example.test', code.toLowerCase()).expect(201);
+    expect(friend.body.user.hasReferrer).toBe(true);
+    expect(friend.body.user.referralCode).not.toBe(code);
+    expect(friend.body.user).not.toHaveProperty('referredByUserId');
+    const googleFriend = await request(app.getHttpServer())
+      .post('/api/v1/auth/google/login')
+      .send({
+        idToken: googleToken({ sub: 'referral-google', email: 'google-referral@example.test' }),
+        referralCode: code.toLowerCase(),
+      })
+      .expect(200);
+    expect(googleFriend.body.user.hasReferrer).toBe(true);
+    const googleAgain = await request(app.getHttpServer())
+      .post('/api/v1/auth/google/login')
+      .send({
+        idToken: googleToken({ sub: 'referral-google', email: 'google-referral@example.test' }),
+        referralCode: '000000000000',
+      })
+      .expect(200);
+    expect(googleAgain.body.user.id).toBe(googleFriend.body.user.id);
+    expect(googleAgain.body.user.hasReferrer).toBe(true);
+    const pending = await register('setup-friend@example.test').expect(201);
+    const apply = (referralCode: string, token = pending.body.accessToken as string) =>
+      request(app.getHttpServer())
+        .post('/api/v1/profile/referral')
+        .auth(token, { type: 'bearer' })
+        .send({ referralCode });
+    await apply('000000000000').expect(400);
+    await apply('bad-format').expect(400);
+    const applied = await apply(code.toLowerCase()).expect(201);
+    expect(applied.body.hasReferrer).toBe(true);
+    await apply(code).expect(201);
+    await finishSetup(pending.body.accessToken as string);
+    await apply(code).expect(201);
+    await request(app.getHttpServer())
+      .post('/api/v1/profile/referral')
+      .send({ referralCode: code })
+      .expect(401);
+    await register('invalid-referral@example.test', '000000000000').expect(400);
+    const rows = await database.query<{ referred_by_user_id: string }>(
+      'select referred_by_user_id from users where email in ($1, $2)',
+      ['referred-friend@example.test', 'setup-friend@example.test'],
+    );
+    expect(rows.rows).toHaveLength(2);
+    expect(rows.rows.every((row) => row.referred_by_user_id === inviter.body.user.id)).toBe(true);
+  });
 
   it('registers, resumes an unfinished profile, reviews, completes, logs in and rotates/logout sessions', async () => {
     await request(app.getHttpServer()).get('/api/v1/ready').expect(200);

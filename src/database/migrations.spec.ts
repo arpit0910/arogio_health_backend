@@ -40,6 +40,77 @@ describe('database migrations', () => {
     ).rejects.toThrow();
   });
 
+  it('assigns unique permanent referral codes and records immutable setup attribution', async () => {
+    const serviceDb = { db: drizzle(database, { schema }) } as unknown as DatabaseService;
+    const auth = new AuthRepository(serviceDb),
+      users = new UsersRepository(serviceDb);
+    const inviter = await auth.createPasswordUser({
+      email: 'inviter@example.test',
+      passwordHash: 'fixture',
+    });
+    const second = await auth.createPasswordUser({
+      email: 'second@example.test',
+      passwordHash: 'fixture',
+    });
+    await users.updateProfile(inviter.id, { profileCompletedAt: new Date() });
+    await users.updateProfile(second.id, { profileCompletedAt: new Date() });
+    const friend = await auth.createPasswordUser({
+      email: 'friend@example.test',
+      passwordHash: 'fixture',
+    });
+    expect(inviter.referralCode).toMatch(/^[A-F0-9]{12}$/);
+    expect(new Set([inviter.referralCode, friend.referralCode, second.referralCode]).size).toBe(3);
+    expect((await auth.findUserById(inviter.id))?.referralCode).toBe(inviter.referralCode);
+    const linked = await users.applyReferral(friend.id, inviter.referralCode);
+    expect(linked.kind).toBe('saved');
+    const stored = await auth.findUserById(friend.id);
+    expect(stored?.referredByUserId).toBe(inviter.id);
+    expect(stored?.referredAt).toBeInstanceOf(Date);
+    expect((await users.applyReferral(friend.id, inviter.referralCode)).kind).toBe('saved');
+    expect((await users.applyReferral(friend.id, second.referralCode)).kind).toBe('already-set');
+    expect((await users.applyReferral(inviter.id, inviter.referralCode)).kind).toBe('self');
+    expect((await users.applyReferral(second.id, inviter.referralCode)).kind).toBe('closed');
+    expect((await users.applyReferral(friend.id, '000000000000')).kind).toBe('invalid');
+    const registered = await auth.createPasswordUser({
+      email: 'registered@example.test',
+      passwordHash: 'fixture',
+      referredByUserId: inviter.id,
+    });
+    expect(registered.referredByUserId).toBe(inviter.id);
+    await expect(
+      database.query('update users set referral_code = $1 where id = $2', [
+        inviter.referralCode,
+        friend.id,
+      ]),
+    ).rejects.toThrow();
+    await expect(
+      database.query('update users set referred_by_user_id = id where id = $1', [friend.id]),
+    ).rejects.toThrow();
+  });
+
+  it('backfills existing accounts with distinct codes before making the field required', async () => {
+    await database.close();
+    database = new PGlite();
+    const directory = join(process.cwd(), 'drizzle');
+    const files = (await readdir(directory)).filter((name) => name.endsWith('.sql')).sort();
+    for (const file of files) {
+      if (file.startsWith('0008_'))
+        await database.exec(
+          "insert into users (email) values ('old-one@example.test'), ('old-two@example.test')",
+        );
+      for (const statement of (await readFile(join(directory, file), 'utf8')).split(
+        '--> statement-breakpoint',
+      ))
+        if (statement.trim()) await database.exec(statement);
+    }
+    const result = await database.query<{ referral_code: string }>(
+      'select referral_code from users',
+    );
+    expect(result.rows).toHaveLength(2);
+    expect(result.rows.every((row) => /^[A-F0-9]{12}$/.test(row.referral_code))).toBe(true);
+    expect(new Set(result.rows.map((row) => row.referral_code)).size).toBe(2);
+  });
+
   it('enforces valid height and weight ranges', async () => {
     await expect(
       database.exec(`

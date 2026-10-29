@@ -12,6 +12,9 @@ import { AuthService } from './auth.service';
 import type { PasswordService } from './password.service';
 
 const user: User = {
+  referralCode: 'A1B2C3D4E5F6',
+  referredByUserId: null,
+  referredAt: null,
   id: '11111111-1111-4111-8111-111111111111',
   fullName: 'Arogio User',
   username: null,

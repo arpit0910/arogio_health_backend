@@ -21,6 +21,23 @@ export class UsersService {
     return user;
   }
 
+  async applyReferral(userId: string, code: string): Promise<SafeUserDto> {
+    const result = await this.repository.applyReferral(userId, code.trim().toUpperCase());
+    if (result.kind === 'saved') return toSafeUser(result.user);
+    const messages = {
+      unavailable: 'User is unavailable',
+      invalid: 'This referral code is not available. Check the code or continue without it.',
+      self: 'You cannot use your own referral code.',
+      'already-set': 'A referrer has already been recorded for this account.',
+      closed: 'Referral codes can only be added before account setup is complete.',
+    };
+    throw new ApiError(
+      'REFERRAL_' + result.kind.replace('-', '_').toUpperCase(),
+      messages[result.kind],
+      result.kind === 'unavailable' ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST,
+    );
+  }
+
   async getMe(userId: string): Promise<SafeUserDto> {
     return toSafeUser(await this.activeUser(userId));
   }

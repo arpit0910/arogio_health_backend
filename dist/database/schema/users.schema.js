@@ -8,6 +8,11 @@ exports.heightUnit = (0, pg_core_1.pgEnum)('height_unit', ['cm', 'in']);
 exports.weightUnit = (0, pg_core_1.pgEnum)('weight_unit', ['kg', 'lb']);
 exports.users = (0, pg_core_1.pgTable)('users', {
     id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
+    referralCode: (0, pg_core_1.text)('referral_code')
+        .notNull()
+        .default((0, drizzle_orm_1.sql) `upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 12))`),
+    referredByUserId: (0, pg_core_1.uuid)('referred_by_user_id').references(() => exports.users.id),
+    referredAt: (0, pg_core_1.timestamp)('referred_at', { withTimezone: true }),
     fullName: (0, pg_core_1.text)('full_name'),
     username: (0, pg_core_1.text)('username'),
     email: (0, pg_core_1.text)('email'),
@@ -27,6 +32,9 @@ exports.users = (0, pg_core_1.pgTable)('users', {
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
+    (0, pg_core_1.uniqueIndex)('users_referral_code_unique').on(table.referralCode),
+    (0, pg_core_1.index)('users_referred_by_idx').on(table.referredByUserId),
+    (0, pg_core_1.check)('users_referral_not_self', (0, drizzle_orm_1.sql) `${table.referredByUserId} is null or ${table.referredByUserId} <> ${table.id}`),
     (0, pg_core_1.uniqueIndex)('users_email_unique').on(table.email),
     (0, pg_core_1.uniqueIndex)('users_username_unique').on(table.username),
     (0, pg_core_1.uniqueIndex)('users_mobile_number_unique').on(table.mobileNumber),

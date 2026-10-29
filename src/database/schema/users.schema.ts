@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   check,
   jsonb,
   index,
@@ -20,6 +21,11 @@ export const users = pgTable(
   'users',
   {
     id: uuid('id').defaultRandom().primaryKey(),
+    referralCode: text('referral_code')
+      .notNull()
+      .default(sql`upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 12))`),
+    referredByUserId: uuid('referred_by_user_id').references((): AnyPgColumn => users.id),
+    referredAt: timestamp('referred_at', { withTimezone: true }),
     fullName: text('full_name'),
     username: text('username'),
     email: text('email'),
@@ -40,6 +46,12 @@ export const users = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
+    uniqueIndex('users_referral_code_unique').on(table.referralCode),
+    index('users_referred_by_idx').on(table.referredByUserId),
+    check(
+      'users_referral_not_self',
+      sql`${table.referredByUserId} is null or ${table.referredByUserId} <> ${table.id}`,
+    ),
     uniqueIndex('users_email_unique').on(table.email),
     uniqueIndex('users_username_unique').on(table.username),
     uniqueIndex('users_mobile_number_unique').on(table.mobileNumber),

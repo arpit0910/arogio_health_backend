@@ -5,6 +5,12 @@ export declare class UsersRepository {
     private readonly database;
     constructor(database: DatabaseService);
     findById(id: string): Promise<User | undefined>;
+    applyReferral(userId: string, code: string): Promise<{
+        kind: 'saved';
+        user: User;
+    } | {
+        kind: 'unavailable' | 'closed' | 'invalid' | 'self' | 'already-set';
+    }>;
     updateProfile(id: string, changes: {
         profileSetup?: Record<string, unknown>;
         profileCompletedAt?: Date;

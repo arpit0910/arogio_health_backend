@@ -18,10 +18,13 @@ export declare class AuthRepository {
     private readonly database;
     constructor(database: DatabaseService);
     findUserByEmail(email: string): Promise<User | undefined>;
+    findUserByReferralCode(code: string): Promise<User | undefined>;
+    private retryReferralCollision;
     findUserById(id: string): Promise<User | undefined>;
     createPasswordUser(input: {
         email: string;
         passwordHash: string;
+        referredByUserId?: string;
         fullName?: string;
         heightValue?: number;
         heightUnit?: HeightUnit;
@@ -33,6 +36,7 @@ export declare class AuthRepository {
     findGoogleUser(subject: string): Promise<User | undefined>;
     createGoogleUser(input: {
         subject: string;
+        referredByUserId?: string;
         email: string | null;
         fullName: string | null;
         emailVerified: boolean;

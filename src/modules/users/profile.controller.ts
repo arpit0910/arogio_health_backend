@@ -1,3 +1,4 @@
+import { ApplyReferralDto } from './dto/referral.dto';
 import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -19,6 +20,16 @@ import { UsersService } from './users.service';
 @Controller('profile')
 export class ProfileController {
   constructor(private readonly profiles: UsersService) {}
+
+  @Post('referral')
+  @ApiOperation({ summary: 'Record a referrer once, before completing account setup' })
+  @ApiOkResponse({ type: SafeUserDto })
+  applyReferral(
+    @CurrentUser() user: RequestUser,
+    @Body() input: ApplyReferralDto,
+  ): Promise<SafeUserDto> {
+    return this.profiles.applyReferral(user.userId, input.referralCode);
+  }
 
   @Get('view')
   @ApiOperation({ summary: 'View your profile' })
