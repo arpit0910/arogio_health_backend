@@ -1,0 +1,641 @@
+import sharp from 'sharp';
+import { seedSuperAdmin } from '../src/database/seed-super-admin';
+import { PasswordService } from '../src/modules/auth/password.service';
+import { getStorageToken, ThrottlerStorageService } from '@nestjs/throttler';
+import { createSign, generateKeyPairSync } from 'node:crypto';
+import { execFile } from 'node:child_process';
+import { readFile, readdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import { Test } from '@nestjs/testing';
+import { PGlite } from '@electric-sql/pglite';
+import { drizzle } from 'drizzle-orm/pglite';
+import { OAuth2Client } from 'google-auth-library';
+import { CertificateFormat } from 'google-auth-library/build/src/auth/oauth2client';
+import request from 'supertest';
+import { AppModule } from '../src/app.module';
+import { configureApplication } from '../src/bootstrap/configure-application';
+import { DatabaseService } from '../src/database/database.service';
+import * as schema from '../src/database/schema';
+
+// Only storage transport and Google's fetched certificate set are substituted.
+// Controllers, validation, guards, repositories, Argon2, JWT, Google signature
+// verification and refresh rotation are the real production implementations.
+describe('signup, setup and Google HTTP journeys', () => {
+  let app: NestExpressApplication;
+  let database: PGlite;
+  const signingKey = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const untrustedKey = generateKeyPairSync('rsa', { modulusLength: 2048 });
+
+  function googleToken(claims: Record<string, unknown> = {}, forged = false): string {
+    const now = Math.floor(Date.now() / 1000);
+    const header = Buffer.from(
+      JSON.stringify({ alg: 'RS256', kid: 'synthetic-test-key' }),
+    ).toString('base64url');
+    const payload = Buffer.from(
+      JSON.stringify({
+        iss: 'https://accounts.google.com',
+        aud: 'test-client.apps.googleusercontent.com',
+        sub: 'synthetic-google-subject',
+        email: 'google-flow@example.com',
+        email_verified: true,
+        name: 'Synthetic Google User',
+        iat: now,
+        exp: now + 3600,
+        ...claims,
+      }),
+    ).toString('base64url');
+    const input = `${header}.${payload}`;
+    const signature = createSign('RSA-SHA256')
+      .update(input)
+      .sign(forged ? untrustedKey.privateKey : signingKey.privateKey)
+      .toString('base64url');
+    return `${input}.${signature}`;
+  }
+
+  beforeAll(async () => {
+    database = new PGlite();
+    for (const name of (await readdir(join(process.cwd(), 'drizzle')))
+      .filter((n) => n.endsWith('.sql'))
+      .sort()) {
+      for (const statement of (await readFile(join(process.cwd(), 'drizzle', name), 'utf8')).split(
+        '--> statement-breakpoint',
+      )) {
+        if (statement.trim()) await database.exec(statement);
+      }
+    }
+    jest.spyOn(OAuth2Client.prototype, 'getFederatedSignonCertsAsync').mockResolvedValue({
+      certs: {
+        'synthetic-test-key': signingKey.publicKey
+          .export({ type: 'spki', format: 'pem' })
+          .toString(),
+      },
+      format: CertificateFormat.PEM,
+    });
+    const module = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(DatabaseService)
+      .useValue({
+        db: drizzle(database, { schema }),
+        ping: async () => {
+          await database.query('select 1');
+        },
+        onApplicationShutdown: async () => {},
+      })
+      .compile();
+    app = module.createNestApplication<NestExpressApplication>();
+    configureApplication(app);
+    await app.init();
+  }, 30000);
+
+  afterAll(async () => {
+    await app?.close();
+    await database?.close();
+    jest.restoreAllMocks();
+  });
+
+  it('soft deletes, revokes all sessions, and restores only with verified sign-in before 30 days', async () => {
+    const credentials = { email: 'delete-journey@example.com', password: 'Health1!' };
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send(credentials)
+      .expect(201);
+    const first = created.body as {
+      accessToken: string;
+      refreshToken: string;
+      user: { id: string };
+    };
+    const auth = { Authorization: `Bearer ${first.accessToken}` };
+    await request(app.getHttpServer())
+      .delete('/api/v1/profile')
+      .set(auth)
+      .send({ confirm: false })
+      .expect(400);
+    await request(app.getHttpServer())
+      .delete('/api/v1/profile')
+      .set(auth)
+      .send({ confirm: true })
+      .expect(200);
+    await request(app.getHttpServer()).get('/api/v1/profile/view').set(auth).expect(401);
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/refresh')
+      .send({ refreshToken: first.refreshToken })
+      .expect(401);
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ ...credentials, password: 'wrongpass1!' })
+      .expect(401);
+    const restored = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send(credentials)
+      .expect(200);
+    expect(restored.body.user.id).toBe(first.user.id);
+    await request(app.getHttpServer()).get('/api/v1/profile/view').set(auth).expect(401);
+    await request(app.getHttpServer())
+      .delete('/api/v1/profile')
+      .auth(restored.body.accessToken as string, { type: 'bearer' })
+      .send({ confirm: true })
+      .expect(200);
+    await database.query(
+      "UPDATE users SET recoverable_until = now() - interval '1 second' WHERE id = $1",
+      [first.user.id],
+    );
+    await request(app.getHttpServer()).post('/api/v1/auth/login').send(credentials).expect(403);
+    const retained = await database.query<{ email: string; status: string }>(
+      'SELECT email, status FROM users WHERE id = $1',
+      [first.user.id],
+    );
+    expect(retained.rows[0]).toEqual({ email: credentials.email, status: 'disabled' });
+  });
+
+  it('seeds an idempotent super admin, enforces roles, audits actions and publishes validated banners', async () => {
+    const seed = {
+      SUPER_ADMIN_EMAIL: 'seed-admin@example.test',
+      SUPER_ADMIN_PASSWORD: 'SecureAdminSeed2026!',
+      SUPER_ADMIN_NAME: 'Seeded Administrator',
+    };
+    const db = app.get(DatabaseService),
+      passwords = new PasswordService();
+    const first = await seedSuperAdmin(db, passwords, seed);
+    expect(first.created).toBe(true);
+    expect(
+      await seedSuperAdmin(db, passwords, {
+        ...seed,
+        SUPER_ADMIN_PASSWORD: 'MustNotResetPassword!',
+      }),
+    ).toEqual({ id: first.id, created: false });
+    await request(app.getHttpServer()).get('/api/v1/admin/analytics').expect(401);
+    const ordinary = await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ email: 'ordinary-admin-test@example.test', password: 'Health1!' })
+      .expect(201);
+    await request(app.getHttpServer())
+      .get('/api/v1/admin/me')
+      .auth(ordinary.body.accessToken as string, { type: 'bearer' })
+      .expect(403);
+    const logged = await request(app.getHttpServer())
+      .post('/api/v1/auth/email/login')
+      .send({ email: seed.SUPER_ADMIN_EMAIL, password: seed.SUPER_ADMIN_PASSWORD })
+      .expect(200);
+    expect(logged.body.user.role).toBe('super_admin');
+    const token = logged.body.accessToken as string,
+      auth = { Authorization: `Bearer ${token}` };
+    await request(app.getHttpServer()).get('/admin').expect(200).expect('content-type', /html/);
+    await request(app.getHttpServer()).get('/api/v1/admin/analytics').set(auth).expect(200);
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/admin/users')
+      .set(auth)
+      .send({
+        email: 'admin-created@example.test',
+        fullName: 'Created by admin',
+        password: 'StrongInitial2026!',
+      })
+      .expect(201);
+    const id = created.body.id as string;
+    expect(created.body.passwordHash).toBeUndefined();
+    expect(created.body.role).toBe('user');
+    await request(app.getHttpServer())
+      .patch(`/api/v1/admin/users/${id}`)
+      .set(auth)
+      .send({ fullName: 'Updated person', location: 'Jaipur' })
+      .expect(200);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/users/${id}/tracking`)
+      .set(auth)
+      .send({
+        path: 'activity/goals',
+        method: 'PUT',
+        body: { goals: { Steps: 8000 } },
+        confirm: true,
+      })
+      .expect(201);
+    const detail = await request(app.getHttpServer())
+      .get(`/api/v1/admin/users/${id}`)
+      .set(auth)
+      .expect(200);
+    expect(detail.body.wellness.activityTracking.goals.Steps).toBe(8000);
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/banners')
+      .set(auth)
+      .field('title', 'Bad')
+      .field('alt', 'Bad image')
+      .attach('image', Buffer.from('<svg/>'), { filename: 'bad.png', contentType: 'image/png' })
+      .expect(400);
+    const image = await sharp({
+      create: { width: 112, height: 40, channels: 3, background: '#ccddaa' },
+    })
+      .png()
+      .toBuffer();
+    const upload = await request(app.getHttpServer())
+      .post('/api/v1/admin/banners')
+      .set(auth)
+      .field('title', 'Home banner')
+      .field('alt', 'A calm lake')
+      .field('route', '/water')
+      .attach('image', image, { filename: 'banner.png', contentType: 'image/png' })
+      .expect(201);
+    const bannerId = upload.body.id as string;
+    await request(app.getHttpServer()).get(`/api/v1/home/banners/${bannerId}/image`).expect(404);
+    await request(app.getHttpServer())
+      .get(`/api/v1/admin/banners/${bannerId}/image`)
+      .set(auth)
+      .expect(200)
+      .expect('content-type', /webp/);
+    await request(app.getHttpServer())
+      .patch(`/api/v1/admin/banners/${bannerId}`)
+      .set(auth)
+      .send({ published: true })
+      .expect(200);
+    const published = await request(app.getHttpServer()).get('/api/v1/home/banners').expect(200);
+    expect(published.body).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: bannerId, alt: 'A calm lake' })]),
+    );
+    await request(app.getHttpServer()).get(`/api/v1/home/banners/${bannerId}/image`).expect(200);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/users/${first.id}/action`)
+      .set(auth)
+      .send({ action: 'delete', confirm: true })
+      .expect(400);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/users/${id}/action`)
+      .set(auth)
+      .send({ action: 'delete', confirm: true })
+      .expect(201);
+    const beforeDisable = await request(app.getHttpServer())
+      .get(`/api/v1/admin/users/${id}`)
+      .set(auth)
+      .expect(200);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/users/${id}/action`)
+      .set(auth)
+      .send({ action: 'disable', confirm: true })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/users/${id}/action`)
+      .set(auth)
+      .send({ action: 'delete', confirm: true })
+      .expect(201);
+    const afterDisable = await request(app.getHttpServer())
+      .get(`/api/v1/admin/users/${id}`)
+      .set(auth)
+      .expect(200);
+    expect(afterDisable.body.deletionRequestedAt).toBe(beforeDisable.body.deletionRequestedAt);
+    expect(afterDisable.body.recoverableUntil).toBe(beforeDisable.body.recoverableUntil);
+    await request(app.getHttpServer())
+      .delete('/api/v1/profile')
+      .set(auth)
+      .send({ confirm: true })
+      .expect(403);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/users/${id}/action`)
+      .set(auth)
+      .send({ action: 'restore', confirm: true })
+      .expect(201);
+    const audit = await request(app.getHttpServer())
+      .get('/api/v1/admin/audit')
+      .set(auth)
+      .expect(200);
+    expect(audit.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ action: 'banner.upload', outcome: 'failed' }),
+        expect.objectContaining({ action: 'tracking.change', outcome: 'succeeded' }),
+      ]),
+    );
+    expect(JSON.stringify(audit.body)).not.toContain('StrongInitial2026');
+    await request(app.getHttpServer())
+      .get('/api/v1/home/weather')
+      .set(auth)
+      .expect(200)
+      .expect(({ body }) => expect(body.available).toBe(false));
+  }, 30000);
+
+  beforeEach(() => {
+    // Give each journey an independent rate-limit window; limits still apply within a test.
+    const storage = app.get<ThrottlerStorageService>(getStorageToken());
+    storage.onApplicationShutdown();
+    storage.storage.clear();
+  });
+
+  const personal = {
+    dateOfBirth: '2001-03-17',
+    heightValue: 170,
+    heightUnit: 'cm',
+    weightValue: 70,
+    weightUnit: 'kg',
+  };
+  const lifestyle = { activityLevel: 'lightly_active' };
+  const healthGoals = ['weight_management', 'fitness_activity'];
+
+  async function finishSetup(accessToken: string) {
+    const patch = (body: object) =>
+      request(app.getHttpServer())
+        .patch('/api/v1/users/me/setup')
+        .auth(accessToken, { type: 'bearer' })
+        .send(body);
+    await patch({ step: 1 }).expect(200);
+    await patch({ ...personal, step: 2 }).expect(200);
+    await patch({ ...lifestyle, step: 3 }).expect(200);
+    await patch({ healthGoals, step: 4 }).expect(200);
+    await patch({ gender: 'female', location: 'Mumbai', referralSource: 'Friend', step: 5 }).expect(
+      200,
+    );
+    await patch({
+      healthReminders: true,
+      tipsAndInsights: true,
+      productUpdates: false,
+      step: 6,
+    }).expect(200);
+    // Review edit returns to review and must not mark setup complete.
+    const edited = await patch({ weightValue: 72, weightUnit: 'kg', step: 6 }).expect(200);
+    expect(edited.body.profileCompletedAt).toBeNull();
+    const completed = await patch({ complete: true, step: 7 }).expect(200);
+    expect(completed.body.profileCompletedAt).toEqual(expect.any(String));
+    expect(completed.body.profileSetup).toMatchObject({
+      ...lifestyle,
+      healthGoals,
+      dateOfBirth: personal.dateOfBirth,
+      step: 7,
+      productUpdates: false,
+    });
+    expect(completed.body.weightValue).toBe(72);
+    expect(completed.body.bmi).toBe(24.9);
+    const retry = await patch({ complete: true }).expect(200);
+    expect(retry.body.profileCompletedAt).toBe(completed.body.profileCompletedAt);
+    return completed.body as { profileCompletedAt: string };
+  }
+
+  it('attributes email signups and setup referrals and rejects invalid or replacement codes', async () => {
+    const register = (email: string, referralCode?: string) =>
+      request(app.getHttpServer())
+        .post('/api/v1/auth/email/register')
+        .send({ email, password: 'ReferralPass123', ...(referralCode ? { referralCode } : {}) });
+    const inviter = await register('invite-owner@example.test').expect(201);
+    await finishSetup(inviter.body.accessToken as string);
+    const code = inviter.body.user.referralCode as string;
+    expect(code).toMatch(/^[A-F0-9]{12}$/);
+    const friend = await register('referred-friend@example.test', code.toLowerCase()).expect(201);
+    expect(friend.body.user.hasReferrer).toBe(true);
+    expect(friend.body.user.referralCode).not.toBe(code);
+    expect(friend.body.user).not.toHaveProperty('referredByUserId');
+    const googleFriend = await request(app.getHttpServer())
+      .post('/api/v1/auth/google/login')
+      .send({
+        idToken: googleToken({ sub: 'referral-google', email: 'google-referral@example.test' }),
+        referralCode: code.toLowerCase(),
+      })
+      .expect(200);
+    expect(googleFriend.body.user.hasReferrer).toBe(true);
+    const googleAgain = await request(app.getHttpServer())
+      .post('/api/v1/auth/google/login')
+      .send({
+        idToken: googleToken({ sub: 'referral-google', email: 'google-referral@example.test' }),
+        referralCode: '000000000000',
+      })
+      .expect(200);
+    expect(googleAgain.body.user.id).toBe(googleFriend.body.user.id);
+    expect(googleAgain.body.user.hasReferrer).toBe(true);
+    const pending = await register('setup-friend@example.test').expect(201);
+    const apply = (referralCode: string, token = pending.body.accessToken as string) =>
+      request(app.getHttpServer())
+        .post('/api/v1/profile/referral')
+        .auth(token, { type: 'bearer' })
+        .send({ referralCode });
+    await apply('000000000000').expect(400);
+    await apply('bad-format').expect(400);
+    const applied = await apply(code.toLowerCase()).expect(201);
+    expect(applied.body.hasReferrer).toBe(true);
+    await apply(code).expect(201);
+    await finishSetup(pending.body.accessToken as string);
+    await apply(code).expect(201);
+    await request(app.getHttpServer())
+      .post('/api/v1/profile/referral')
+      .send({ referralCode: code })
+      .expect(401);
+    await register('invalid-referral@example.test', '000000000000').expect(400);
+    const rows = await database.query<{ referred_by_user_id: string }>(
+      'select referred_by_user_id from users where email in ($1, $2)',
+      ['referred-friend@example.test', 'setup-friend@example.test'],
+    );
+    expect(rows.rows).toHaveLength(2);
+    expect(rows.rows.every((row) => row.referred_by_user_id === inviter.body.user.id)).toBe(true);
+  });
+
+  it('registers, resumes an unfinished profile, reviews, completes, logs in and rotates/logout sessions', async () => {
+    await request(app.getHttpServer()).get('/api/v1/ready').expect(200);
+    const account = {
+      email: ' Full-Flow@Example.com ',
+      password: 'Health1!',
+      fullName: 'Synthetic Test User',
+    };
+    const registration = await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send(account)
+      .expect(201);
+    expect(registration.body.user).toMatchObject({
+      email: 'full-flow@example.com',
+      profileSetup: null,
+      profileCompletedAt: null,
+    });
+    expect(registration.body.user).not.toHaveProperty('passwordHash');
+    const initialToken = registration.body.accessToken as string;
+    await request(app.getHttpServer())
+      .patch('/api/v1/users/me/setup')
+      .auth(initialToken, { type: 'bearer' })
+      .send({ ...personal, step: 2 })
+      .expect(200);
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email: account.email, password: account.password })
+      .expect(200);
+    expect(login.body.user.profileSetup).toMatchObject({
+      dateOfBirth: personal.dateOfBirth,
+      step: 2,
+    });
+    expect(login.body.user.profileCompletedAt).toBeNull();
+    const completed = await finishSetup(login.body.accessToken as string);
+    const signedIn = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email: account.email, password: account.password })
+      .expect(200);
+    expect(signedIn.body.user.profileCompletedAt).toBe(completed.profileCompletedAt);
+    const renewed = await request(app.getHttpServer())
+      .post('/api/v1/auth/refresh')
+      .send({ refreshToken: signedIn.body.refreshToken })
+      .expect(200);
+    await request(app.getHttpServer())
+      .get('/api/v1/users/me')
+      .auth(renewed.body.accessToken as string, { type: 'bearer' })
+      .expect(200);
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/logout')
+      .send({ refreshToken: renewed.body.refreshToken })
+      .expect(204);
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/refresh')
+      .send({ refreshToken: renewed.body.refreshToken })
+      .expect(401);
+  });
+
+  it('returns a conflict for duplicate registration and rejects incomplete/invalid setup without saving it', async () => {
+    const account = { email: 'duplicate-flow@example.com', password: 'SyntheticPassword123' };
+    const registration = await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send(account)
+      .expect(201);
+    await request(app.getHttpServer()).post('/api/v1/auth/register').send(account).expect(409);
+    const patch = (body: object) =>
+      request(app.getHttpServer())
+        .patch('/api/v1/users/me/setup')
+        .auth(registration.body.accessToken as string, { type: 'bearer' })
+        .send(body);
+    for (const body of [
+      { complete: true },
+      { dateOfBirth: '2001-02-31' },
+      { heightValue: 10, heightUnit: 'cm' },
+      { healthGoals: ['invalid'] },
+      { productUpdates: null },
+    ]) {
+      await patch(body).expect(400);
+    }
+    const current = await request(app.getHttpServer())
+      .get('/api/v1/users/me')
+      .auth(registration.body.accessToken as string, { type: 'bearer' })
+      .expect(200);
+    expect(current.body.profileSetup).toBeNull();
+    expect(current.body.profileCompletedAt).toBeNull();
+    await request(app.getHttpServer())
+      .patch('/api/v1/users/me/setup')
+      .send({ step: 1 })
+      .expect(401);
+    await patch({ id: 'another-user', step: 1 }).expect(400);
+  });
+
+  it('verifies a signed Google identity, creates one account, completes setup and restores it on Google sign-in', async () => {
+    const first = await request(app.getHttpServer())
+      .post('/api/v1/auth/google')
+      .send({ idToken: googleToken() })
+      .expect(200);
+    expect(first.body.user).toMatchObject({
+      email: 'google-flow@example.com',
+      profileCompletedAt: null,
+    });
+    const completed = await finishSetup(first.body.accessToken as string);
+    const next = await request(app.getHttpServer())
+      .post('/api/v1/auth/google')
+      .send({ idToken: googleToken() })
+      .expect(200);
+    expect(next.body.user.id).toBe(first.body.user.id);
+    expect(next.body.user.profileCompletedAt).toBe(completed.profileCompletedAt);
+    const count = await database.query<{ count: number }>(
+      "select count(*)::int as count from auth_identities where provider_subject = 'synthetic-google-subject'",
+    );
+    expect(count.rows[0]?.count).toBe(1);
+  });
+
+  it('rejects Google tokens with the wrong audience, issuer, signature or expiry, and prevents automatic email linking', async () => {
+    const now = Math.floor(Date.now() / 1000);
+    const invalid = [
+      googleToken({ aud: 'wrong-client' }),
+      googleToken({ iss: 'https://attacker.example' }),
+      googleToken({}, true),
+      googleToken({ iat: now - 7200, exp: now - 3600 }),
+      'not-a-valid-google-token',
+    ];
+    for (const idToken of invalid) {
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/auth/google')
+        .send({ idToken })
+        .expect(401);
+      expect(response.body.error.code).toBe('INVALID_GOOGLE_TOKEN');
+    }
+    const existing = { email: 'google-link@example.com', password: 'SyntheticPassword123' };
+    await request(app.getHttpServer()).post('/api/v1/auth/register').send(existing).expect(201);
+    const conflict = await request(app.getHttpServer())
+      .post('/api/v1/auth/google')
+      .send({ idToken: googleToken({ sub: 'unlinked-subject', email: existing.email }) })
+      .expect(409);
+    expect(conflict.body.error.code).toBe('ACCOUNT_LINK_REQUIRED');
+  });
+
+  it('edits a completed profile atomically and keeps setup completion and other preferences', async () => {
+    const registered = await request(app.getHttpServer())
+      .post('/api/v1/auth/email/register')
+      .send({
+        email: 'profile-editor@example.com',
+        password: 'SyntheticPassword123',
+        fullName: 'Original Name',
+      })
+      .expect(201);
+    const token = registered.body.accessToken as string;
+    await request(app.getHttpServer()).get('/api/v1/profile/view').expect(401);
+    await request(app.getHttpServer())
+      .post('/api/v1/profile/create')
+      .auth(token, { type: 'bearer' })
+      .send({ step: 1, healthGoals: [] })
+      .expect(201);
+    const completed = await finishSetup(token);
+    const edited = await request(app.getHttpServer())
+      .patch('/api/v1/profile/update')
+      .auth(token, { type: 'bearer' })
+      .send({
+        fullName: 'Arpit Vijay',
+        dateOfBirth: '2001-03-17',
+        gender: 'male',
+        location: 'Jaipur, Rajasthan',
+        weightValue: 70,
+        weightUnit: 'kg',
+        heightValue: 170,
+        heightUnit: 'cm',
+        healthGoals: ['lose_weight', 'better_eating'],
+        activityLevel: 'moderately_active',
+      })
+      .expect(200);
+    expect(edited.body).toMatchObject({
+      fullName: 'Arpit Vijay',
+      bmi: 24.2,
+      profileCompletedAt: completed.profileCompletedAt,
+      profileSetup: {
+        step: 7,
+        gender: 'male',
+        location: 'Jaipur, Rajasthan',
+        healthGoals: ['lose_weight', 'better_eating'],
+        activityLevel: 'moderately_active',
+        referralSource: 'Friend',
+      },
+    });
+    await request(app.getHttpServer())
+      .patch('/api/v1/profile/update')
+      .auth(token, { type: 'bearer' })
+      .send({ dateOfBirth: '2001-02-29', fullName: 'Must Not Save' })
+      .expect(400);
+    await request(app.getHttpServer())
+      .patch('/api/v1/profile/update')
+      .auth(token, { type: 'bearer' })
+      .send({ healthGoals: [] })
+      .expect(400);
+    const reloaded = await request(app.getHttpServer())
+      .get('/api/v1/profile/view')
+      .auth(token, { type: 'bearer' })
+      .expect(200);
+    const retried = await request(app.getHttpServer())
+      .post('/api/v1/profile/create')
+      .auth(token, { type: 'bearer' })
+      .send({ step: 0 })
+      .expect(201);
+    expect(retried.body.profileSetup.step).toBe(7);
+    expect(reloaded.body.fullName).toBe('Arpit Vijay');
+    expect(reloaded.body.profileSetup.healthGoals).toEqual(['lose_weight', 'better_eating']);
+  });
+
+  it('passes the release smoke script against a real local HTTP listener', async () => {
+    await app.listen(0, '127.0.0.1');
+    const baseUrl = `${await app.getUrl()}/api/v1`;
+    const result = await promisify(execFile)(process.execPath, ['scripts/smoke-api.mjs', baseUrl]);
+    const checks = result.stdout
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as { pass: boolean });
+    expect(checks).toHaveLength(6);
+    expect(checks.every((check) => check.pass)).toBe(true);
+  });
+});

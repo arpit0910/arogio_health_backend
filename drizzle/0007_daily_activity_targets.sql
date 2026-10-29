@@ -1,0 +1,1 @@
+ALTER TABLE "wellness_settings" ADD COLUMN "activity_tracking" jsonb DEFAULT '{"goals":{},"days":[]}'::jsonb NOT NULL;

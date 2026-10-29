@@ -69,6 +69,8 @@ web_modules/
 .env
 .env.*
 !.env.example
+!.env.*.example
+/.local/
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -80,8 +82,10 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 .output
+
+# Shared hosting pulls the compiled Nest application from Git. Keep dist tracked;
+# native dependencies, private environment files and *.tsbuildinfo stay ignored.
 
 # Gatsby files
 .cache/
@@ -147,3 +151,6 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Local verification artifacts and isolated browser profiles
+/.tmp/
