@@ -1,4 +1,5 @@
 export declare class ProfileSetupDto {
+    setupDeferred?: boolean;
     heightValue?: number;
     heightUnit?: 'cm' | 'in';
     weightValue?: number;

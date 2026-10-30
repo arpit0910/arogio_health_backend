@@ -29,6 +29,7 @@ class UpdateProfileDto extends (0, swagger_1.PickType)(profile_setup_dto_1.Profi
     'productUpdates',
     'step',
     'complete',
+    'setupDeferred',
 ]) {
     photo;
     fullName;

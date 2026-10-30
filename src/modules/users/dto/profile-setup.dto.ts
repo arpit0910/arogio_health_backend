@@ -15,6 +15,11 @@ import {
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ProfileSetupDto {
+  @ApiPropertyOptional({ description: 'Defer profile setup without marking it complete' })
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsBoolean()
+  setupDeferred?: boolean;
+
   @ApiPropertyOptional({ minimum: 20, maximum: 300 })
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsNumber({ maxDecimalPlaces: 1 })

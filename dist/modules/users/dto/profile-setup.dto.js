@@ -13,6 +13,7 @@ exports.ProfileSetupDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
 class ProfileSetupDto {
+    setupDeferred;
     heightValue;
     heightUnit;
     weightValue;
@@ -30,6 +31,12 @@ class ProfileSetupDto {
     complete;
 }
 exports.ProfileSetupDto = ProfileSetupDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Defer profile setup without marking it complete' }),
+    (0, class_validator_1.ValidateIf)((_object, value) => value !== undefined),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], ProfileSetupDto.prototype, "setupDeferred", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ minimum: 20, maximum: 300 }),
     (0, class_validator_1.ValidateIf)((_object, value) => value !== undefined),

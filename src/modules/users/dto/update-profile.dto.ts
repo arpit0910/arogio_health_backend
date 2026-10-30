@@ -34,6 +34,7 @@ export class UpdateProfileDto extends PickType(ProfileSetupDto, [
   'productUpdates',
   'step',
   'complete',
+  'setupDeferred',
 ] as const) {
   @ApiPropertyOptional({
     description: 'Compressed JPEG avatar as a data URL; maximum 160 KB decoded',

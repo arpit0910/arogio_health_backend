@@ -91,7 +91,7 @@ let UsersService = class UsersService {
                     !(heightValue ?? existing.heightValue) ||
                     !(weightValue ?? existing.weightValue)))
                 throw new api_error_1.ApiError('VALIDATION_FAILED', 'Complete personal details, activity level and at least one health goal', common_1.HttpStatus.BAD_REQUEST);
-            changes.profileSetup = { ...setup, step: complete ? 7 : (setup.step ?? 0) };
+            changes.profileSetup = { ...setup, ...(complete ? { setupDeferred: false } : {}), step: complete ? 7 : (setup.step ?? 0) };
             if (complete)
                 changes.profileCompletedAt = existing.profileCompletedAt ?? new Date();
         }

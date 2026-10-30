@@ -124,7 +124,7 @@ export class UsersService {
           'Complete personal details, activity level and at least one health goal',
           HttpStatus.BAD_REQUEST,
         );
-      changes.profileSetup = { ...setup, step: complete ? 7 : (setup.step ?? 0) };
+      changes.profileSetup = { ...setup, ...(complete ? { setupDeferred: false } : {}), step: complete ? 7 : (setup.step ?? 0) };
       if (complete) changes.profileCompletedAt = existing.profileCompletedAt ?? new Date();
     }
     try {

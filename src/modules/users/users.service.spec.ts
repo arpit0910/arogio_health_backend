@@ -40,7 +40,24 @@ describe('UsersService', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
-  it('returns a safe current-user profile', async () => {
+  it('defers setup while preserving saved progress and leaving completion unset', async () => {
+    const existing = { ...user, profileSetup: { step: 1, healthGoals: ['stay_fit'] } };
+    repository.findById.mockResolvedValue(existing);
+    repository.updateProfile.mockResolvedValue({ ...existing, profileSetup: { ...existing.profileSetup, setupDeferred: true } });
+    const result = await service.updateMe(user.id, { setupDeferred: true });
+    expect(result.profileCompletedAt).toBeNull();
+    expect(repository.updateProfile).toHaveBeenCalledWith(user.id, {
+      profileSetup: { step: 1, healthGoals: ['stay_fit'], setupDeferred: true },
+    });
+  });
+
+  it('still validates real completion after setup was deferred', async () => {
+    repository.findById.mockResolvedValue({ ...user, profileSetup: { setupDeferred: true } });
+    await expect(service.updateMe(user.id, { complete: true })).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+    expect(repository.updateProfile).not.toHaveBeenCalled();
+  });
+
+  it('returns a safe current-user profile' , async () => {
     repository.findById.mockResolvedValue(user);
     const result = await service.getMe(user.id);
     expect(result.id).toBe(user.id);
