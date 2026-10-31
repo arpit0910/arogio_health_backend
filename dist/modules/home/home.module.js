@@ -11,10 +11,11 @@ const common_1 = require("@nestjs/common");
 const auth_module_1 = require("../auth/auth.module");
 const home_controller_1 = require("./home.controller");
 const home_service_1 = require("./home.service");
+const stormglass_weather_1 = require("./stormglass.weather");
 let HomeModule = class HomeModule {
 };
 exports.HomeModule = HomeModule;
 exports.HomeModule = HomeModule = __decorate([
-    (0, common_1.Module)({ imports: [auth_module_1.AuthModule], controllers: [home_controller_1.HomeController], providers: [home_service_1.HomeService] })
+    (0, common_1.Module)({ imports: [auth_module_1.AuthModule], controllers: [home_controller_1.HomeController], providers: [home_service_1.HomeService, stormglass_weather_1.StormglassWeather] })
 ], HomeModule);
 //# sourceMappingURL=home.module.js.map

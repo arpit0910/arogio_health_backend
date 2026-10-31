@@ -4,6 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { DatabaseService } from '../../database/database.service';
 import { banners, users } from '../../database/schema';
+import { StormglassWeather } from './stormglass.weather';
 @Injectable()
 export class HomeService {
   private readonly cache = new Map<
@@ -22,6 +23,7 @@ export class HomeService {
   constructor(
     private readonly database: DatabaseService,
     private readonly config: ConfigService,
+    private readonly stormglass: StormglassWeather,
   ) {}
   async banners() {
     return this.database.db
@@ -55,7 +57,9 @@ export class HomeService {
     const city =
       typeof user?.profile?.location === 'string' ? user.profile.location.trim().slice(0, 100) : '';
     const key = this.config.get<string>('OPENWEATHER_API_KEY');
-    if (!city || !key) return { available: false, city: city || null };
+    if (!city) return { available: false, city: null, reason: 'missing-city' };
+    if (this.config.get<string>('STORMGLASS_API_KEY')) return this.stormglass.weather(city);
+    if (!key) return { available: false, city, reason: 'provider-not-configured' };
     const cacheKey = city.toLowerCase(),
       saved = this.cache.get(cacheKey);
     if (saved && Date.now() - saved.at < 15 * 60000) return saved.value;
@@ -67,7 +71,7 @@ export class HomeService {
       const [location] = z
         .array(z.object({ name: z.string(), lat: z.number(), lon: z.number() }))
         .parse(await geoResponse.json());
-      if (!location) return { available: false, city };
+      if (!location) return { available: false, city, reason: 'city-not-found' };
       const weatherUrl = new URL('https://api.openweathermap.org/data/2.5/weather');
       weatherUrl.search = new URLSearchParams({
         lat: String(location.lat),
@@ -95,7 +99,7 @@ export class HomeService {
       this.cache.set(cacheKey, { at: Date.now(), value });
       return value;
     } catch {
-      return { available: false, city };
+      return { available: false, city, reason: 'provider-unavailable' };
     }
   }
 }

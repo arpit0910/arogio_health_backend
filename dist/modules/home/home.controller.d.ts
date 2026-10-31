@@ -20,6 +20,11 @@ export declare class HomeController {
         observedAt: string;
     } | {
         available: boolean;
-        city: string | null;
+        city: null;
+        reason: string;
+    } | {
+        available: boolean;
+        city: string;
+        reason: string;
     }>;
 }

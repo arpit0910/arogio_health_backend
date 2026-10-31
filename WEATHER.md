@@ -1,0 +1,11 @@
+# Weather providers
+
+Home weather uses the saved profile city. `STORMGLASS_API_KEY` takes precedence over `OPENWEATHER_API_KEY`. Keep keys only in private server environment files, never Expo public variables. The provided Stormglass key is configured in ignored `.env.local` for local testing only; production deployment has not occurred.
+
+Stormglass fetches 24 hours of hourly air temperature, cloud cover and precipitation in one call per city. Other users in that city and app refreshes reuse the saved forecast. The response identifies forecast values; no expired hour is presented as current weather. City lookup uses the Open-Meteo geocoder, whose hosted free API is also for non-commercial use.
+
+`WEATHER_CACHE_DIR` defaults to `.local/weather`. Use a persistent, private directory shared by **all Node workers and deployments using the same key**. The cache stores forecasts, resolved city coordinates and a rolling 24-hour request ledger. The backend permits at most 10 Stormglass attempts in that window across all cities; failed attempts count and retry for a failed city waits one hour. Different cities share the allowance, not ten calls per user. Calls from the dashboard or other deployments cannot be counted locally, so dedicate this key to this backend.
+
+An atomic directory lock prevents simultaneous workers issuing duplicate requests. Usage is written before the provider request and survives process restarts. Missing write access or corrupted usage fails closed. After a crash, a leftover `request.lock` also fails closed: stop all workers, verify no request is in flight, remove only the empty lock directory and restart. Do not delete `stormglass.json` to reset usage. Multiple servers without a shared filesystem need a database/Redis quota store before deployment.
+
+The free Stormglass plan currently allows ten requests/day and excludes commercial use: https://stormglass.io/pricing/. Suitable for local evaluation. For the commercial Arogio app, WeatherAPI currently offers 100,000 monthly requests and commercial use on its free plan: https://www.weatherapi.com/pricing. A WeatherAPI adapter/key would be needed to switch; none is configured. OpenWeather remains supported with its own key and terms.

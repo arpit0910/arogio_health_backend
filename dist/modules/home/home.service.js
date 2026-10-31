@@ -16,13 +16,16 @@ const drizzle_orm_1 = require("drizzle-orm");
 const zod_1 = require("zod");
 const database_service_1 = require("../../database/database.service");
 const schema_1 = require("../../database/schema");
+const stormglass_weather_1 = require("./stormglass.weather");
 let HomeService = class HomeService {
     database;
     config;
+    stormglass;
     cache = new Map();
-    constructor(database, config) {
+    constructor(database, config, stormglass) {
         this.database = database;
         this.config = config;
+        this.stormglass = stormglass;
     }
     async banners() {
         return this.database.db
@@ -56,8 +59,12 @@ let HomeService = class HomeService {
             .limit(1);
         const city = typeof user?.profile?.location === 'string' ? user.profile.location.trim().slice(0, 100) : '';
         const key = this.config.get('OPENWEATHER_API_KEY');
-        if (!city || !key)
-            return { available: false, city: city || null };
+        if (!city)
+            return { available: false, city: null, reason: 'missing-city' };
+        if (this.config.get('STORMGLASS_API_KEY'))
+            return this.stormglass.weather(city);
+        if (!key)
+            return { available: false, city, reason: 'provider-not-configured' };
         const cacheKey = city.toLowerCase(), saved = this.cache.get(cacheKey);
         if (saved && Date.now() - saved.at < 15 * 60000)
             return saved.value;
@@ -71,7 +78,7 @@ let HomeService = class HomeService {
                 .array(zod_1.z.object({ name: zod_1.z.string(), lat: zod_1.z.number(), lon: zod_1.z.number() }))
                 .parse(await geoResponse.json());
             if (!location)
-                return { available: false, city };
+                return { available: false, city, reason: 'city-not-found' };
             const weatherUrl = new URL('https://api.openweathermap.org/data/2.5/weather');
             weatherUrl.search = new URLSearchParams({
                 lat: String(location.lat),
@@ -102,7 +109,7 @@ let HomeService = class HomeService {
             return value;
         }
         catch {
-            return { available: false, city };
+            return { available: false, city, reason: 'provider-unavailable' };
         }
     }
 };
@@ -110,6 +117,7 @@ exports.HomeService = HomeService;
 exports.HomeService = HomeService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [database_service_1.DatabaseService,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        stormglass_weather_1.StormglassWeather])
 ], HomeService);
 //# sourceMappingURL=home.service.js.map

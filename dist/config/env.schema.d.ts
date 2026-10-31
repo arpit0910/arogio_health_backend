@@ -1,6 +1,8 @@
 import { z } from 'zod';
 declare const envSchema: z.ZodObject<{
     OPENWEATHER_API_KEY: z.ZodOptional<z.ZodString>;
+    STORMGLASS_API_KEY: z.ZodOptional<z.ZodString>;
+    WEATHER_CACHE_DIR: z.ZodOptional<z.ZodString>;
     NODE_ENV: z.ZodDefault<z.ZodEnum<{
         test: "test";
         development: "development";

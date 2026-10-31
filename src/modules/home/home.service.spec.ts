@@ -1,6 +1,7 @@
 import type { ConfigService } from '@nestjs/config';
 import type { DatabaseService } from '../../database/database.service';
 import { HomeService } from './home.service';
+import { StormglassWeather } from './stormglass.weather';
 function service(key?: string) {
   const database = {
     db: {
@@ -11,13 +12,14 @@ function service(key?: string) {
       }),
     },
   } as unknown as DatabaseService;
-  return new HomeService(database, { get: () => key } as unknown as ConfigService);
+  const config = { get: (name: string) => name === 'OPENWEATHER_API_KEY' ? key : undefined } as unknown as ConfigService;
+  return new HomeService(database, config, new StormglassWeather(config));
 }
 describe('Home weather', () => {
   afterEach(() => jest.restoreAllMocks());
   it('does not invent weather without a provider key', async () => {
     const fetch = jest.spyOn(globalThis, 'fetch');
-    expect(await service().weather('fixture')).toEqual({ available: false, city: 'Jaipur' });
+    expect(await service().weather('fixture')).toEqual({ available: false, city: 'Jaipur', reason: 'provider-not-configured' });
     expect(fetch).not.toHaveBeenCalled();
   });
   it('uses real provider fields and reuses a short-lived city cache', async () => {
@@ -49,6 +51,7 @@ describe('Home weather', () => {
     expect(await service('fixture-key').weather('fixture')).toEqual({
       available: false,
       city: 'Jaipur',
+      reason: 'provider-unavailable',
     });
   });
 });
