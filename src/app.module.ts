@@ -1,5 +1,7 @@
+import { DirectoryModule } from './modules/directory/directory.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { HomeModule } from './modules/home/home.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -33,7 +35,9 @@ import { WellnessModule } from './modules/wellness/wellness.module';
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     DatabaseModule,
     AdminModule,
+    DirectoryModule,
     HomeModule,
+    ChatModule,
     HealthModule,
     StatusModule,
     AuthModule,

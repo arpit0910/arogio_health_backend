@@ -7,8 +7,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
+const directory_module_1 = require("./modules/directory/directory.module");
 const admin_module_1 = require("./modules/admin/admin.module");
 const home_module_1 = require("./modules/home/home.module");
+const chat_module_1 = require("./modules/chat/chat.module");
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const core_1 = require("@nestjs/core");
@@ -44,7 +46,9 @@ exports.AppModule = AppModule = __decorate([
             throttler_1.ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
             database_module_1.DatabaseModule,
             admin_module_1.AdminModule,
+            directory_module_1.DirectoryModule,
             home_module_1.HomeModule,
+            chat_module_1.ChatModule,
             health_module_1.HealthModule,
             status_module_1.StatusModule,
             auth_module_1.AuthModule,

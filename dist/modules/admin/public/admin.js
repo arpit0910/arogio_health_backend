@@ -287,6 +287,7 @@ async function show() {
   if (page === 'overview') return overview();
   if (page === 'people') return people();
   if (page === 'banners') return homeBanners();
+  if (page === 'articles' || page === 'blood-banks') return directoryPage(page);
   return audit();
 }
 async function overview() {

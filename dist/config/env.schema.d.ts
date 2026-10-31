@@ -1,5 +1,7 @@
 import { z } from 'zod';
 declare const envSchema: z.ZodObject<{
+    NVIDIA_API_KEY: z.ZodOptional<z.ZodString>;
+    NVIDIA_MODEL: z.ZodDefault<z.ZodString>;
     OPENWEATHER_API_KEY: z.ZodOptional<z.ZodString>;
     STORMGLASS_API_KEY: z.ZodOptional<z.ZodString>;
     WEATHER_CACHE_DIR: z.ZodOptional<z.ZodString>;

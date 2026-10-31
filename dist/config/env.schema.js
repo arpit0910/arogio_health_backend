@@ -7,6 +7,8 @@ const booleanFromString = zod_1.z
     .default('false')
     .transform((value) => value === 'true');
 const envSchema = zod_1.z.object({
+    NVIDIA_API_KEY: zod_1.z.string().min(1).optional(),
+    NVIDIA_MODEL: zod_1.z.string().min(1).default('nvidia/nemotron-3.5-lightning-30b-a3b'),
     OPENWEATHER_API_KEY: zod_1.z.string().min(1).optional(),
     STORMGLASS_API_KEY: zod_1.z.string().min(1).optional(),
     WEATHER_CACHE_DIR: zod_1.z.string().min(1).optional(),
