@@ -1,5 +1,12 @@
 import { z } from 'zod';
 export declare const bloodGroups: readonly ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+export declare const thumbnailInput: z.ZodDefault<z.ZodString>;
+export declare const categoryInput: z.ZodObject<{
+    name: z.ZodString;
+    name_hi: z.ZodDefault<z.ZodString>;
+    description: z.ZodDefault<z.ZodString>;
+    image_url: z.ZodDefault<z.ZodString>;
+}, z.core.$strict>;
 export declare const articleInput: z.ZodObject<{
     title_en: z.ZodString;
     title_hi: z.ZodDefault<z.ZodString>;
@@ -8,6 +15,7 @@ export declare const articleInput: z.ZodObject<{
     content_en: z.ZodString;
     content_hi: z.ZodDefault<z.ZodString>;
     category: z.ZodString;
+    image_url: z.ZodDefault<z.ZodString>;
     author_name: z.ZodDefault<z.ZodString>;
     is_published: z.ZodDefault<z.ZodBoolean>;
 }, z.core.$strict>;
@@ -50,6 +58,16 @@ export declare const listInput: z.ZodObject<{
     limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     search: z.ZodDefault<z.ZodString>;
     category: z.ZodOptional<z.ZodString>;
+    sort: z.ZodDefault<z.ZodEnum<{
+        newest: "newest";
+        oldest: "oldest";
+        title_asc: "title_asc";
+        title_desc: "title_desc";
+    }>>;
+    language: z.ZodDefault<z.ZodEnum<{
+        en: "en";
+        hi: "hi";
+    }>>;
     bloodGroup: z.ZodOptional<z.ZodEnum<{
         "A+": "A+";
         "A-": "A-";

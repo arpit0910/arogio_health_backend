@@ -32,6 +32,17 @@ export class DirectoryAdminController {
     private readonly directory: DirectoryService,
     private readonly audit: AdminService,
   ) {}
+  @Get('article-categories') categories() {
+    return this.directory.categories(true);
+  }
+  @Post('article-categories') saveCategory(
+    @CurrentUser() user: RequestUser,
+    @Body() body: unknown,
+  ) {
+    return this.audit.audit(user.userId, 'article-category.save', null, () =>
+      this.directory.saveCategory(body),
+    );
+  }
   @Get(':kind') list(@Param('kind') kind: string, @Query() query: unknown) {
     return this.directory.adminList(this.directory.kind(kind), query);
   }

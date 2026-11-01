@@ -85,6 +85,13 @@
       "when": 1793412782066,
       "tag": "0011_articles_blood_banks",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793547285149,
+      "tag": "0012_jazzy_princess_powerful",
+      "breakpoints": true
     }
   ]
 }

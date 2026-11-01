@@ -6,8 +6,19 @@ export declare class DirectoryAdminController {
     private readonly directory;
     private readonly audit;
     constructor(directory: DirectoryService, audit: AdminService);
+    categories(): Promise<{
+        count: number;
+        custom_image_url?: string | undefined;
+        name: string;
+        name_hi: string;
+        description: string;
+        image_url: string;
+    }[]>;
+    saveCategory(user: RequestUser, body: unknown): Promise<{
+        saved: boolean;
+    }>;
     list(kind: string, query: unknown): Promise<{
-        items: {
+        items: ({
             id: string;
             source_id: string;
             title_en: string;
@@ -15,14 +26,27 @@ export declare class DirectoryAdminController {
             excerpt_en: string;
             excerpt_hi: string;
             category: string;
+            image_url: string;
             author_name: string;
             is_published: boolean;
             created_at: Date;
             updated_at: Date;
-        }[];
+        } & {
+            thumbnail_url: string;
+            category_hi: string;
+        })[];
         page: number;
         hasNext: boolean;
         categories: string[];
+        categoryDetails: {
+            count: number;
+            custom_image_url?: string | undefined;
+            name: string;
+            name_hi: string;
+            description: string;
+            image_url: string;
+        }[];
+        total: number;
     } | {
         items: {
             id: string;
@@ -61,20 +85,6 @@ export declare class DirectoryAdminController {
     get(kind: string, id: string): Promise<{
         id: string;
         source_id: string;
-        title_en: string;
-        title_hi: string;
-        excerpt_en: string;
-        excerpt_hi: string;
-        content_en: string;
-        content_hi: string;
-        category: string;
-        author_name: string;
-        is_published: boolean;
-        created_at: Date;
-        updated_at: Date;
-    }> | Promise<{
-        id: string;
-        source_id: string;
         name_en: string;
         name_hi: string;
         city: string;
@@ -100,6 +110,24 @@ export declare class DirectoryAdminController {
         is_active: boolean;
         created_at: Date;
         updated_at: Date;
+    }> | Promise<{
+        id: string;
+        source_id: string;
+        title_en: string;
+        title_hi: string;
+        excerpt_en: string;
+        excerpt_hi: string;
+        content_en: string;
+        content_hi: string;
+        category: string;
+        image_url: string;
+        author_name: string;
+        is_published: boolean;
+        created_at: Date;
+        updated_at: Date;
+    } & {
+        thumbnail_url: string;
+        category_hi: string;
     }>;
     preview(kind: string, file?: Express.Multer.File): Promise<{
         totalRows: number;
@@ -112,6 +140,8 @@ export declare class DirectoryAdminController {
         creates: number;
         updates: number;
         publishedRows: number;
+        categoryCount: number;
+        thumbnailFallbacks: number;
         missingCoordinates: number;
         sample: {
             source_id: string;
@@ -120,6 +150,7 @@ export declare class DirectoryAdminController {
     }>;
     import(user: RequestUser, kind: string, file?: Express.Multer.File): Promise<{
         imported: number;
+        categories: number;
         missingCoordinates: number;
     }>;
     create(user: RequestUser, kind: string, body: unknown): Promise<{
@@ -132,6 +163,7 @@ export declare class DirectoryAdminController {
         content_en: string;
         content_hi: string;
         category: string;
+        image_url: string;
         author_name: string;
         is_published: boolean;
         created_at: Date;
@@ -175,6 +207,7 @@ export declare class DirectoryAdminController {
         content_en: string;
         content_hi: string;
         category: string;
+        image_url: string;
         author_name: string;
         is_published: boolean;
         created_at: Date;

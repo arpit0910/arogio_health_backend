@@ -3,7 +3,7 @@ export declare class DirectoryController {
     private readonly directory;
     constructor(directory: DirectoryService);
     articles(query: unknown): Promise<{
-        items: {
+        items: ({
             id: string;
             source_id: string;
             title_en: string;
@@ -11,15 +11,36 @@ export declare class DirectoryController {
             excerpt_en: string;
             excerpt_hi: string;
             category: string;
+            image_url: string;
             author_name: string;
             is_published: boolean;
             created_at: Date;
             updated_at: Date;
-        }[];
+        } & {
+            thumbnail_url: string;
+            category_hi: string;
+        })[];
         page: number;
         hasNext: boolean;
         categories: string[];
+        categoryDetails: {
+            count: number;
+            custom_image_url?: string | undefined;
+            name: string;
+            name_hi: string;
+            description: string;
+            image_url: string;
+        }[];
+        total: number;
     }>;
+    categories(): Promise<{
+        count: number;
+        custom_image_url?: string | undefined;
+        name: string;
+        name_hi: string;
+        description: string;
+        image_url: string;
+    }[]>;
     article(id: string): Promise<{
         id: string;
         source_id: string;
@@ -30,10 +51,14 @@ export declare class DirectoryController {
         content_en: string;
         content_hi: string;
         category: string;
+        image_url: string;
         author_name: string;
         is_published: boolean;
         created_at: Date;
         updated_at: Date;
+    } & {
+        thumbnail_url: string;
+        category_hi: string;
     }>;
     banks(query: unknown): Promise<{
         items: {

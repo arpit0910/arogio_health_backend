@@ -2,6 +2,28 @@ import { z } from 'zod';
 export const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] as const;
 const line = z.string().trim().max(300),
   optional = z.string().trim().max(1000).nullable().default(null);
+export const thumbnailInput = z
+  .string()
+  .trim()
+  .max(2000)
+  .refine((value) => {
+    if (!value) return true;
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  }, 'Use a full HTTPS image URL, or leave empty for the topic image.')
+  .default('');
+export const categoryInput = z
+  .object({
+    name: line.min(1),
+    name_hi: line.default(''),
+    description: z.string().trim().max(2000).default(''),
+    image_url: thumbnailInput,
+  })
+  .strict();
 export const articleInput = z
   .object({
     title_en: line.min(1),
@@ -11,6 +33,7 @@ export const articleInput = z
     content_en: z.string().trim().min(1).max(100000),
     content_hi: z.string().trim().max(100000).default(''),
     category: line.min(1),
+    image_url: thumbnailInput,
     author_name: line.default(''),
     is_published: z.boolean().default(false),
   })
@@ -66,6 +89,8 @@ export const listInput = z
     limit: z.coerce.number().int().min(1).max(100).default(25),
     search: z.string().trim().max(150).default(''),
     category: z.string().trim().max(300).optional(),
+    sort: z.enum(['newest', 'oldest', 'title_asc', 'title_desc']).default('newest'),
+    language: z.enum(['en', 'hi']).default('en'),
     bloodGroup: z.enum(bloodGroups).optional(),
     only24h: z.enum(['true', 'false']).optional(),
   })

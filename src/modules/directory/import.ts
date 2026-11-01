@@ -19,6 +19,7 @@ export const articleHeaders = [
   'is_published',
   'created_at',
   'updated_at',
+  'image_url',
 ];
 export const bankHeaders = [
   'id',
@@ -66,7 +67,7 @@ export function prepareImport(kind: DirectoryKind, buffer: Buffer) {
   const rows = parseCsv(buffer),
     expected = kind === 'articles' ? articleHeaders : bankHeaders;
   const headers = Object.keys(rows[0]!);
-  const missing = expected.filter((key) => !headers.includes(key)),
+  const missing = expected.filter((key) => key !== 'image_url' && !headers.includes(key)),
     unknown = headers.filter((key) => !expected.includes(key));
   if (missing.length || unknown.length)
     throw new Error(

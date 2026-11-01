@@ -1,8 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bloodBanks = exports.articles = void 0;
+exports.bloodBanks = exports.articles = exports.articleCategories = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
+exports.articleCategories = (0, pg_core_1.pgTable)('article_categories', {
+    name: (0, pg_core_1.text)('name').primaryKey(),
+    name_hi: (0, pg_core_1.text)('name_hi').notNull().default(''),
+    description: (0, pg_core_1.text)('description').notNull().default(''),
+    image_url: (0, pg_core_1.text)('image_url').notNull().default(''),
+    updated_at: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
 exports.articles = (0, pg_core_1.pgTable)('articles', {
     id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
     source_id: (0, pg_core_1.text)('source_id').notNull().unique(),
@@ -13,11 +20,15 @@ exports.articles = (0, pg_core_1.pgTable)('articles', {
     content_en: (0, pg_core_1.text)('content_en').notNull(),
     content_hi: (0, pg_core_1.text)('content_hi').notNull().default(''),
     category: (0, pg_core_1.text)('category').notNull(),
+    image_url: (0, pg_core_1.text)('image_url').notNull().default(''),
     author_name: (0, pg_core_1.text)('author_name').notNull().default(''),
     is_published: (0, pg_core_1.boolean)('is_published').notNull().default(false),
     created_at: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
     updated_at: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).notNull().defaultNow(),
-}, (table) => [(0, pg_core_1.index)('articles_published_created').on(table.is_published, table.created_at)]);
+}, (table) => [
+    (0, pg_core_1.index)('articles_published_created').on(table.is_published, table.created_at),
+    (0, pg_core_1.index)('articles_category_published').on(table.category, table.is_published),
+]);
 exports.bloodBanks = (0, pg_core_1.pgTable)('blood_banks', {
     id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
     source_id: (0, pg_core_1.text)('source_id').notNull().unique(),

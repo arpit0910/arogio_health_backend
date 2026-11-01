@@ -18,6 +18,9 @@ export class DirectoryController {
   @Get('articles') articles(@Query() query: unknown) {
     return this.directory.listArticles(query);
   }
+  @Get('article-categories') categories() {
+    return this.directory.categories();
+  }
   @Get('articles/:id') article(@Param('id') id: string) {
     return this.directory.article(id);
   }

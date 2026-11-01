@@ -9,6 +9,13 @@ import {
   check,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+export const articleCategories = pgTable('article_categories', {
+  name: text('name').primaryKey(),
+  name_hi: text('name_hi').notNull().default(''),
+  description: text('description').notNull().default(''),
+  image_url: text('image_url').notNull().default(''),
+  updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
 export const articles = pgTable(
   'articles',
   {
@@ -21,12 +28,16 @@ export const articles = pgTable(
     content_en: text('content_en').notNull(),
     content_hi: text('content_hi').notNull().default(''),
     category: text('category').notNull(),
+    image_url: text('image_url').notNull().default(''),
     author_name: text('author_name').notNull().default(''),
     is_published: boolean('is_published').notNull().default(false),
     created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index('articles_published_created').on(table.is_published, table.created_at)],
+  (table) => [
+    index('articles_published_created').on(table.is_published, table.created_at),
+    index('articles_category_published').on(table.category, table.is_published),
+  ],
 );
 export const bloodBanks = pgTable(
   'blood_banks',

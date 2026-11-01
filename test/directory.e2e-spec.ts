@@ -245,4 +245,148 @@ describe('Articles and nearby blood-bank directory', () => {
       .expect(200);
     expect(absent.body.items).toHaveLength(0);
   });
+  it('imports all 284 supplied articles idempotently, then filters, sorts and resolves thumbnails', async () => {
+    const file = await readFile('imports/Arogio_Final_Health_Articles_284.xlsx');
+    const preview = await request(app.getHttpServer())
+      .post('/api/v1/admin/content/articles/import/preview')
+      .set(auth())
+      .attach('file', file, 'library.xlsx')
+      .expect(201);
+    expect(preview.body).toMatchObject({
+      totalRows: 284,
+      categoryCount: 17,
+      errorCount: 0,
+      thumbnailFallbacks: 284,
+    });
+    for (let i = 0; i < 2; i++)
+      await request(app.getHttpServer())
+        .post('/api/v1/admin/content/articles/import/apply')
+        .set(auth())
+        .attach('file', file, 'library.xlsx')
+        .expect(201);
+    const categories = await request(app.getHttpServer())
+      .get('/api/v1/article-categories')
+      .set(auth())
+      .expect(200);
+    expect(categories.body).toHaveLength(17);
+    expect((categories.body as { count: number }[]).reduce((sum, row) => sum + row.count, 0)).toBe(
+      284,
+    );
+    expect(
+      (categories.body as { name: string }[]).find((row) => row.name === 'Food & Nutrition'),
+    ).toMatchObject({ count: 46, image_url: '/admin-assets/article-thumbnails/nutrition.jpg' });
+    await request(app.getHttpServer())
+      .get('/admin-assets/article-thumbnails/nutrition.jpg')
+      .expect(200)
+      .expect('Content-Type', /image/);
+    const path = '/api/v1/articles?category=Food%20%26%20Nutrition&limit=100';
+    const asc = await request(app.getHttpServer())
+      .get(path + '&sort=title_asc')
+      .set(auth())
+      .expect(200);
+    const desc = await request(app.getHttpServer())
+      .get(path + '&sort=title_desc')
+      .set(auth())
+      .expect(200);
+    expect(asc.body.total).toBe(46);
+    expect((asc.body.items as { id: string }[]).map((row) => row.id)).toEqual(
+      (desc.body.items as { id: string }[]).map((row) => row.id).reverse(),
+    );
+    expect(
+      (asc.body.items as { category: string; thumbnail_url: string }[]).every(
+        (row: { category: string; thumbnail_url: string }) =>
+          row.category === 'Food & Nutrition' && !!row.thumbnail_url,
+      ),
+    ).toBe(true);
+    const newest = await request(app.getHttpServer())
+      .get(path + '&sort=newest')
+      .set(auth())
+      .expect(200);
+    const oldest = await request(app.getHttpServer())
+      .get(path + '&sort=oldest')
+      .set(auth())
+      .expect(200);
+    expect(new Date(newest.body.items[0].created_at as string).getTime()).toBeGreaterThanOrEqual(
+      new Date(oldest.body.items[0].created_at as string).getTime(),
+    );
+    const combined = await request(app.getHttpServer())
+      .get(path + '&search=food&sort=title_asc')
+      .set(auth())
+      .expect(200);
+    expect(combined.body.total).toBeGreaterThan(0);
+    await request(app.getHttpServer()).get('/api/v1/articles?sort=unsafe').set(auth()).expect(400);
+    await request(app.getHttpServer()).get('/api/v1/article-categories').expect(401);
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/content/article-categories')
+      .set('Authorization', `Bearer ${ordinary}`)
+      .send({ name: 'Care' })
+      .expect(403);
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/content/article-categories')
+      .set(auth())
+      .send({ name: 'Food & Nutrition', image_url: 'javascript:alert(1)' })
+      .expect(400);
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/content/article-categories')
+      .set(auth())
+      .send({
+        name: 'Food & Nutrition',
+        name_hi: 'Nutrition Hindi',
+        image_url: 'https://example.com/category.jpg',
+      })
+      .expect(201);
+    const inherited = await request(app.getHttpServer()).get(path).set(auth()).expect(200);
+    expect(inherited.body.items[0].thumbnail_url).toBe('https://example.com/category.jpg');
+    const article = inherited.body.items[0];
+    const detail = await request(app.getHttpServer())
+      .get(`/api/v1/admin/content/articles/${article.id}`)
+      .set(auth())
+      .expect(200);
+    const {
+      title_en,
+      title_hi,
+      excerpt_en,
+      excerpt_hi,
+      content_en,
+      content_hi,
+      category,
+      author_name,
+      is_published,
+    } = detail.body;
+    await request(app.getHttpServer())
+      .patch(`/api/v1/admin/content/articles/${article.id}`)
+      .set(auth())
+      .send({
+        title_en,
+        title_hi,
+        excerpt_en,
+        excerpt_hi,
+        content_en,
+        content_hi,
+        category,
+        author_name,
+        is_published,
+        image_url: 'https://example.com/article.jpg',
+      })
+      .expect(200);
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/content/articles/import/apply')
+      .set(auth())
+      .attach('file', file, 'library.xlsx')
+      .expect(201);
+    const kept = await request(app.getHttpServer())
+      .get(`/api/v1/articles/${article.id}`)
+      .set(auth())
+      .expect(200);
+    expect(kept.body.thumbnail_url).toBe('https://example.com/article.jpg');
+    const keptCategories = await request(app.getHttpServer())
+      .get('/api/v1/article-categories')
+      .set(auth())
+      .expect(200);
+    expect(
+      (keptCategories.body as { name: string; image_url: string }[]).find(
+        (row) => row.name === 'Food & Nutrition',
+      )?.image_url,
+    ).toBe('https://example.com/category.jpg');
+  }, 60000);
 });

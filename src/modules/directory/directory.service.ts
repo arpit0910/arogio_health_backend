@@ -17,16 +17,19 @@ import {
 } from 'drizzle-orm';
 import { z } from 'zod';
 import { DatabaseService } from '../../database/database.service';
-import { articles, bloodBanks } from '../../database/schema';
+import { articles, articleCategories, bloodBanks } from '../../database/schema';
 import {
   articleInput,
+  categoryInput,
   bankInput,
   listInput,
   nearbyInput,
   type DirectoryKind,
 } from './directory.input';
 import { prepareImport } from './import';
-import { workbookToCsv } from './workbook';
+import { readDirectoryWorkbook } from './workbook';
+import { topicImage } from './thumbnails';
+import { articleTopics } from './article-topics';
 
 const articleSummary = {
   id: articles.id,
@@ -36,6 +39,7 @@ const articleSummary = {
   excerpt_en: articles.excerpt_en,
   excerpt_hi: articles.excerpt_hi,
   category: articles.category,
+  image_url: articles.image_url,
   author_name: articles.author_name,
   is_published: articles.is_published,
   created_at: articles.created_at,
@@ -64,29 +68,93 @@ export class DirectoryService {
           ilike(articles.title_en, `%${q.search}%`),
           ilike(articles.title_hi, `%${q.search}%`),
           ilike(articles.category, `%${q.search}%`),
+          sql`exists (select 1 from ${articleCategories} where ${articleCategories.name} = ${articles.category} and ${articleCategories.name_hi} ilike ${`%${q.search}%`})`,
         )!,
       );
     if (q.category) conditions.push(eq(articles.category, q.category));
-    const [items, categories] = await Promise.all([
+    const title =
+      q.language === 'hi'
+        ? sql`coalesce(nullif(${articles.title_hi}, ''), ${articles.title_en})`
+        : articles.title_en;
+    const order =
+      q.sort === 'oldest'
+        ? asc(articles.created_at)
+        : q.sort === 'title_asc'
+          ? asc(title)
+          : q.sort === 'title_desc'
+            ? desc(title)
+            : desc(articles.created_at);
+    const [items, categories, total] = await Promise.all([
       this.database.db
         .select(articleSummary)
         .from(articles)
         .where(and(...conditions))
-        .orderBy(desc(articles.created_at), asc(articles.id))
+        .orderBy(order, asc(articles.id))
         .limit(q.limit + 1)
         .offset((q.page - 1) * q.limit),
+      this.categories(admin),
       this.database.db
-        .selectDistinct({ category: articles.category })
+        .select({ count: count() })
         .from(articles)
-        .where(admin ? undefined : eq(articles.is_published, true))
-        .orderBy(asc(articles.category)),
+        .where(and(...conditions)),
     ]);
     return {
-      items: items.slice(0, q.limit),
+      items: items.slice(0, q.limit).map((item) => this.withThumbnail(item, categories)),
       page: q.page,
       hasNext: items.length > q.limit,
-      categories: categories.map((item) => item.category),
+      categories: categories.map((item) => item.name),
+      categoryDetails: categories,
+      total: total[0]!.count,
     };
+  }
+  private withThumbnail<T extends { category: string; image_url: string }>(
+    row: T,
+    categories: { name: string; name_hi: string; image_url: string }[],
+  ) {
+    const category = categories.find((item) => item.name === row.category);
+    return {
+      ...row,
+      thumbnail_url: row.image_url || category?.image_url || topicImage(row.category),
+      category_hi: category?.name_hi || '',
+    };
+  }
+  async categories(admin = false) {
+    const [metadata, counts] = await Promise.all([
+      this.database.db.select().from(articleCategories).orderBy(asc(articleCategories.name)),
+      this.database.db
+        .select({ name: articles.category, count: count() })
+        .from(articles)
+        .where(admin ? undefined : eq(articles.is_published, true))
+        .groupBy(articles.category),
+    ]);
+    const names = new Set(
+      admin
+        ? [...metadata.map((row) => row.name), ...counts.map((row) => row.name)]
+        : counts.map((row) => row.name),
+    );
+    return [...names].sort().map((name) => {
+      const stored = metadata.find((row) => row.name === name),
+        fallback = articleTopics.find((row) => row.name === name);
+      return {
+        name,
+        name_hi: stored?.name_hi || fallback?.name_hi || '',
+        description: stored?.description || fallback?.description || '',
+        image_url: stored?.image_url || topicImage(name),
+        ...(admin ? { custom_image_url: stored?.image_url || '' } : {}),
+        count: counts.find((row) => row.name === name)?.count ?? 0,
+      };
+    });
+  }
+  async saveCategory(body: unknown) {
+    const value = this.parse(categoryInput, body);
+    await this.database.db
+      .insert(articleCategories)
+      .values(value)
+      .onConflictDoUpdate({
+        target: articleCategories.name,
+        set: { ...value, updated_at: new Date() },
+      });
+    return { saved: true };
   }
   async article(id: string, admin = false) {
     this.parse(z.uuid(), id);
@@ -96,7 +164,7 @@ export class DirectoryService {
       .where(and(eq(articles.id, id), admin ? undefined : eq(articles.is_published, true)))
       .limit(1);
     if (!row) throw new NotFoundException('Article not found.');
-    return row;
+    return this.withThumbnail(row, await this.categories(admin));
   }
   private bankFilters(bloodGroup?: string, only24h = false, admin = false): SQL[] {
     const filters = admin ? [] : [eq(bloodBanks.is_active, true)];
@@ -192,6 +260,10 @@ export class DirectoryService {
     if (id) this.parse(z.uuid(), id);
     if (kind === 'articles') {
       const value = this.parse(articleInput, body);
+      await this.database.db
+        .insert(articleCategories)
+        .values({ name: value.category })
+        .onConflictDoNothing();
       const rows = id
         ? await this.database.db
             .update(articles)
@@ -240,8 +312,16 @@ export class DirectoryService {
       const name = file.originalname.toLowerCase();
       if (!name.endsWith('.csv') && !name.endsWith('.xlsx'))
         throw new Error('Use .xlsx or .csv. Save legacy .xls workbooks as .xlsx first.');
-      const buffer = name.endsWith('.xlsx') ? await workbookToCsv(file.buffer) : file.buffer;
-      return prepareImport(kind, buffer);
+      const workbook = name.endsWith('.xlsx')
+        ? await readDirectoryWorkbook(file.buffer, kind)
+        : { csv: file.buffer, categories: [] };
+      const result = prepareImport(kind, workbook.csv);
+      if (workbook.categories.length) {
+        const names = new Set(workbook.categories.map((row) => row.name));
+        if (result.articles.some((row) => !names.has(row.category)))
+          throw new Error('Every article category must appear in the Categories worksheet.');
+      }
+      return { ...result, categories: workbook.categories };
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Import file could not be read.',
@@ -270,6 +350,8 @@ export class DirectoryService {
       creates: ids.length - existing.length,
       updates: existing.length,
       publishedRows: result.articles.filter((row) => row.is_published).length,
+      categoryCount: new Set(result.articles.map((row) => row.category)).size,
+      thumbnailFallbacks: result.articles.filter((row) => !row.image_url).length,
       missingCoordinates: result.banks.filter((row) => row.latitude == null).length,
       sample:
         kind === 'articles'
@@ -288,13 +370,28 @@ export class DirectoryService {
         `Nothing imported. Fix ${result.errors.length} invalid rows first.`,
       );
     await this.database.db.transaction(async (tx) => {
-      if (kind === 'articles')
+      if (kind === 'articles') {
+        for (const category of result.categories) {
+          const { image_url, ...metadata } = category;
+          await tx
+            .insert(articleCategories)
+            .values(category)
+            .onConflictDoUpdate({
+              target: articleCategories.name,
+              set: { ...metadata, ...(image_url ? { image_url } : {}), updated_at: new Date() },
+            });
+        }
+        for (const name of new Set(result.articles.map((row) => row.category)))
+          await tx.insert(articleCategories).values({ name }).onConflictDoNothing();
         for (const row of result.articles)
           await tx
             .insert(articles)
             .values(row)
-            .onConflictDoUpdate({ target: articles.source_id, set: row });
-      else
+            .onConflictDoUpdate({
+              target: articles.source_id,
+              set: { ...row, ...(row.image_url ? {} : { image_url: sql`${articles.image_url}` }) },
+            });
+      } else
         for (const row of result.banks) {
           const { is_active: _active, ...updates } = row;
           void _active;
@@ -309,6 +406,7 @@ export class DirectoryService {
     });
     return {
       imported: result.totalRows,
+      categories: new Set(result.articles.map((row) => row.category)).size,
       missingCoordinates: result.banks.filter((row) => row.latitude == null).length,
     };
   }

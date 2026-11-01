@@ -32,6 +32,12 @@ let DirectoryAdminController = class DirectoryAdminController {
         this.directory = directory;
         this.audit = audit;
     }
+    categories() {
+        return this.directory.categories(true);
+    }
+    saveCategory(user, body) {
+        return this.audit.audit(user.userId, 'article-category.save', null, () => this.directory.saveCategory(body));
+    }
     list(kind, query) {
         return this.directory.adminList(this.directory.kind(kind), query);
     }
@@ -78,6 +84,20 @@ let DirectoryAdminController = class DirectoryAdminController {
     }
 };
 exports.DirectoryAdminController = DirectoryAdminController;
+__decorate([
+    (0, common_1.Get)('article-categories'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], DirectoryAdminController.prototype, "categories", null);
+__decorate([
+    (0, common_1.Post)('article-categories'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], DirectoryAdminController.prototype, "saveCategory", null);
 __decorate([
     (0, common_1.Get)(':kind'),
     __param(0, (0, common_1.Param)('kind')),

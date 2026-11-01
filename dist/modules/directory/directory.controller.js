@@ -24,6 +24,9 @@ let DirectoryController = class DirectoryController {
     articles(query) {
         return this.directory.listArticles(query);
     }
+    categories() {
+        return this.directory.categories();
+    }
     article(id) {
         return this.directory.article(id);
     }
@@ -42,6 +45,12 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], DirectoryController.prototype, "articles", null);
+__decorate([
+    (0, common_1.Get)('article-categories'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], DirectoryController.prototype, "categories", null);
 __decorate([
     (0, common_1.Get)('articles/:id'),
     __param(0, (0, common_1.Param)('id')),

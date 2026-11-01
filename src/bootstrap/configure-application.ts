@@ -15,7 +15,9 @@ export function configureApplication(app: NestExpressApplication): void {
   const config = app.get(ConfigService);
   app.useLogger(app.get(Logger));
   app.enableShutdownHooks();
-  app.use(helmet());
+  app.use(
+    helmet({ contentSecurityPolicy: { directives: { imgSrc: ["'self'", 'data:', 'https:'] } } }),
+  );
   app.use(app.get(RequestActivityService).middleware);
   app.useStaticAssets(join(__dirname, '..', 'modules', 'admin', 'public'), {
     prefix: '/admin-assets/',

@@ -2,7 +2,21 @@ import { ConfigService } from '@nestjs/config';
 import { ChatService, JEEVA_INSTRUCTIONS } from './chat.service';
 import { chatInput } from './chat.input';
 import type { ChatContextService } from './chat-context.service';
-const question = { messages: [{ role: 'user', content: 'How do I track water?' }] };
+import { SAFETY_REVIEW } from './chat.safety';
+const answer = (content: string) =>
+  new Response(JSON.stringify({ choices: [{ message: { content } }] }));
+const safe = () => answer(JSON.stringify({ decision: 'allow' }));
+const provider = (content = 'Hello') =>
+  jest
+    .spyOn(globalThis, 'fetch')
+    .mockImplementation((_url, options) =>
+      Promise.resolve(
+        JSON.parse(options?.body as string).messages[0].content === SAFETY_REVIEW
+          ? safe()
+          : answer(content),
+      ),
+    );
+const question = { messages: [{ role: 'user', content: 'What can affect sleep?' }] };
 describe('Jeeva provider boundary', () => {
   const service = (key = 'fixture-secret') =>
     new ChatService(new ConfigService({ NVIDIA_API_KEY: key }), {
@@ -41,16 +55,10 @@ describe('Jeeva provider boundary', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
   it('sends only server instructions and the submitted conversation to the fixed NVIDIA endpoint', async () => {
-    const fetch = jest
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(
-        new Response(
-          JSON.stringify({ choices: [{ message: { content: ' Open Water to log a drink. ' } }] }),
-        ),
-      );
+    const fetch = provider('Open Water to log a drink.');
     const result = await service().reply('private-user-id', question);
     expect(result.message).toEqual({ role: 'assistant', content: 'Open Water to log a drink.' });
-    const [url, options] = fetch.mock.calls[0]!;
+    const [url, options] = fetch.mock.calls[1]!;
     expect(url).toBe('https://integrate.api.nvidia.com/v1/chat/completions');
     expect(options?.headers).toMatchObject({ Authorization: 'Bearer fixture-secret' });
     const body = JSON.parse(options?.body as string);
@@ -71,12 +79,9 @@ describe('Jeeva provider boundary', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
   it('redacts upstream failures and frees the account to retry', async () => {
-    const fetch = jest
-      .spyOn(globalThis, 'fetch')
-      .mockRejectedValueOnce(new Error('fixture-secret private provider body'))
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ choices: [{ message: { content: 'Hello' } }] })),
-      );
+    const fetch = provider().mockRejectedValueOnce(
+      new Error('fixture-secret private provider body'),
+    );
     const chat = service();
     await expect(chat.reply('one', question)).rejects.toMatchObject({
       code: 'CHAT_UNAVAILABLE',
@@ -85,7 +90,7 @@ describe('Jeeva provider boundary', () => {
     await expect(chat.reply('one', question)).resolves.toMatchObject({
       message: { content: 'Hello' },
     });
-    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenCalledTimes(4);
   });
   it('maps exhausted provider limits and rejects empty or malformed replies', async () => {
     const fetch = jest
@@ -102,16 +107,20 @@ describe('Jeeva provider boundary', () => {
   });
   it('blocks overlapping requests from one account without mixing accounts', async () => {
     let finish!: (response: Response) => void;
-    jest.spyOn(globalThis, 'fetch').mockImplementation(
-      () =>
-        new Promise((resolve) => {
+    let calls = 0;
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (_url, options) => {
+      if (calls++ === 0)
+        return new Promise((resolve) => {
           finish = resolve;
-        }),
-    );
+        });
+      return JSON.parse(options?.body as string).messages[0].content === SAFETY_REVIEW
+        ? safe()
+        : answer('Hello');
+    });
     const chat = service(),
       first = chat.reply('one', question);
     await expect(chat.reply('one', question)).rejects.toMatchObject({ code: 'CHAT_BUSY' });
-    finish(new Response(JSON.stringify({ choices: [{ message: { content: 'Hello' } }] })));
+    finish(safe());
     await first;
   });
   it('caps total context while allowing normal follow-up turns', () => {

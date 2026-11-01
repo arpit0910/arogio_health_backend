@@ -7,6 +7,7 @@ const articleFields = [
   'content_en',
   'content_hi',
   'category',
+  'image_url',
   'author_name',
 ];
 const bankFields = [
@@ -63,6 +64,7 @@ async function directoryPage(kind, current = 1, term = '') {
     submit,
     button(articles ? 'Create article' : 'Add blood bank', () => directoryEditor(kind)),
   );
+  if (articles) tools.append(button('Manage categories', () => categoryManager()));
   section.append(tools);
   content.append(section);
   const uploader = panel('Import Excel or CSV'),
@@ -104,7 +106,13 @@ async function directoryPage(kind, current = 1, term = '') {
             `${data.totalRows} records · ${data.creates} new · ${data.updates} updates · ${data.errorCount} errors`,
           ),
         );
-        if (articles) review.append(el('p', `${data.publishedRows} articles will be published.`));
+        if (articles)
+          review.append(
+            el(
+              'p',
+              `${data.publishedRows} articles will be published across ${data.categoryCount} categories. ${data.thumbnailFallbacks} will use their category thumbnail. Existing custom images are kept when the import has no image URL.`,
+            ),
+          );
         else
           review.append(
             el(
@@ -149,7 +157,7 @@ async function directoryPage(kind, current = 1, term = '') {
   uploader.append(
     el(
       'p',
-      'Upload .xlsx or UTF-8 CSV using the original export headers. Excel needs one worksheet with plain values. Matching export IDs update existing records. An invalid file imports nothing.',
+      'Upload .xlsx or UTF-8 CSV with plain values. Article workbooks may include Articles, Categories and Read Me sheets. Optional image_url columns accept HTTPS images; empty values use topic thumbnails. Matching export IDs update existing records. An invalid file imports nothing.',
     ),
     file,
     preview,
@@ -165,7 +173,7 @@ async function directoryPage(kind, current = 1, term = '') {
   section.append(
     table(
       articles
-        ? ['Title', 'Category', 'Status', 'Updated', 'Actions']
+        ? ['Thumbnail', 'Title', 'Category', 'Status', 'Updated', 'Actions']
         : ['Name', 'City', 'Coordinates', 'Status', 'Actions'],
       data.items.map((row) => {
         const actions = el('div', null, 'actions');
@@ -185,6 +193,7 @@ async function directoryPage(kind, current = 1, term = '') {
         );
         return articles
           ? [
+              articleThumbnail(row.thumbnail_url, row.title_en),
               row.title_en,
               row.category,
               row.is_published ? 'Published' : 'Draft',
@@ -247,7 +256,86 @@ async function directoryEditor(kind, id) {
       await directoryPage(kind);
     },
     articles
-      ? 'English content is required. Hindi is optional. Publish to make this article visible in the app.'
+      ? 'English content is required. Hindi is optional. Enter an existing category or a new name. Image URL must use HTTPS; leave it empty to use the category thumbnail. Publish to make this article visible in the app.'
       : 'Enter both coordinates or leave both empty. Listed blood groups are not live stock. Separate groups with semicolons, for example A+;O-.',
+  );
+}
+function articleThumbnail(url, title) {
+  const image = el('img');
+  image.src = url;
+  image.alt = title;
+  image.loading = 'lazy';
+  image.referrerPolicy = 'no-referrer';
+  image.width = 96;
+  image.height = 64;
+  image.style.objectFit = 'cover';
+  image.style.borderRadius = '8px';
+  image.addEventListener(
+    'error',
+    () => {
+      image.src = '/admin-assets/article-thumbnails/wellbeing.jpg';
+    },
+    { once: true },
+  );
+  return image;
+}
+async function categoryManager() {
+  reset('Article categories');
+  const rev = requestRevision,
+    section = panel('Classify your library');
+  section.append(
+    el(
+      'p',
+      'Each article belongs to one category. Category thumbnails also cover articles without a custom image. Category names are stable; update the Hindi name, description or thumbnail below.',
+    ),
+  );
+  const actions = el('div', null, 'toolbar');
+  actions.append(
+    button('Add category', () => categoryEditor()),
+    button('View articles', () => directoryPage('articles')),
+  );
+  section.append(actions);
+  content.append(section);
+  const rows = await api('/admin/content/article-categories');
+  if (rev !== requestRevision) return;
+  section.append(
+    table(
+      ['Thumbnail', 'Category', 'Hindi name', 'Articles', 'Actions'],
+      rows.map((row) => [
+        articleThumbnail(row.image_url, row.name),
+        row.name,
+        row.name_hi || '—',
+        String(row.count),
+        button('Edit', () => categoryEditor(row)),
+      ]),
+    ),
+  );
+  if (!rows.length)
+    section.append(el('p', 'Add a category or import the article workbook to begin.'));
+}
+function categoryEditor(row) {
+  const name = field('name', 'Category name (English)', row?.name || '', 'text');
+  if (row) name.querySelector('input').readOnly = true;
+  openEditor(
+    row ? 'Edit category' : 'Add category',
+    [
+      name,
+      field('name_hi', 'Category name (Hindi)', row?.name_hi || '', 'text'),
+      field('description', 'Description', row?.description || '', 'textarea'),
+      field('image_url', 'Thumbnail HTTPS URL', row?.custom_image_url || '', 'text'),
+    ],
+    async (form) => {
+      await send(
+        '/admin/content/article-categories',
+        Object.fromEntries(
+          ['name', 'name_hi', 'description', 'image_url'].map((key) => [
+            key,
+            String(form.get(key) || '').trim(),
+          ]),
+        ),
+      );
+      await categoryManager();
+    },
+    'Leave the image URL empty to use the bundled topic photograph. Custom images must be publicly accessible HTTPS URLs.',
   );
 }

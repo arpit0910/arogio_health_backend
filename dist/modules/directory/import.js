@@ -17,6 +17,7 @@ exports.articleHeaders = [
     'is_published',
     'created_at',
     'updated_at',
+    'image_url',
 ];
 exports.bankHeaders = [
     'id',
@@ -63,7 +64,7 @@ function timestamp(value) {
 function prepareImport(kind, buffer) {
     const rows = (0, csv_1.parseCsv)(buffer), expected = kind === 'articles' ? exports.articleHeaders : exports.bankHeaders;
     const headers = Object.keys(rows[0]);
-    const missing = expected.filter((key) => !headers.includes(key)), unknown = headers.filter((key) => !expected.includes(key));
+    const missing = expected.filter((key) => key !== 'image_url' && !headers.includes(key)), unknown = headers.filter((key) => !expected.includes(key));
     if (missing.length || unknown.length)
         throw new Error(`Import headers do not match. Missing: ${missing.join(', ') || 'none'}. Unknown: ${unknown.join(', ') || 'none'}.`);
     const articles = [], banks = [], errors = [], seen = new Set();

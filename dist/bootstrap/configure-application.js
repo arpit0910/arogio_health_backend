@@ -18,7 +18,7 @@ function configureApplication(app) {
     const config = app.get(config_1.ConfigService);
     app.useLogger(app.get(nestjs_pino_1.Logger));
     app.enableShutdownHooks();
-    app.use((0, helmet_1.default)());
+    app.use((0, helmet_1.default)({ contentSecurityPolicy: { directives: { imgSrc: ["'self'", 'data:', 'https:'] } } }));
     app.use(app.get(request_activity_service_1.RequestActivityService).middleware);
     app.useStaticAssets((0, node_path_1.join)(__dirname, '..', 'modules', 'admin', 'public'), {
         prefix: '/admin-assets/',

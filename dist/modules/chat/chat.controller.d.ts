@@ -8,6 +8,15 @@ export declare class ChatController {
             role: "assistant";
             content: string;
         };
+        kind: "medication" | "urgent" | "harmful" | "off_topic";
+        createdAt: string;
+        savedHealthIncluded: boolean;
+    } | {
+        message: {
+            role: "assistant";
+            content: string;
+        };
+        kind: "answer";
         createdAt: string;
         savedHealthIncluded: boolean;
     }>;

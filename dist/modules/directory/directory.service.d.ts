@@ -6,7 +6,7 @@ export declare class DirectoryService {
     private parse;
     kind(value: string): DirectoryKind;
     listArticles(query: unknown, admin?: boolean): Promise<{
-        items: {
+        items: ({
             id: string;
             source_id: string;
             title_en: string;
@@ -14,14 +14,39 @@ export declare class DirectoryService {
             excerpt_en: string;
             excerpt_hi: string;
             category: string;
+            image_url: string;
             author_name: string;
             is_published: boolean;
             created_at: Date;
             updated_at: Date;
-        }[];
+        } & {
+            thumbnail_url: string;
+            category_hi: string;
+        })[];
         page: number;
         hasNext: boolean;
         categories: string[];
+        categoryDetails: {
+            count: number;
+            custom_image_url?: string | undefined;
+            name: string;
+            name_hi: string;
+            description: string;
+            image_url: string;
+        }[];
+        total: number;
+    }>;
+    private withThumbnail;
+    categories(admin?: boolean): Promise<{
+        count: number;
+        custom_image_url?: string | undefined;
+        name: string;
+        name_hi: string;
+        description: string;
+        image_url: string;
+    }[]>;
+    saveCategory(body: unknown): Promise<{
+        saved: boolean;
     }>;
     article(id: string, admin?: boolean): Promise<{
         id: string;
@@ -33,10 +58,14 @@ export declare class DirectoryService {
         content_en: string;
         content_hi: string;
         category: string;
+        image_url: string;
         author_name: string;
         is_published: boolean;
         created_at: Date;
         updated_at: Date;
+    } & {
+        thumbnail_url: string;
+        category_hi: string;
     }>;
     private bankFilters;
     listBanks(query: unknown, admin?: boolean): Promise<{
@@ -111,7 +140,7 @@ export declare class DirectoryService {
         distanceType: string;
     }>;
     adminList(kind: DirectoryKind, query: unknown): Promise<{
-        items: {
+        items: ({
             id: string;
             source_id: string;
             title_en: string;
@@ -119,14 +148,27 @@ export declare class DirectoryService {
             excerpt_en: string;
             excerpt_hi: string;
             category: string;
+            image_url: string;
             author_name: string;
             is_published: boolean;
             created_at: Date;
             updated_at: Date;
-        }[];
+        } & {
+            thumbnail_url: string;
+            category_hi: string;
+        })[];
         page: number;
         hasNext: boolean;
         categories: string[];
+        categoryDetails: {
+            count: number;
+            custom_image_url?: string | undefined;
+            name: string;
+            name_hi: string;
+            description: string;
+            image_url: string;
+        }[];
+        total: number;
     } | {
         items: {
             id: string;
@@ -200,6 +242,7 @@ export declare class DirectoryService {
         content_en: string;
         content_hi: string;
         category: string;
+        image_url: string;
         author_name: string;
         is_published: boolean;
         created_at: Date;
@@ -248,6 +291,8 @@ export declare class DirectoryService {
         creates: number;
         updates: number;
         publishedRows: number;
+        categoryCount: number;
+        thumbnailFallbacks: number;
         missingCoordinates: number;
         sample: {
             source_id: string;
@@ -256,6 +301,7 @@ export declare class DirectoryService {
     }>;
     import(kind: DirectoryKind, file?: Express.Multer.File): Promise<{
         imported: number;
+        categories: number;
         missingCoordinates: number;
     }>;
 }

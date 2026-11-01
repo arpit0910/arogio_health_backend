@@ -1,9 +1,33 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.nearbyInput = exports.listInput = exports.bankInput = exports.articleInput = exports.bloodGroups = void 0;
+exports.nearbyInput = exports.listInput = exports.bankInput = exports.articleInput = exports.categoryInput = exports.thumbnailInput = exports.bloodGroups = void 0;
 const zod_1 = require("zod");
 exports.bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 const line = zod_1.z.string().trim().max(300), optional = zod_1.z.string().trim().max(1000).nullable().default(null);
+exports.thumbnailInput = zod_1.z
+    .string()
+    .trim()
+    .max(2000)
+    .refine((value) => {
+    if (!value)
+        return true;
+    try {
+        const url = new URL(value);
+        return url.protocol === 'https:' && !url.username && !url.password;
+    }
+    catch {
+        return false;
+    }
+}, 'Use a full HTTPS image URL, or leave empty for the topic image.')
+    .default('');
+exports.categoryInput = zod_1.z
+    .object({
+    name: line.min(1),
+    name_hi: line.default(''),
+    description: zod_1.z.string().trim().max(2000).default(''),
+    image_url: exports.thumbnailInput,
+})
+    .strict();
 exports.articleInput = zod_1.z
     .object({
     title_en: line.min(1),
@@ -13,6 +37,7 @@ exports.articleInput = zod_1.z
     content_en: zod_1.z.string().trim().min(1).max(100000),
     content_hi: zod_1.z.string().trim().max(100000).default(''),
     category: line.min(1),
+    image_url: exports.thumbnailInput,
     author_name: line.default(''),
     is_published: zod_1.z.boolean().default(false),
 })
@@ -62,6 +87,8 @@ exports.listInput = zod_1.z
     limit: zod_1.z.coerce.number().int().min(1).max(100).default(25),
     search: zod_1.z.string().trim().max(150).default(''),
     category: zod_1.z.string().trim().max(300).optional(),
+    sort: zod_1.z.enum(['newest', 'oldest', 'title_asc', 'title_desc']).default('newest'),
+    language: zod_1.z.enum(['en', 'hi']).default('en'),
     bloodGroup: zod_1.z.enum(exports.bloodGroups).optional(),
     only24h: zod_1.z.enum(['true', 'false']).optional(),
 })

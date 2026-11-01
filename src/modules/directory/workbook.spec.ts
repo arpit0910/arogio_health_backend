@@ -1,10 +1,42 @@
 import { Workbook } from 'exceljs';
-import { workbookToCsv } from './workbook';
+import { readDirectoryWorkbook, workbookToCsv } from './workbook';
+import { readFile } from 'node:fs/promises';
 import { prepareImport, articleHeaders, bankHeaders } from './import';
 async function bytes(workbook: Workbook) {
   return Buffer.from(await workbook.xlsx.writeBuffer());
 }
 describe('Excel directory imports', () => {
+  it('reads the supplied prefixed-XML workbook without changing its articles or dates', async () => {
+    const file = await readFile('imports/Arogio_Final_Health_Articles_284.xlsx');
+    const result = await readDirectoryWorkbook(file, 'articles');
+    const parsed = prepareImport('articles', result.csv);
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.articles).toHaveLength(284);
+    expect(result.categories).toHaveLength(17);
+    expect(parsed.articles[0]).toMatchObject({
+      source_id: '1',
+      category: 'Yoga & Breathing',
+      title_en: 'Gentle Yoga for PCOS',
+    });
+    expect(parsed.articles[0]!.created_at.toISOString()).toBe('2026-04-01T09:00:00.000Z');
+    expect(result.categories.find((row) => row.name === 'Food & Nutrition')?.name_hi).toBeTruthy();
+  });
+  it('rejects formulas in category metadata and unexpected extra worksheets', async () => {
+    const workbook = new Workbook();
+    const articles = workbook.addWorksheet('Articles');
+    articles.addRow(articleHeaders);
+    const categories = workbook.addWorksheet('Categories');
+    categories.addRow(['Category', 'Category (Hindi)', 'Articles', 'Description']);
+    categories.addRow(['Care', '', 1, { formula: '1+1', result: 2 }]);
+    await expect(readDirectoryWorkbook(await bytes(workbook), 'articles')).rejects.toThrow(
+      'plain values',
+    );
+    categories.getCell('D2').value = 'Care';
+    workbook.addWorksheet('Unexpected').addRow(['not data']);
+    await expect(readDirectoryWorkbook(await bytes(workbook), 'articles')).rejects.toThrow(
+      'Articles, Categories',
+    );
+  });
   it('uses the CSV validation rules and preserves bilingual text, text contacts, dates and boolean cells', async () => {
     const workbook = new Workbook(),
       sheet = workbook.addWorksheet('Articles');
