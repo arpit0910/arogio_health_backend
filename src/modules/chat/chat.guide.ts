@@ -14,7 +14,7 @@ export function appHelp(question: string, hindi: boolean): string | null {
   if (/saved health|record access|nvidia|privacy|सहेजे.*रिकॉर्ड|गोपनीयता/.test(q))
     return hindi
       ? 'जीवा में सहेजे स्वास्थ्य रिकॉर्ड का उपयोग डिफ़ॉल्ट रूप से बंद है। ऊपर रिकॉर्ड वाले विकल्प को खोलकर Use saved health records चालू कर सकते हैं। इससे प्रोफ़ाइल, गतिविधि, पानी, दवा और माहवारी के सारांश NVIDIA को भेजे जाते हैं; फ़ोन पर ही मौजूद रीडिंग शामिल नहीं होतीं। अनुमति बदलने पर नई बातचीत शुरू होती है। केवल सामान्य सवाल पूछने के लिए रिकॉर्ड चालू करना आवश्यक नहीं है।'
-      : 'Saved health records are off by default in Jeeva. Open the record-access row above the conversation to enable Use saved health records. That sends saved profile, activity, water, medicine and cycle summaries to NVIDIA; device-only readings are excluded. Changing access starts a new chat. You can ask general questions with records off.';
+      : 'Saved health records are off by default in Jeeva. Open the record-access row above the conversation to enable Use saved health records. That sends saved profile, activity, water, medicine and cycle summaries to the AI service; device-only readings are excluded. Changing access starts a new chat. You can ask general questions with records off.';
   if (/delete.*account|deactivate|खाता.*हटा/.test(q))
     return hindi
       ? 'Profile में Delete account खोलें। शर्तें पढ़कर पुष्टि करें। इससे खाता निष्क्रिय होता है और आप साइन आउट हो जाते हैं। मूल जानकारी और सहेजे रिकॉर्ड तुरंत स्थायी रूप से मिटते नहीं हैं। 30 दिनों के भीतर साइन इन करने पर खाता बहाल किया जा सकता है। मैं यह कार्रवाई आपके लिए नहीं कर सकती।'

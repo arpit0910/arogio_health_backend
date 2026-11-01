@@ -89,7 +89,7 @@ export const listInput = z
     limit: z.coerce.number().int().min(1).max(100).default(25),
     search: z.string().trim().max(150).default(''),
     category: z.string().trim().max(300).optional(),
-    sort: z.enum(['newest', 'oldest', 'title_asc', 'title_desc']).default('newest'),
+    sort: z.enum(['newest', 'oldest', 'title_asc', 'title_desc', 'random']).default('newest'),
     language: z.enum(['en', 'hi']).default('en'),
     bloodGroup: z.enum(bloodGroups).optional(),
     only24h: z.enum(['true', 'false']).optional(),

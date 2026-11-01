@@ -77,13 +77,15 @@ export class DirectoryService {
         ? sql`coalesce(nullif(${articles.title_hi}, ''), ${articles.title_en})`
         : articles.title_en;
     const order =
-      q.sort === 'oldest'
-        ? asc(articles.created_at)
-        : q.sort === 'title_asc'
-          ? asc(title)
-          : q.sort === 'title_desc'
-            ? desc(title)
-            : desc(articles.created_at);
+      q.sort === 'random'
+        ? sql`random()`
+        : q.sort === 'oldest'
+          ? asc(articles.created_at)
+          : q.sort === 'title_asc'
+            ? asc(title)
+            : q.sort === 'title_desc'
+              ? desc(title)
+              : desc(articles.created_at);
     const [items, categories, total] = await Promise.all([
       this.database.db
         .select(articleSummary)
