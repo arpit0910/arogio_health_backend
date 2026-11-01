@@ -4,11 +4,13 @@ The admin portal has Articles and Blood banks sections. Each supports search, pa
 
 ## Upload the supplied exports
 
-1. Open the appropriate section in `/admin` and choose the original UTF-8 CSV under **Import CSV**.
+1. Open the appropriate section in `/admin` and choose an Excel `.xlsx` workbook or the original UTF-8 CSV under **Import Excel or CSV**. **Download Excel template** provides the correct headers and text-formatted columns.
 2. Choose **Preview import**. Review row errors, new/update counts, publication status and missing coordinates.
 3. Choose **Import records**. A file with any invalid row writes nothing. The import is a database transaction.
 
 Keep the supplied header names. Maximum size is 8 MB and 5,000 records. Export IDs are retained as separate source IDs: importing the same IDs updates records without duplicating their app IDs. Omitted records are not deleted. Bank visibility changes made in admin survive repeat CSV imports. Article publication follows the CSV's `is_published` column.
+
+Excel requires exactly one populated visible worksheet, with headers in row 1. Use plain values: formulas (including cached formula results), hyperlinks, cell errors, macros and merged cells are rejected. Keep phone numbers, pincodes and country codes as text to preserve leading zeroes and `+`. Excel dates and boolean cells are accepted. Save legacy `.xls` files as `.xlsx` first. The archive is streamed and checked before parsing, with a 32 MB expanded limit. Excel uses the same field validation, repeat-import logic and all-or-nothing transaction as CSV.
 
 Boolean fields accept `1`/`0` or `true`/`false`. Blood groups use semicolons. Empty or `Not Available` contact/coordinate fields become null. Bare website hostnames gain `https://`; non-HTTP website schemes are rejected. Literal escaped newlines in article bodies become paragraphs. SQL dates without a timezone are interpreted as UTC; the portal displays dates in India time. Content is rendered as plain text, never HTML or executable instructions.
 
@@ -35,6 +37,7 @@ All routes use the `/api/v1` prefix and require the existing bearer session.
 | `POST /blood-banks/nearby` | JSON latitude/longitude, optional radiusKm, bloodGroup, only24h, page, limit; sorted distanceKm |
 | `GET /admin/content/:kind` | Admin list including drafts/hidden banks |
 | `GET /admin/content/:kind/:id` | Full editable record |
+| `GET /admin/content/:kind/template` | Download an Excel import template (super-admin only) |
 | `POST /admin/content/:kind` | Create |
 | `PATCH /admin/content/:kind/:id` | Save complete editable fields, excluding generated IDs/timestamps |
 | `DELETE /admin/content/:kind/:id` | Delete |

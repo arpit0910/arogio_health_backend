@@ -255,3 +255,11 @@ Before public release:
 | `npm run db:generate`  | Generate reviewed migrations from schema changes       |
 | `npm run db:check`     | Check migration consistency                            |
 | `npm run db:migrate`   | Apply committed migrations                             |
+
+## Admin login
+
+Set `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD` (16?128 characters), and `SUPER_ADMIN_NAME` in your private environment file.
+
+For the local embedded database, run `npm run start:local -- --seed-admin`, then open http://localhost:3001/admin. Credentials are read from `.env.local`.
+
+For production, configure these values in `.env.production`, run `npm run build` and `npm run seed:super-admin:production`, then open `/admin` on the backend host. The seeder creates a dedicated super-admin account; rerunning it never resets an existing account password. Setting environment values alone does not create the account.
