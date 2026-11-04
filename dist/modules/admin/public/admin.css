@@ -291,6 +291,47 @@ header p {
 .table-wrap {
   overflow: auto;
 }
+.meditation-library {
+  min-width: 0;
+  max-width: 100%;
+}
+.meditation-library .toolbar input {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.meditation-library .toolbar select {
+  flex: 0 1 200px;
+  width: auto;
+}
+.meditation-library table {
+  min-width: 760px;
+}
+.meditation-library td {
+  overflow-wrap: normal;
+}
+.meditation-library .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.meditation-library .actions a {
+  color: #126349;
+  padding: 8px 4px;
+}
+.meditation-table-hint {
+  display: none;
+}
+@media (max-width: 720px) {
+  .meditation-library .toolbar input,
+  .meditation-library .toolbar select {
+    flex-basis: 100%;
+    max-width: 100%;
+  }
+  .meditation-table-hint {
+    display: block;
+  }
+}
 table {
   border-collapse: collapse;
   width: 100%;

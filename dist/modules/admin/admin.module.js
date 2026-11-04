@@ -8,6 +8,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminModule = void 0;
 const directory_module_1 = require("../directory/directory.module");
+const meditation_module_1 = require("../meditation/meditation.module");
+const meditation_admin_controller_1 = require("./meditation-admin.controller");
 const directory_admin_controller_1 = require("./directory-admin.controller");
 const common_1 = require("@nestjs/common");
 const auth_module_1 = require("../auth/auth.module");
@@ -22,8 +24,8 @@ let AdminModule = class AdminModule {
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
-        imports: [directory_module_1.DirectoryModule, auth_module_1.AuthModule, users_module_1.UsersModule, wellness_module_1.WellnessModule],
-        controllers: [admin_controller_1.AdminController, directory_admin_controller_1.DirectoryAdminController],
+        imports: [meditation_module_1.MeditationModule, directory_module_1.DirectoryModule, auth_module_1.AuthModule, users_module_1.UsersModule, wellness_module_1.WellnessModule],
+        controllers: [admin_controller_1.AdminController, directory_admin_controller_1.DirectoryAdminController, meditation_admin_controller_1.MeditationAdminController],
         providers: [admin_guard_1.SuperAdminGuard, admin_service_1.AdminService, password_service_1.PasswordService],
     })
 ], AdminModule);

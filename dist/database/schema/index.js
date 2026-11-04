@@ -20,4 +20,5 @@ __exportStar(require("./users.schema"), exports);
 __exportStar(require("./wellness.schema"), exports);
 __exportStar(require("./content.schema"), exports);
 __exportStar(require("./directory.schema"), exports);
+__exportStar(require("./meditation.schema"), exports);
 //# sourceMappingURL=index.js.map

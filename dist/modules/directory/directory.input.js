@@ -87,7 +87,7 @@ exports.listInput = zod_1.z
     limit: zod_1.z.coerce.number().int().min(1).max(100).default(25),
     search: zod_1.z.string().trim().max(150).default(''),
     category: zod_1.z.string().trim().max(300).optional(),
-    sort: zod_1.z.enum(['newest', 'oldest', 'title_asc', 'title_desc']).default('newest'),
+    sort: zod_1.z.enum(['newest', 'oldest', 'title_asc', 'title_desc', 'random']).default('newest'),
     language: zod_1.z.enum(['en', 'hi']).default('en'),
     bloodGroup: zod_1.z.enum(exports.bloodGroups).optional(),
     only24h: zod_1.z.enum(['true', 'false']).optional(),

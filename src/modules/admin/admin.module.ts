@@ -1,4 +1,6 @@
 import { DirectoryModule } from '../directory/directory.module';
+import { MeditationModule } from '../meditation/meditation.module';
+import { MeditationAdminController } from './meditation-admin.controller';
 import { DirectoryAdminController } from './directory-admin.controller';
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
@@ -9,8 +11,8 @@ import { AdminController } from './admin.controller';
 import { SuperAdminGuard } from './admin.guard';
 import { AdminService } from './admin.service';
 @Module({
-  imports: [DirectoryModule, AuthModule, UsersModule, WellnessModule],
-  controllers: [AdminController, DirectoryAdminController],
+  imports: [MeditationModule, DirectoryModule, AuthModule, UsersModule, WellnessModule],
+  controllers: [AdminController, DirectoryAdminController, MeditationAdminController],
   providers: [SuperAdminGuard, AdminService, PasswordService],
 })
 export class AdminModule {}

@@ -4,3 +4,4 @@ export * from './users.schema';
 export * from './wellness.schema';
 export * from './content.schema';
 export * from './directory.schema';
+export * from './meditation.schema';

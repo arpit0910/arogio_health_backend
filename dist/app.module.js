@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const directory_module_1 = require("./modules/directory/directory.module");
+const meditation_module_1 = require("./modules/meditation/meditation.module");
 const admin_module_1 = require("./modules/admin/admin.module");
 const home_module_1 = require("./modules/home/home.module");
 const chat_module_1 = require("./modules/chat/chat.module");
@@ -46,6 +47,7 @@ exports.AppModule = AppModule = __decorate([
             throttler_1.ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
             database_module_1.DatabaseModule,
             admin_module_1.AdminModule,
+            meditation_module_1.MeditationModule,
             directory_module_1.DirectoryModule,
             home_module_1.HomeModule,
             chat_module_1.ChatModule,

@@ -58,13 +58,15 @@ let DirectoryService = class DirectoryService {
         const title = q.language === 'hi'
             ? (0, drizzle_orm_1.sql) `coalesce(nullif(${schema_1.articles.title_hi}, ''), ${schema_1.articles.title_en})`
             : schema_1.articles.title_en;
-        const order = q.sort === 'oldest'
-            ? (0, drizzle_orm_1.asc)(schema_1.articles.created_at)
-            : q.sort === 'title_asc'
-                ? (0, drizzle_orm_1.asc)(title)
-                : q.sort === 'title_desc'
-                    ? (0, drizzle_orm_1.desc)(title)
-                    : (0, drizzle_orm_1.desc)(schema_1.articles.created_at);
+        const order = q.sort === 'random'
+            ? (0, drizzle_orm_1.sql) `random()`
+            : q.sort === 'oldest'
+                ? (0, drizzle_orm_1.asc)(schema_1.articles.created_at)
+                : q.sort === 'title_asc'
+                    ? (0, drizzle_orm_1.asc)(title)
+                    : q.sort === 'title_desc'
+                        ? (0, drizzle_orm_1.desc)(title)
+                        : (0, drizzle_orm_1.desc)(schema_1.articles.created_at);
         const [items, categories, total] = await Promise.all([
             this.database.db
                 .select(articleSummary)

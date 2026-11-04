@@ -31,6 +31,8 @@ After deployment, visit the backend origin followed by `/admin` and sign in with
 
 ## Portal functions
 
+The portal also includes **Meditation** for managing published/draft YouTube videos and guided timed practices, including bilingual text, section/order, preparation, steps and repeats. See [MEDITATION_MODULE.md](MEDITATION_MODULE.md) for editor behavior, API routes, migration `0013_meditation_content.sql` and deployment steps.
+
 - **Overview:** total/active/completed/referred/soft-deleted account counts, 7/30-day registrations, daily registration series, saved care counts, recent accounts and referral leaders. These are database aggregates, not medical or device analytics.
 - **People:** paginated name/email search, create normal accounts, view profiles and saved tracking, edit supported profile fields, disable/restore/soft-delete normal accounts. Existing sessions are revoked on status actions. Disabling an already soft-deleted account preserves its deletion dates; repeated soft deletion preserves the recovery deadline.
 - **Tracking:** structured forms for activity totals/targets, water plans/logs, medicines/doses, cycle settings/check-ins and period dates. Existing activity entries can be edited; blank target values remove targets. Individual records and category tracking data have explicit destructive actions. Account soft deletion retains records; category deletion permanently removes that category.

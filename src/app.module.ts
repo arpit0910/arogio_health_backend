@@ -1,4 +1,5 @@
 import { DirectoryModule } from './modules/directory/directory.module';
+import { MeditationModule } from './modules/meditation/meditation.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { HomeModule } from './modules/home/home.module';
 import { ChatModule } from './modules/chat/chat.module';
@@ -35,6 +36,7 @@ import { WellnessModule } from './modules/wellness/wellness.module';
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     DatabaseModule,
     AdminModule,
+    MeditationModule,
     DirectoryModule,
     HomeModule,
     ChatModule,

@@ -1,0 +1,291 @@
+{
+  "items": [
+    {
+      "id": "8e0bc1a0-6ce8-4000-8000-000000000001",
+      "kind": "practice",
+      "section": "breathing",
+      "title_en": "Gentle breathing",
+      "title_hi": "सहज साँसों का अभ्यास",
+      "description_en": "2 minutes · Follow an easy breathing rhythm",
+      "description_hi": "2 मिनट · साँसों की सहज लय अपनाएँ",
+      "preparation_en": "Sit with your back supported. Use the count only if it feels comfortable; keep your breath gentle and do not hold it.",
+      "preparation_hi": "पीठ को सहारा देकर बैठें। गिनती तभी अपनाएँ जब सहज लगे; आराम से साँस लें और साँस न रोकें।",
+      "author": "",
+      "video_id": null,
+      "duration_seconds": 120,
+      "steps": [
+        {
+          "seconds": 4,
+          "title_en": "Breathe in",
+          "title_hi": "साँस अंदर लें",
+          "instruction_en": "Breathe in gently through your nose. Let your belly move naturally.",
+          "instruction_hi": "नाक से धीरे साँस लें। पेट को स्वाभाविक रूप से हिलने दें।"
+        },
+        {
+          "seconds": 4,
+          "title_en": "Breathe out",
+          "title_hi": "साँस बाहर छोड़ें",
+          "instruction_en": "Let your breath flow out gently through your mouth. Do not force it.",
+          "instruction_hi": "मुँह से धीरे साँस बाहर छोड़ें। ज़ोर न लगाएँ।"
+        }
+      ],
+      "repeat": 15,
+      "published": true,
+      "sort_order": 0,
+      "created_by": null,
+      "created_at": "2026-11-04T01:43:53.311Z",
+      "updated_at": "2026-11-04T01:43:53.311Z",
+      "videoId": null,
+      "durationSeconds": 120,
+      "sortOrder": 0,
+      "updatedAt": "2026-11-04T01:43:53.311Z",
+      "createdAt": "2026-11-04T01:43:53.311Z",
+      "createdBy": null,
+      "youtubeUrl": ""
+    },
+    {
+      "id": "8e0bc1a0-6ce8-4000-8000-000000000002",
+      "kind": "practice",
+      "section": "meditation",
+      "title_en": "Breath awareness",
+      "title_hi": "साँसों पर ध्यान",
+      "description_en": "3 minutes · Notice your natural breath",
+      "description_hi": "3 मिनट · अपनी स्वाभाविक साँसों को महसूस करें",
+      "preparation_en": "Sit comfortably with your eyes open or softly closed. There is no need to change your breathing.",
+      "preparation_hi": "आराम से बैठें। आँखें खुली रखें या हल्के से बंद करें। साँस लेने का तरीका बदलने की ज़रूरत नहीं है।",
+      "author": "",
+      "video_id": null,
+      "duration_seconds": 180,
+      "steps": [
+        {
+          "seconds": 30,
+          "title_en": "Settle in",
+          "title_hi": "आराम से बैठें",
+          "instruction_en": "Feel the support of the chair and the contact of your feet with the floor.",
+          "instruction_hi": "कुर्सी का सहारा और ज़मीन पर पैरों का स्पर्श महसूस करें।"
+        },
+        {
+          "seconds": 60,
+          "title_en": "Notice your breath",
+          "title_hi": "साँसों को महसूस करें",
+          "instruction_en": "Notice where you feel each natural breath: your nose, chest or belly.",
+          "instruction_hi": "ध्यान दें कि हर साँस नाक, छाती या पेट में कहाँ महसूस होती है।"
+        },
+        {
+          "seconds": 60,
+          "title_en": "Return gently",
+          "title_hi": "धीरे से ध्यान वापस लाएँ",
+          "instruction_en": "When your mind wanders, notice it without judging and return to the next breath.",
+          "instruction_hi": "मन भटके तो खुद को दोष दिए बिना अगली साँस पर ध्यान वापस लाएँ।"
+        },
+        {
+          "seconds": 30,
+          "title_en": "Take your time",
+          "title_hi": "अपना समय लें",
+          "instruction_en": "Notice the room around you. Move your hands and feet when you are ready.",
+          "instruction_hi": "अपने आस-पास के कमरे पर ध्यान दें। तैयार होने पर हाथ-पैर हिलाएँ।"
+        }
+      ],
+      "repeat": 1,
+      "published": true,
+      "sort_order": 1,
+      "created_by": null,
+      "created_at": "2026-11-04T01:43:53.311Z",
+      "updated_at": "2026-11-04T01:43:53.311Z",
+      "videoId": null,
+      "durationSeconds": 180,
+      "sortOrder": 1,
+      "updatedAt": "2026-11-04T01:43:53.311Z",
+      "createdAt": "2026-11-04T01:43:53.311Z",
+      "createdBy": null,
+      "youtubeUrl": ""
+    },
+    {
+      "id": "8e0bc1a0-6ce8-4000-8000-000000000003",
+      "kind": "practice",
+      "section": "meditation",
+      "title_en": "Body scan",
+      "title_hi": "शरीर पर ध्यान",
+      "description_en": "5 minutes · Explore how your body feels",
+      "description_hi": "5 मिनट · शरीर की संवेदनाओं को महसूस करें",
+      "preparation_en": "Sit or lie somewhere supported. Notice sensations without trying to change them. Skip any area you prefer.",
+      "preparation_hi": "सहारा लेकर बैठें या लेटें। संवेदनाओं को बदलने की कोशिश किए बिना महसूस करें। चाहें तो किसी हिस्से को छोड़ दें।",
+      "author": "",
+      "video_id": null,
+      "duration_seconds": 300,
+      "steps": [
+        {
+          "seconds": 30,
+          "title_en": "Arrive",
+          "title_hi": "वर्तमान में आएँ",
+          "instruction_en": "Feel the surface beneath you. Let your breathing find its own rhythm.",
+          "instruction_hi": "अपने नीचे की सतह महसूस करें। साँसों को अपनी सहज लय में चलने दें।"
+        },
+        {
+          "seconds": 60,
+          "title_en": "Feet and legs",
+          "title_hi": "पैर और टाँगें",
+          "instruction_en": "Notice your toes, feet and legs. You may feel warmth, pressure or very little at all.",
+          "instruction_hi": "पैरों की उँगलियों, पैरों और टाँगों पर ध्यान दें। गर्माहट, दबाव या बहुत कम संवेदना भी हो सकती है।"
+        },
+        {
+          "seconds": 60,
+          "title_en": "Belly and back",
+          "title_hi": "पेट और पीठ",
+          "instruction_en": "Bring attention to your belly and back. Notice contact and the movement of breathing.",
+          "instruction_hi": "पेट और पीठ पर ध्यान लाएँ। स्पर्श और साँसों की हलचल महसूस करें।"
+        },
+        {
+          "seconds": 60,
+          "title_en": "Hands and shoulders",
+          "title_hi": "हाथ और कंधे",
+          "instruction_en": "Notice your fingers, arms and shoulders. Let them rest in a comfortable position.",
+          "instruction_hi": "उँगलियों, बाँहों और कंधों पर ध्यान दें। इन्हें आरामदायक स्थिति में रहने दें।"
+        },
+        {
+          "seconds": 60,
+          "title_en": "Face and jaw",
+          "title_hi": "चेहरा और जबड़ा",
+          "instruction_en": "Notice your forehead, eyes and jaw. Allow space for whatever you feel.",
+          "instruction_hi": "माथे, आँखों और जबड़े पर ध्यान दें। जो भी महसूस हो, उसे रहने दें।"
+        },
+        {
+          "seconds": 30,
+          "title_en": "Return to the room",
+          "title_hi": "आस-पास पर ध्यान लाएँ",
+          "instruction_en": "Feel your whole body supported. Look around and move gently when ready.",
+          "instruction_hi": "पूरे शरीर को मिले सहारे को महसूस करें। तैयार होने पर आस-पास देखें और धीरे हिलें।"
+        }
+      ],
+      "repeat": 1,
+      "published": true,
+      "sort_order": 2,
+      "created_by": null,
+      "created_at": "2026-11-04T01:43:53.311Z",
+      "updated_at": "2026-11-04T01:43:53.311Z",
+      "videoId": null,
+      "durationSeconds": 300,
+      "sortOrder": 2,
+      "updatedAt": "2026-11-04T01:43:53.311Z",
+      "createdAt": "2026-11-04T01:43:53.311Z",
+      "createdBy": null,
+      "youtubeUrl": ""
+    },
+    {
+      "id": "8e0bc1a0-6ce8-4000-8000-000000000004",
+      "kind": "practice",
+      "section": "grounding",
+      "title_en": "Sense your surroundings",
+      "title_hi": "आस-पास को महसूस करें",
+      "description_en": "2 minutes · Bring attention to the present",
+      "description_hi": "2 मिनट · वर्तमान पर ध्यान लाएँ",
+      "preparation_en": "Keep your eyes open in a comfortable, safe place. Use whichever senses are available to you.",
+      "preparation_hi": "आरामदायक, सुरक्षित जगह पर आँखें खुली रखें। जो इंद्रियाँ आपके लिए उपलब्ध हैं, उनका उपयोग करें।",
+      "author": "",
+      "video_id": null,
+      "duration_seconds": 120,
+      "steps": [
+        {
+          "seconds": 30,
+          "title_en": "Look around",
+          "title_hi": "आस-पास देखें",
+          "instruction_en": "Notice a few things you can see. Explore their colours, shapes and textures.",
+          "instruction_hi": "दिखाई देने वाली कुछ चीज़ों पर ध्यान दें। उनके रंग, आकार और बनावट देखें।"
+        },
+        {
+          "seconds": 30,
+          "title_en": "Feel support",
+          "title_hi": "सहारा महसूस करें",
+          "instruction_en": "Notice your feet on the floor or your hands resting on a surface.",
+          "instruction_hi": "ज़मीन पर पैरों या किसी सतह पर टिके हाथों का स्पर्श महसूस करें।"
+        },
+        {
+          "seconds": 30,
+          "title_en": "Listen",
+          "title_hi": "सुनें",
+          "instruction_en": "Notice nearby or distant sounds. If listening is not comfortable, look at an object instead.",
+          "instruction_hi": "पास या दूर की आवाज़ों पर ध्यान दें। सुनना सहज न लगे तो किसी वस्तु को देखें।"
+        },
+        {
+          "seconds": 30,
+          "title_en": "Come back",
+          "title_hi": "ध्यान वापस लाएँ",
+          "instruction_en": "Notice one detail around you, take a natural breath and choose what to do next.",
+          "instruction_hi": "आस-पास की किसी एक बात पर ध्यान दें, स्वाभाविक साँस लें और आगे क्या करना है चुनें।"
+        }
+      ],
+      "repeat": 1,
+      "published": true,
+      "sort_order": 3,
+      "created_by": null,
+      "created_at": "2026-11-04T01:43:53.311Z",
+      "updated_at": "2026-11-04T01:43:53.311Z",
+      "videoId": null,
+      "durationSeconds": 120,
+      "sortOrder": 3,
+      "updatedAt": "2026-11-04T01:43:53.311Z",
+      "createdAt": "2026-11-04T01:43:53.311Z",
+      "createdBy": null,
+      "youtubeUrl": ""
+    },
+    {
+      "id": "8e0bc1a0-6ce8-4000-8000-000000000005",
+      "kind": "video",
+      "section": "affirmations",
+      "title_en": "Affirmations video",
+      "title_hi": "सकारात्मक कथनों का वीडियो",
+      "description_en": "",
+      "description_hi": "",
+      "preparation_en": "",
+      "preparation_hi": "",
+      "author": "",
+      "video_id": "s2NISyShKXM",
+      "duration_seconds": null,
+      "steps": [],
+      "repeat": 1,
+      "published": true,
+      "sort_order": 15,
+      "created_by": null,
+      "created_at": "2026-11-04T01:43:53.311Z",
+      "updated_at": "2026-11-04T01:43:53.311Z",
+      "videoId": "s2NISyShKXM",
+      "durationSeconds": null,
+      "sortOrder": 15,
+      "updatedAt": "2026-11-04T01:43:53.311Z",
+      "createdAt": "2026-11-04T01:43:53.311Z",
+      "createdBy": null,
+      "youtubeUrl": "https://www.youtube.com/watch?v=s2NISyShKXM"
+    },
+    {
+      "id": "8e0bc1a0-6ce8-4000-8000-000000000006",
+      "kind": "video",
+      "section": "affirmations",
+      "title_en": "Daily morning affirmations · Sandeep Maheshwari",
+      "title_hi": "सुबह के सकारात्मक कथन · संदीप माहेश्वरी",
+      "description_en": "",
+      "description_hi": "",
+      "preparation_en": "",
+      "preparation_hi": "",
+      "author": "Sandeep Maheshwari",
+      "video_id": "fG1oNm2tCro",
+      "duration_seconds": null,
+      "steps": [],
+      "repeat": 1,
+      "published": true,
+      "sort_order": 16,
+      "created_by": null,
+      "created_at": "2026-11-04T01:43:53.311Z",
+      "updated_at": "2026-11-04T01:43:53.311Z",
+      "videoId": "fG1oNm2tCro",
+      "durationSeconds": null,
+      "sortOrder": 16,
+      "updatedAt": "2026-11-04T01:43:53.311Z",
+      "createdAt": "2026-11-04T01:43:53.311Z",
+      "createdBy": null,
+      "youtubeUrl": "https://www.youtube.com/watch?v=fG1oNm2tCro"
+    }
+  ],
+  "page": 1,
+  "hasNext": false,
+  "total": 6
+}

@@ -63,6 +63,7 @@ export declare const listInput: z.ZodObject<{
         oldest: "oldest";
         title_asc: "title_asc";
         title_desc: "title_desc";
+        random: "random";
     }>>;
     language: z.ZodDefault<z.ZodEnum<{
         en: "en";
