@@ -69,6 +69,8 @@ export const bankInput = z
       .nullable()
       .default(null),
     is_verified: z.boolean().default(false),
+    source_url: thumbnailInput.nullable().default(null),
+    verified_at: z.iso.datetime().transform(value => new Date(value)).nullable().default(null),
     is_24_7: z.boolean().default(false),
     is_government: z.boolean().default(false),
     component_facility: z.boolean().default(false),

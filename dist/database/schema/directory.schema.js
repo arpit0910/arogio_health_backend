@@ -47,6 +47,8 @@ exports.bloodBanks = (0, pg_core_1.pgTable)('blood_banks', {
     email: (0, pg_core_1.text)('email'),
     website: (0, pg_core_1.text)('website'),
     is_verified: (0, pg_core_1.boolean)('is_verified').notNull().default(false),
+    source_url: (0, pg_core_1.text)('source_url'),
+    verified_at: (0, pg_core_1.timestamp)('verified_at', { withTimezone: true }),
     is_24_7: (0, pg_core_1.boolean)('is_24_7').notNull().default(false),
     is_government: (0, pg_core_1.boolean)('is_government').notNull().default(false),
     component_facility: (0, pg_core_1.boolean)('component_facility').notNull().default(false),

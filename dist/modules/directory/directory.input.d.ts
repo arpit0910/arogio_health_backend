@@ -35,6 +35,8 @@ export declare const bankInput: z.ZodObject<{
     email: z.ZodDefault<z.ZodNullable<z.ZodEmail>>;
     website: z.ZodDefault<z.ZodNullable<z.ZodURL>>;
     is_verified: z.ZodDefault<z.ZodBoolean>;
+    source_url: z.ZodDefault<z.ZodNullable<z.ZodDefault<z.ZodString>>>;
+    verified_at: z.ZodDefault<z.ZodNullable<z.ZodPipe<z.ZodISODateTime, z.ZodTransform<Date, string>>>>;
     is_24_7: z.ZodDefault<z.ZodBoolean>;
     is_government: z.ZodDefault<z.ZodBoolean>;
     component_facility: z.ZodDefault<z.ZodBoolean>;

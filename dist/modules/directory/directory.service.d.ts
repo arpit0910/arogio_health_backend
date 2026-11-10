@@ -68,7 +68,7 @@ export declare class DirectoryService {
         category_hi: string;
     }>;
     private bankFilters;
-    listBanks(query: unknown, admin?: boolean): Promise<{
+    listBanks(query: unknown, admin?: boolean, sourced?: boolean): Promise<{
         items: {
             id: string;
             source_id: string;
@@ -87,6 +87,8 @@ export declare class DirectoryService {
             email: string | null;
             website: string | null;
             is_verified: boolean;
+            source_url: string | null;
+            verified_at: Date | null;
             is_24_7: boolean;
             is_government: boolean;
             component_facility: boolean;
@@ -102,7 +104,7 @@ export declare class DirectoryService {
         hasNext: boolean;
         missingCoordinates: number;
     }>;
-    nearby(body: unknown): Promise<{
+    nearby(body: unknown, sourced?: boolean): Promise<{
         items: {
             distanceKm: number;
             id: string;
@@ -122,6 +124,8 @@ export declare class DirectoryService {
             email: string | null;
             website: string | null;
             is_verified: boolean;
+            source_url: string | null;
+            verified_at: Date | null;
             is_24_7: boolean;
             is_government: boolean;
             component_facility: boolean;
@@ -188,6 +192,8 @@ export declare class DirectoryService {
             email: string | null;
             website: string | null;
             is_verified: boolean;
+            source_url: string | null;
+            verified_at: Date | null;
             is_24_7: boolean;
             is_government: boolean;
             component_facility: boolean;
@@ -221,6 +227,8 @@ export declare class DirectoryService {
         email: string | null;
         website: string | null;
         is_verified: boolean;
+        source_url: string | null;
+        verified_at: Date | null;
         is_24_7: boolean;
         is_government: boolean;
         component_facility: boolean;
@@ -265,6 +273,8 @@ export declare class DirectoryService {
         email: string | null;
         website: string | null;
         is_verified: boolean;
+        source_url: string | null;
+        verified_at: Date | null;
         is_24_7: boolean;
         is_government: boolean;
         component_facility: boolean;

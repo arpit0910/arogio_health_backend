@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const directory_module_1 = require("./modules/directory/directory.module");
+const care_module_1 = require("./modules/care/care.module");
 const meditation_module_1 = require("./modules/meditation/meditation.module");
 const admin_module_1 = require("./modules/admin/admin.module");
 const home_module_1 = require("./modules/home/home.module");
@@ -49,6 +50,7 @@ exports.AppModule = AppModule = __decorate([
             admin_module_1.AdminModule,
             meditation_module_1.MeditationModule,
             directory_module_1.DirectoryModule,
+            care_module_1.CareModule,
             home_module_1.HomeModule,
             chat_module_1.ChatModule,
             health_module_1.HealthModule,

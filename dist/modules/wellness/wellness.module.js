@@ -11,14 +11,16 @@ const common_1 = require("@nestjs/common");
 const auth_module_1 = require("../auth/auth.module");
 const wellness_controller_1 = require("./wellness.controller");
 const wellness_service_1 = require("./wellness.service");
+const export_controller_1 = require("./export.controller");
+const users_module_1 = require("../users/users.module");
 let WellnessModule = class WellnessModule {
 };
 exports.WellnessModule = WellnessModule;
 exports.WellnessModule = WellnessModule = __decorate([
     (0, common_1.Module)({
         exports: [wellness_service_1.WellnessService],
-        imports: [auth_module_1.AuthModule],
-        controllers: [wellness_controller_1.WellnessController],
+        imports: [auth_module_1.AuthModule, users_module_1.UsersModule],
+        controllers: [wellness_controller_1.WellnessController, export_controller_1.ExportController],
         providers: [wellness_service_1.WellnessService],
     })
 ], WellnessModule);

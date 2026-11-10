@@ -628,6 +628,40 @@ export declare const bloodBanks: import("drizzle-orm/pg-core").PgTableWithColumn
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        source_url: import("drizzle-orm/pg-core").PgColumn<{
+            name: "source_url";
+            tableName: "blood_banks";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        verified_at: import("drizzle-orm/pg-core").PgColumn<{
+            name: "verified_at";
+            tableName: "blood_banks";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         is_24_7: import("drizzle-orm/pg-core").PgColumn<{
             name: "is_24_7";
             tableName: "blood_banks";

@@ -288,6 +288,7 @@ async function show() {
   if (page === 'people') return people();
   if (page === 'banners') return homeBanners();
   if (page === 'meditation') return meditationPage();
+  if (page === 'care') return carePage();
   if (page === 'articles' || page === 'blood-banks') return directoryPage(page);
   return audit();
 }

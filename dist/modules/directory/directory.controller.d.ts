@@ -79,6 +79,8 @@ export declare class DirectoryController {
             email: string | null;
             website: string | null;
             is_verified: boolean;
+            source_url: string | null;
+            verified_at: Date | null;
             is_24_7: boolean;
             is_government: boolean;
             component_facility: boolean;
@@ -114,6 +116,8 @@ export declare class DirectoryController {
             email: string | null;
             website: string | null;
             is_verified: boolean;
+            source_url: string | null;
+            verified_at: Date | null;
             is_24_7: boolean;
             is_government: boolean;
             component_facility: boolean;

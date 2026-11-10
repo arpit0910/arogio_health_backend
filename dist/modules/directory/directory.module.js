@@ -10,6 +10,7 @@ exports.DirectoryModule = void 0;
 const common_1 = require("@nestjs/common");
 const auth_module_1 = require("../auth/auth.module");
 const directory_controller_1 = require("./directory.controller");
+const public_directory_controller_1 = require("./public-directory.controller");
 const directory_service_1 = require("./directory.service");
 let DirectoryModule = class DirectoryModule {
 };
@@ -17,7 +18,7 @@ exports.DirectoryModule = DirectoryModule;
 exports.DirectoryModule = DirectoryModule = __decorate([
     (0, common_1.Module)({
         imports: [auth_module_1.AuthModule],
-        controllers: [directory_controller_1.DirectoryController],
+        controllers: [directory_controller_1.DirectoryController, public_directory_controller_1.PublicDirectoryController],
         providers: [directory_service_1.DirectoryService],
         exports: [directory_service_1.DirectoryService],
     })

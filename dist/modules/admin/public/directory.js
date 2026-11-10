@@ -191,6 +191,7 @@ async function directoryPage(kind, current = 1, term = '') {
             ),
           ),
         );
+        if (!articles) actions.append(button('Source review', () => reviewBloodBank(row)));
         return articles
           ? [
               articleThumbnail(row.thumbnail_url, row.title_en),
@@ -245,7 +246,7 @@ async function directoryEditor(kind, id) {
       if (!articles) {
         for (const key of ['latitude', 'longitude'])
           body[key] = body[key] === '' ? null : Number(body[key]);
-        for (const key of ['phone', 'emergency_phone', 'email', 'website', 'pincode', 'landmark'])
+        for (const key of ['phone', 'emergency_phone', 'email', 'website', 'pincode', 'landmark', 'source_url', 'verified_at'])
           body[key] ||= null;
         body.available_blood_groups = body.available_blood_groups
           .split(';')

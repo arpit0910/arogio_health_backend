@@ -59,6 +59,8 @@ export const bloodBanks = pgTable(
     email: text('email'),
     website: text('website'),
     is_verified: boolean('is_verified').notNull().default(false),
+    source_url: text('source_url'),
+    verified_at: timestamp('verified_at', { withTimezone: true }),
     is_24_7: boolean('is_24_7').notNull().default(false),
     is_government: boolean('is_government').notNull().default(false),
     component_facility: boolean('component_facility').notNull().default(false),

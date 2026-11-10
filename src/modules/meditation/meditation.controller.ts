@@ -9,3 +9,8 @@ export class MeditationController {
     return this.meditation.list(query);
   }
 }
+@Controller('public/meditation')
+export class PublicMeditationController {
+  constructor(private readonly meditation: MeditationService) {}
+  @Get('content') @Header('Cache-Control', 'no-cache') list(@Query() query: unknown) { return this.meditation.list(query); }
+}

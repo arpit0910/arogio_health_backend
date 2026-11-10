@@ -214,6 +214,24 @@ describe('Articles and nearby blood-bank directory', () => {
     expect(nearby.body.items[1].distanceKm).toBeGreaterThan(10);
     expect(nearby.body.missingCoordinates).toBe(1);
     expect(nearby.headers['cache-control']).toContain('no-store');
+    await database.exec(
+      "update blood_banks set is_verified = true, source_url = 'https://example.test/old-source', verified_at = now()",
+    );
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/content/blood-banks/import/apply')
+      .set(auth())
+      .attach('file', file, 'banks.csv')
+      .expect(201);
+    const afterImport = await database.query<{
+      is_verified: boolean;
+      source_url: string | null;
+      verified_at: string | null;
+    }>('select is_verified, source_url, verified_at from blood_banks');
+    expect(
+      afterImport.rows.every(
+        (row) => !row.is_verified && row.source_url === null && row.verified_at === null,
+      ),
+    ).toBe(true);
     expect(
       (await request(app.getHttpServer()).get('/api/v1/blood-banks?search=Jaipur').set(auth())).body
         .items,

@@ -6,6 +6,7 @@ import {
   count,
   desc,
   eq,
+  gte,
   ilike,
   inArray,
   isNotNull,
@@ -168,16 +169,23 @@ export class DirectoryService {
     if (!row) throw new NotFoundException('Article not found.');
     return this.withThumbnail(row, await this.categories(admin));
   }
-  private bankFilters(bloodGroup?: string, only24h = false, admin = false): SQL[] {
+  private bankFilters(bloodGroup?: string, only24h = false, admin = false, sourced = false): SQL[] {
     const filters = admin ? [] : [eq(bloodBanks.is_active, true)];
+    if (sourced)
+      filters.push(
+        eq(bloodBanks.city, 'Jaipur'),
+        eq(bloodBanks.is_verified, true),
+        sql`${bloodBanks.source_url} like 'https://%'`,
+        gte(bloodBanks.verified_at, new Date(Date.now() - 180 * 86400000)),
+      );
     if (bloodGroup)
       filters.push(sql`${bloodBanks.available_blood_groups} @> ARRAY[${bloodGroup}]::text[]`);
     if (only24h) filters.push(eq(bloodBanks.is_24_7, true));
     return filters;
   }
-  async listBanks(query: unknown, admin = false) {
+  async listBanks(query: unknown, admin = false, sourced = false) {
     const q = this.parse(listInput, query),
-      filters = this.bankFilters(q.bloodGroup, q.only24h === 'true', admin);
+      filters = this.bankFilters(q.bloodGroup, q.only24h === 'true', admin, sourced);
     if (q.search)
       filters.push(
         or(
@@ -210,9 +218,9 @@ export class DirectoryService {
       missingCoordinates: missing[0]!.count,
     };
   }
-  async nearby(body: unknown) {
+  async nearby(body: unknown, sourced = false) {
     const q = this.parse(nearbyInput, body),
-      filters = this.bankFilters(q.bloodGroup, q.only24h);
+      filters = this.bankFilters(q.bloodGroup, q.only24h, false, sourced);
     const distance = sql<number>`(6371.0 * 2 * asin(sqrt(least(1.0, greatest(0.0,
       power(sin(radians(${bloodBanks.latitude} - ${q.latitude}) / 2), 2) + cos(radians(${q.latitude})) * cos(radians(${bloodBanks.latitude})) * power(sin(radians(${bloodBanks.longitude} - ${q.longitude}) / 2), 2)
     )))))`.mapWith(Number);
@@ -279,7 +287,7 @@ export class DirectoryService {
       if (!rows[0]) throw new NotFoundException();
       return rows[0];
     }
-    const value = this.parse(bankInput, body);
+    const value = { ...this.parse(bankInput, body), is_verified: false, source_url: null, verified_at: null };
     const rows = id
       ? await this.database.db
           .update(bloodBanks)
@@ -399,10 +407,10 @@ export class DirectoryService {
           void _active;
           await tx
             .insert(bloodBanks)
-            .values(row)
+            .values({ ...row, is_verified: false, source_url: null, verified_at: null })
             .onConflictDoUpdate({
               target: bloodBanks.source_id,
-              set: { ...updates, updated_at: new Date() },
+              set: { ...updates, is_verified: false, source_url: null, verified_at: null, updated_at: new Date() },
             });
         }
     });

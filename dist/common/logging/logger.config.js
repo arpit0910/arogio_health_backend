@@ -32,7 +32,7 @@ function createLoggerConfig(config) {
                         method: request.method,
                         url: request.url?.startsWith('/api/v1/wellness')
                             ? '/api/v1/wellness/[private]'
-                            : request.url,
+                            : request.url?.split('?')[0],
                     };
                 },
             },

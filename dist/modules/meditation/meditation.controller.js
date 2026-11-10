@@ -12,7 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MeditationController = void 0;
+exports.PublicMeditationController = exports.MeditationController = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_auth_guard_1 = require("../../common/auth/jwt-auth.guard");
 const meditation_service_1 = require("./meditation.service");
@@ -39,4 +39,24 @@ exports.MeditationController = MeditationController = __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [meditation_service_1.MeditationService])
 ], MeditationController);
+let PublicMeditationController = class PublicMeditationController {
+    meditation;
+    constructor(meditation) {
+        this.meditation = meditation;
+    }
+    list(query) { return this.meditation.list(query); }
+};
+exports.PublicMeditationController = PublicMeditationController;
+__decorate([
+    (0, common_1.Get)('content'),
+    (0, common_1.Header)('Cache-Control', 'no-cache'),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PublicMeditationController.prototype, "list", null);
+exports.PublicMeditationController = PublicMeditationController = __decorate([
+    (0, common_1.Controller)('public/meditation'),
+    __metadata("design:paramtypes", [meditation_service_1.MeditationService])
+], PublicMeditationController);
 //# sourceMappingURL=meditation.controller.js.map

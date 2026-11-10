@@ -70,6 +70,8 @@ exports.bankInput = zod_1.z
         .nullable()
         .default(null),
     is_verified: zod_1.z.boolean().default(false),
+    source_url: exports.thumbnailInput.nullable().default(null),
+    verified_at: zod_1.z.iso.datetime().transform(value => new Date(value)).nullable().default(null),
     is_24_7: zod_1.z.boolean().default(false),
     is_government: zod_1.z.boolean().default(false),
     component_facility: zod_1.z.boolean().default(false),

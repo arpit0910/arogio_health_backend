@@ -1,4 +1,5 @@
 import { DirectoryModule } from './modules/directory/directory.module';
+import { CareModule } from './modules/care/care.module';
 import { MeditationModule } from './modules/meditation/meditation.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { HomeModule } from './modules/home/home.module';
@@ -38,6 +39,7 @@ import { WellnessModule } from './modules/wellness/wellness.module';
     AdminModule,
     MeditationModule,
     DirectoryModule,
+    CareModule,
     HomeModule,
     ChatModule,
     HealthModule,

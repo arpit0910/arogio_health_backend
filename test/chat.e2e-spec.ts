@@ -111,10 +111,21 @@ describe('Authenticated Jeeva HTTP journey', () => {
     });
     provider = jest
       .spyOn(globalThis, 'fetch')
-      .mockImplementation(() =>
+      .mockImplementation((_url, options) =>
         Promise.resolve(
           new Response(
-            JSON.stringify({ choices: [{ message: { content: 'Open Water to log a drink.' } }] }),
+            JSON.stringify({
+              choices: [
+                {
+                  message: {
+                    content: JSON.parse(typeof options?.body === 'string' ? options.body : '{}')
+                      .response_format
+                      ? JSON.stringify({ decision: 'allow' })
+                      : 'Open Water to log a drink.',
+                  },
+                },
+              ],
+            }),
           ),
         ),
       );
@@ -125,6 +136,11 @@ describe('Authenticated Jeeva HTTP journey', () => {
     await database?.close();
   });
   const body = { messages: [{ role: 'user', content: 'synthetic-private-question' }] };
+  const generatedBody = () =>
+    [...provider.mock.calls]
+      .reverse()
+      .map((call) => String(call[1]?.body))
+      .find((value) => !JSON.parse(value).response_format)!;
   it('requires authentication and rejects system-role injection without contacting NVIDIA', async () => {
     await request(app.getHttpServer()).post('/api/v1/chat/messages').send(body).expect(401);
     await request(app.getHttpServer())
@@ -163,7 +179,7 @@ describe('Authenticated Jeeva HTTP journey', () => {
       .auth(token, { type: 'bearer' })
       .send({ ...body, useSavedHealth: true })
       .expect(200);
-    const payload = JSON.parse(provider.mock.calls.at(-1)![1].body as string);
+    const payload = JSON.parse(generatedBody());
     const contextMessage = payload.messages[1].content as string;
     const context = JSON.parse(contextMessage.slice(contextMessage.indexOf('\n') + 1));
     expect(context.profile).toMatchObject({
@@ -195,7 +211,7 @@ describe('Authenticated Jeeva HTTP journey', () => {
       .auth(token, { type: 'bearer' })
       .send({ ...body, useSavedHealth: true })
       .expect(200);
-    expect(provider.mock.calls.at(-1)![1].body).toContain('61');
+    expect(generatedBody()).toContain('61');
   });
   it('isolates another account and leaves records out when access is off', async () => {
     await request(app.getHttpServer())
@@ -203,7 +219,7 @@ describe('Authenticated Jeeva HTTP journey', () => {
       .auth(otherToken, { type: 'bearer' })
       .send({ ...body, useSavedHealth: true })
       .expect(200);
-    const otherBody = provider.mock.calls.at(-1)![1].body as string;
+    const otherBody = generatedBody();
     expect(otherBody).toContain('99999');
     expect(otherBody).not.toContain('own-fixture-medicine');
     const response = await request(app.getHttpServer())
@@ -212,7 +228,7 @@ describe('Authenticated Jeeva HTTP journey', () => {
       .send({ ...body, useSavedHealth: false })
       .expect(200);
     expect(response.body.savedHealthIncluded).toBe(false);
-    const payload = JSON.parse(provider.mock.calls.at(-1)![1].body as string);
+    const payload = JSON.parse(generatedBody());
     expect(payload.messages).toHaveLength(2);
     expect(payload.messages[1]).toEqual(body.messages[0]);
   });

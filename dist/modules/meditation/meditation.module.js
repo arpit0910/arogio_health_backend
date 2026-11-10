@@ -17,7 +17,7 @@ exports.MeditationModule = MeditationModule;
 exports.MeditationModule = MeditationModule = __decorate([
     (0, common_1.Module)({
         imports: [auth_module_1.AuthModule],
-        controllers: [meditation_controller_1.MeditationController],
+        controllers: [meditation_controller_1.MeditationController, meditation_controller_1.PublicMeditationController],
         providers: [meditation_service_1.MeditationService],
         exports: [meditation_service_1.MeditationService],
     })

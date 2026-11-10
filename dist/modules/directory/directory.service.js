@@ -144,16 +144,18 @@ let DirectoryService = class DirectoryService {
             throw new common_1.NotFoundException('Article not found.');
         return this.withThumbnail(row, await this.categories(admin));
     }
-    bankFilters(bloodGroup, only24h = false, admin = false) {
+    bankFilters(bloodGroup, only24h = false, admin = false, sourced = false) {
         const filters = admin ? [] : [(0, drizzle_orm_1.eq)(schema_1.bloodBanks.is_active, true)];
+        if (sourced)
+            filters.push((0, drizzle_orm_1.eq)(schema_1.bloodBanks.city, 'Jaipur'), (0, drizzle_orm_1.eq)(schema_1.bloodBanks.is_verified, true), (0, drizzle_orm_1.sql) `${schema_1.bloodBanks.source_url} like 'https://%'`, (0, drizzle_orm_1.gte)(schema_1.bloodBanks.verified_at, new Date(Date.now() - 180 * 86400000)));
         if (bloodGroup)
             filters.push((0, drizzle_orm_1.sql) `${schema_1.bloodBanks.available_blood_groups} @> ARRAY[${bloodGroup}]::text[]`);
         if (only24h)
             filters.push((0, drizzle_orm_1.eq)(schema_1.bloodBanks.is_24_7, true));
         return filters;
     }
-    async listBanks(query, admin = false) {
-        const q = this.parse(directory_input_1.listInput, query), filters = this.bankFilters(q.bloodGroup, q.only24h === 'true', admin);
+    async listBanks(query, admin = false, sourced = false) {
+        const q = this.parse(directory_input_1.listInput, query), filters = this.bankFilters(q.bloodGroup, q.only24h === 'true', admin, sourced);
         if (q.search)
             filters.push((0, drizzle_orm_1.or)(...[
                 schema_1.bloodBanks.name_en,
@@ -182,8 +184,8 @@ let DirectoryService = class DirectoryService {
             missingCoordinates: missing[0].count,
         };
     }
-    async nearby(body) {
-        const q = this.parse(directory_input_1.nearbyInput, body), filters = this.bankFilters(q.bloodGroup, q.only24h);
+    async nearby(body, sourced = false) {
+        const q = this.parse(directory_input_1.nearbyInput, body), filters = this.bankFilters(q.bloodGroup, q.only24h, false, sourced);
         const distance = (0, drizzle_orm_1.sql) `(6371.0 * 2 * asin(sqrt(least(1.0, greatest(0.0,
       power(sin(radians(${schema_1.bloodBanks.latitude} - ${q.latitude}) / 2), 2) + cos(radians(${q.latitude})) * cos(radians(${schema_1.bloodBanks.latitude})) * power(sin(radians(${schema_1.bloodBanks.longitude} - ${q.longitude}) / 2), 2)
     )))))`.mapWith(Number);
@@ -246,7 +248,7 @@ let DirectoryService = class DirectoryService {
                 throw new common_1.NotFoundException();
             return rows[0];
         }
-        const value = this.parse(directory_input_1.bankInput, body);
+        const value = { ...this.parse(directory_input_1.bankInput, body), is_verified: false, source_url: null, verified_at: null };
         const rows = id
             ? await this.database.db
                 .update(schema_1.bloodBanks)
@@ -364,10 +366,10 @@ let DirectoryService = class DirectoryService {
                     void _active;
                     await tx
                         .insert(schema_1.bloodBanks)
-                        .values(row)
+                        .values({ ...row, is_verified: false, source_url: null, verified_at: null })
                         .onConflictDoUpdate({
                         target: schema_1.bloodBanks.source_id,
-                        set: { ...updates, updated_at: new Date() },
+                        set: { ...updates, is_verified: false, source_url: null, verified_at: null, updated_at: new Date() },
                     });
                 }
         });
