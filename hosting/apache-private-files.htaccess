@@ -1,0 +1,11 @@
+# MERGE into the hosting-managed .htaccess at the backend document root.
+# Keep all existing Passenger/runtime/domain directives. Requires mod_rewrite.
+# Do not upload this as a replacement for the hosting-generated configuration.
+RewriteEngine On
+
+# Server implementation, dependencies, tests and deployment artifacts are private.
+RewriteRule ^(?:dist|src|drizzle|node_modules|scripts|test|docs|hosting|coverage|\.tmp)(?:/|$) - [F,L,NC]
+RewriteRule ^(?:\.git|\.aws|\.codex|\.agents)(?:/|$) - [F,L,NC]
+RewriteRule ^(?:\.env(?:\.[^/]*)?|app\.js|package(?:-lock)?\.json|tsconfig(?:\.[^/]*)?\.json|nest-cli\.json|drizzle\.config\.[^/]+|eslint\.config\.[^/]+|.*\.tsbuildinfo)$ - [F,L,NC]
+
+# /api/v1, /admin, /admin-assets and /status-assets intentionally remain routable.
