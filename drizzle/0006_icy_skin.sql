@@ -1,0 +1,1 @@
+ALTER TABLE "wellness_settings" ADD COLUMN "medicines" jsonb DEFAULT '[]'::jsonb NOT NULL;
