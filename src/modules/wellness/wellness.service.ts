@@ -15,6 +15,7 @@ import {
   waterTaskStates as tasks,
   cyclePeriods as periods,
   cycleEntries as entries,
+  medicineDoses as doses,
 } from '../../database/schema';
 import {
   APP_TIMEZONE,
@@ -24,6 +25,7 @@ import {
   waterDay,
   waterSchedule,
   waterWindow,
+  zonedInstant,
 } from './domain';
 import * as input from './wellness.input';
 
@@ -57,7 +59,7 @@ export class WellnessService {
   async snapshot(userId: string) {
     const db = this.database.db,
       cutoff = addDays(localDay(new Date(), APP_TIMEZONE), -90);
-    const [preferences, water, states, history, daily] = await Promise.all([
+    const [preferences, water, states, history, daily, doseRecords] = await Promise.all([
       db.select().from(settings).where(eq(settings.userId, userId)),
       db
         .select()
@@ -76,10 +78,22 @@ export class WellnessService {
         .where(eq(entries.userId, userId))
         .orderBy(desc(entries.day))
         .limit(730),
+      db
+        .select()
+        .from(doses)
+        .where(and(eq(doses.userId, userId), gte(doses.day, cutoff))),
     ]);
     return {
       activityTracking: preferences[0]?.activityTracking ?? { goals: {}, days: [] },
       medicines: preferences[0]?.medicines ?? [],
+      medicineDoses: doseRecords.map((row) => ({
+        medicineId: row.medicineId,
+        day: row.day,
+        time: row.time,
+        status: row.status,
+        recordedAt: row.recordedAt.toISOString(),
+        snoozedUntil: row.snoozedUntil?.toISOString() ?? null,
+      })),
       waterPlan: preferences[0]?.waterPlan
         ? { ...preferences[0].waterPlan, timezone: APP_TIMEZONE }
         : null,
@@ -192,6 +206,7 @@ export class WellnessService {
   deleteMedicine(userId: string, id: string) {
     this.uuid(id);
     return this.mutate(userId, async (tx) => {
+      await tx.delete(doses).where(and(eq(doses.userId, userId), eq(doses.medicineId, id)));
       const [row] = await tx.select().from(settings).where(eq(settings.userId, userId));
       await tx
         .update(settings)
@@ -200,6 +215,68 @@ export class WellnessService {
           updatedAt: new Date(),
         })
         .where(eq(settings.userId, userId));
+    });
+  }
+  saveMedicineDose(userId: string, id: string, day: string, time: string, body: unknown) {
+    this.uuid(id);
+    this.parse(input.doseDayInput, day);
+    this.parse(input.doseTimeInput, time);
+    const value = this.parse(input.medicineDoseInput, body);
+    const now = new Date(),
+      today = localDay(now, APP_TIMEZONE);
+    if (day > today || day < addDays(today, -90) || (value.snooze && day !== today))
+      throw new BadRequestException(
+        'Choose today or a date within the last 90 days. Snooze is only available today.',
+      );
+    return this.mutate(userId, async (tx) => {
+      const [row] = await tx.select().from(settings).where(eq(settings.userId, userId));
+      const medicine = row?.medicines.find(
+        (m) => m.id === id && m.doses.some((d) => d.time === time),
+      );
+      if (!medicine)
+        throw new NotFoundException(
+          'This medicine or dose time has changed. Refresh your schedule.',
+        );
+      if (value.snooze && (!medicine.enabled || zonedInstant(day, time, APP_TIMEZONE) > now))
+        throw new BadRequestException(
+          'Snooze is available when a dose is due and reminders are enabled.',
+        );
+      const filter = and(
+        eq(doses.userId, userId),
+        eq(doses.medicineId, id),
+        eq(doses.day, day),
+        eq(doses.time, time),
+      );
+      const [existing] = await tx.select().from(doses).where(filter);
+      if (value.snooze && (existing?.status === 'taken' || existing?.status === 'skipped'))
+        throw new ConflictException('This dose is already logged. Undo it before snoozing.');
+      // Repeated requests for the same action do not duplicate logs or move a snooze.
+      if (
+        existing?.status === value.status &&
+        (!value.snooze
+          ? !existing.snoozedUntil
+          : existing.snoozedUntil && existing.snoozedUntil > now)
+      )
+        return;
+      const snoozedUntil = value.snooze ? new Date(now.getTime() + 15 * 60000) : null;
+      if (snoozedUntil && localDay(snoozedUntil, APP_TIMEZONE) !== today)
+        throw new BadRequestException('A snooze cannot move this dose into the next day.');
+      const record = {
+        userId,
+        medicineId: id,
+        day,
+        time,
+        status: value.status,
+        recordedAt: now,
+        snoozedUntil,
+      };
+      await tx
+        .insert(doses)
+        .values(record)
+        .onConflictDoUpdate({
+          target: [doses.userId, doses.medicineId, doses.day, doses.time],
+          set: record,
+        });
     });
   }
   savePlan(userId: string, body: unknown) {

@@ -58,6 +58,26 @@ export const waterLogs = pgTable(
     check('water_log_amount_range', sql`${table.amountMl} between 1 and 3000`),
   ],
 );
+export const medicineDoses = pgTable(
+  'medicine_doses',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    medicineId: uuid('medicine_id').notNull(),
+    day: date('day', { mode: 'string' }).notNull(),
+    time: text('time').notNull(),
+    status: text('status').$type<'taken' | 'skipped' | 'pending'>().notNull(),
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
+    snoozedUntil: timestamp('snoozed_until', { withTimezone: true }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.medicineId, table.day, table.time] }),
+    index('medicine_doses_user_day').on(table.userId, table.day),
+    check('medicine_dose_status', sql`${table.status} in ('taken', 'skipped', 'pending')`),
+    check('medicine_dose_clock', sql`${table.time} ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'`),
+  ],
+);
 export const waterTaskStates = pgTable(
   'water_task_states',
   {

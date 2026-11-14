@@ -8,5 +8,6 @@ import { CareController, CareAdminController, CareSearchController } from './car
   imports: [AuthModule, DirectoryModule],
   controllers: [CareController, CareAdminController, CareSearchController],
   providers: [CareService, SuperAdminGuard],
+  exports: [CareService],
 })
 export class CareModule {}

@@ -23,7 +23,7 @@ export class ExportController {
     return {
       exportedAt: new Date().toISOString(),
       scope:
-        'Profile and retained wellness snapshot. Water history is limited to 90 days. Device readings and chat are not included.',
+        'Profile and retained wellness snapshot. Water and medicine dose history is limited to 90 days. Device readings and chat are not included.',
       profile,
       wellness,
     };

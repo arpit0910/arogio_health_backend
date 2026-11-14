@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
@@ -33,7 +33,18 @@ export class WellnessController {
   @Delete('medicines/:id') removeMedicine(@CurrentUser() u: RequestUser, @Param('id') id: string) {
     return this.service.deleteMedicine(u.userId, id);
   }
-  @Get() get(@CurrentUser() u: RequestUser) {
+  @Put('medicines/:id/doses/:day/:time') dose(
+    @CurrentUser() u: RequestUser,
+    @Param('id') id: string,
+    @Param('day') day: string,
+    @Param('time') time: string,
+    @Body() body: unknown,
+  ) {
+    return this.service.saveMedicineDose(u.userId, id, day, time, body);
+  }
+  @Get()
+  @Header('Cache-Control', 'private, no-store')
+  get(@CurrentUser() u: RequestUser) {
     return this.service.snapshot(u.userId);
   }
   @Put('water/plan') plan(@CurrentUser() u: RequestUser, @Body() body: unknown) {

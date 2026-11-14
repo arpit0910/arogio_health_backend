@@ -21,6 +21,14 @@ export declare class ExportController {
                     amount: string;
                 }[];
             }[];
+            medicineDoses: {
+                medicineId: string;
+                day: string;
+                time: string;
+                status: "pending" | "skipped" | "taken";
+                recordedAt: string;
+                snoozedUntil: string | null;
+            }[];
             waterPlan: {
                 timezone: string;
                 version: string;

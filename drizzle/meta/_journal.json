@@ -120,6 +120,13 @@
       "when": 1794304470907,
       "tag": "0016_bank_corrections",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794635284194,
+      "tag": "0017_lean_doorman",
+      "breakpoints": true
     }
   ]
 }

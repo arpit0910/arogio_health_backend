@@ -3,5 +3,11 @@ import { AuthModule } from '../auth/auth.module';
 import { HomeController } from './home.controller';
 import { HomeService } from './home.service';
 import { StormglassWeather } from './stormglass.weather';
-@Module({ imports: [AuthModule], controllers: [HomeController], providers: [HomeService, StormglassWeather] })
+import { CareModule } from '../care/care.module';
+import { DiscoveryController } from './discovery.controller';
+@Module({
+  imports: [AuthModule, CareModule],
+  controllers: [HomeController, DiscoveryController],
+  providers: [HomeService, StormglassWeather],
+})
 export class HomeModule {}

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.activityDayInput = exports.activityGoalsInput = exports.medicineInput = exports.entryInput = exports.periodInput = exports.taskInput = exports.logInput = exports.cycleInput = exports.planInput = void 0;
+exports.activityDayInput = exports.activityGoalsInput = exports.doseTimeInput = exports.doseDayInput = exports.medicineDoseInput = exports.medicineInput = exports.entryInput = exports.periodInput = exports.taskInput = exports.logInput = exports.cycleInput = exports.planInput = void 0;
 const zod_1 = require("zod");
 const domain_1 = require("./domain");
 const clock = zod_1.z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
@@ -71,6 +71,15 @@ exports.medicineInput = zod_1.z
         .refine((doses) => new Set(doses.map((d) => d.time)).size === doses.length, 'Choose a different time for each dose.'),
 })
     .strict();
+exports.medicineDoseInput = zod_1.z
+    .object({
+    status: zod_1.z.enum(['taken', 'skipped', 'pending']),
+    snooze: zod_1.z.boolean().default(false),
+})
+    .strict()
+    .refine((value) => !value.snooze || value.status === 'pending', 'Only pending doses can be snoozed.');
+exports.doseDayInput = day;
+exports.doseTimeInput = clock;
 const activityValues = zod_1.z
     .object({
     Steps: zod_1.z.number().int().min(0).max(200000).nullable().optional(),

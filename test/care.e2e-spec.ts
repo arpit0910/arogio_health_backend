@@ -73,6 +73,13 @@ describe('Public care and audited publication', () => {
     publish: true,
   });
   it('allows guest public content but keeps old private contracts and administration protected', async () => {
+    const discovery = await request(app.getHttpServer())
+      .get('/api/v1/home/discovery')
+      .expect(200)
+      .expect('Cache-Control', 'no-store');
+    expect(discovery.body.hospitals).toEqual({ status: 'available', items: [] });
+    expect(discovery.body.doctors).toEqual({ status: 'available', items: [] });
+    expect(discovery.body.availability).toBe('contact-provider');
     await request(app.getHttpServer())
       .get('/api/v1/care')
       .expect(200)
@@ -106,6 +113,9 @@ describe('Public care and audited publication', () => {
       .expect(201);
     hospital = created.body;
     await request(app.getHttpServer()).get(`/api/v1/care/${hospital.id}`).expect(404);
+    expect(
+      (await request(app.getHttpServer()).get('/api/v1/home/discovery')).body.hospitals.items,
+    ).toEqual([]);
     await request(app.getHttpServer())
       .post(`/api/v1/admin/care/${hospital.id}/review`)
       .set(auth())
@@ -117,6 +127,12 @@ describe('Public care and audited publication', () => {
       .send(review(hospital))
       .expect(201);
     hospital = published.body;
+    const discovery = await request(app.getHttpServer()).get('/api/v1/home/discovery').expect(200);
+    expect((discovery.body.hospitals.items as { id: string }[]).map((item) => item.id)).toEqual([
+      hospital.id,
+    ]);
+    expect(discovery.body.hospitals.items[0].reviewEvidence).toBeUndefined();
+    expect(discovery.body.hospitals.items[0].reviewedBy).toBeUndefined();
     const detail = await request(app.getHttpServer())
       .get(`/api/v1/care/${hospital.id}`)
       .expect(200);

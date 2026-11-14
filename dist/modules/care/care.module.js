@@ -21,6 +21,7 @@ exports.CareModule = CareModule = __decorate([
         imports: [auth_module_1.AuthModule, directory_module_1.DirectoryModule],
         controllers: [care_controller_1.CareController, care_controller_1.CareAdminController, care_controller_1.CareSearchController],
         providers: [care_service_1.CareService, admin_guard_1.SuperAdminGuard],
+        exports: [care_service_1.CareService],
     })
 ], CareModule);
 //# sourceMappingURL=care.module.js.map

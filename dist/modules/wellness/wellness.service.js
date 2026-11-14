@@ -74,7 +74,7 @@ let WellnessService = class WellnessService {
     }
     async snapshot(userId) {
         const db = this.database.db, cutoff = (0, domain_1.addDays)((0, domain_1.localDay)(new Date(), domain_1.APP_TIMEZONE), -90);
-        const [preferences, water, states, history, daily] = await Promise.all([
+        const [preferences, water, states, history, daily, doseRecords] = await Promise.all([
             db.select().from(schema_1.wellnessSettings).where((0, drizzle_orm_1.eq)(schema_1.wellnessSettings.userId, userId)),
             db
                 .select()
@@ -93,10 +93,22 @@ let WellnessService = class WellnessService {
                 .where((0, drizzle_orm_1.eq)(schema_1.cycleEntries.userId, userId))
                 .orderBy((0, drizzle_orm_1.desc)(schema_1.cycleEntries.day))
                 .limit(730),
+            db
+                .select()
+                .from(schema_1.medicineDoses)
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.medicineDoses.userId, userId), (0, drizzle_orm_1.gte)(schema_1.medicineDoses.day, cutoff))),
         ]);
         return {
             activityTracking: preferences[0]?.activityTracking ?? { goals: {}, days: [] },
             medicines: preferences[0]?.medicines ?? [],
+            medicineDoses: doseRecords.map((row) => ({
+                medicineId: row.medicineId,
+                day: row.day,
+                time: row.time,
+                status: row.status,
+                recordedAt: row.recordedAt.toISOString(),
+                snoozedUntil: row.snoozedUntil?.toISOString() ?? null,
+            })),
             waterPlan: preferences[0]?.waterPlan
                 ? { ...preferences[0].waterPlan, timezone: domain_1.APP_TIMEZONE }
                 : null,
@@ -213,6 +225,7 @@ let WellnessService = class WellnessService {
     deleteMedicine(userId, id) {
         this.uuid(id);
         return this.mutate(userId, async (tx) => {
+            await tx.delete(schema_1.medicineDoses).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.medicineDoses.userId, userId), (0, drizzle_orm_1.eq)(schema_1.medicineDoses.medicineId, id)));
             const [row] = await tx.select().from(schema_1.wellnessSettings).where((0, drizzle_orm_1.eq)(schema_1.wellnessSettings.userId, userId));
             await tx
                 .update(schema_1.wellnessSettings)
@@ -221,6 +234,51 @@ let WellnessService = class WellnessService {
                 updatedAt: new Date(),
             })
                 .where((0, drizzle_orm_1.eq)(schema_1.wellnessSettings.userId, userId));
+        });
+    }
+    saveMedicineDose(userId, id, day, time, body) {
+        this.uuid(id);
+        this.parse(input.doseDayInput, day);
+        this.parse(input.doseTimeInput, time);
+        const value = this.parse(input.medicineDoseInput, body);
+        const now = new Date(), today = (0, domain_1.localDay)(now, domain_1.APP_TIMEZONE);
+        if (day > today || day < (0, domain_1.addDays)(today, -90) || (value.snooze && day !== today))
+            throw new common_1.BadRequestException('Choose today or a date within the last 90 days. Snooze is only available today.');
+        return this.mutate(userId, async (tx) => {
+            const [row] = await tx.select().from(schema_1.wellnessSettings).where((0, drizzle_orm_1.eq)(schema_1.wellnessSettings.userId, userId));
+            const medicine = row?.medicines.find((m) => m.id === id && m.doses.some((d) => d.time === time));
+            if (!medicine)
+                throw new common_1.NotFoundException('This medicine or dose time has changed. Refresh your schedule.');
+            if (value.snooze && (!medicine.enabled || (0, domain_1.zonedInstant)(day, time, domain_1.APP_TIMEZONE) > now))
+                throw new common_1.BadRequestException('Snooze is available when a dose is due and reminders are enabled.');
+            const filter = (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.medicineDoses.userId, userId), (0, drizzle_orm_1.eq)(schema_1.medicineDoses.medicineId, id), (0, drizzle_orm_1.eq)(schema_1.medicineDoses.day, day), (0, drizzle_orm_1.eq)(schema_1.medicineDoses.time, time));
+            const [existing] = await tx.select().from(schema_1.medicineDoses).where(filter);
+            if (value.snooze && (existing?.status === 'taken' || existing?.status === 'skipped'))
+                throw new common_1.ConflictException('This dose is already logged. Undo it before snoozing.');
+            if (existing?.status === value.status &&
+                (!value.snooze
+                    ? !existing.snoozedUntil
+                    : existing.snoozedUntil && existing.snoozedUntil > now))
+                return;
+            const snoozedUntil = value.snooze ? new Date(now.getTime() + 15 * 60000) : null;
+            if (snoozedUntil && (0, domain_1.localDay)(snoozedUntil, domain_1.APP_TIMEZONE) !== today)
+                throw new common_1.BadRequestException('A snooze cannot move this dose into the next day.');
+            const record = {
+                userId,
+                medicineId: id,
+                day,
+                time,
+                status: value.status,
+                recordedAt: now,
+                snoozedUntil,
+            };
+            await tx
+                .insert(schema_1.medicineDoses)
+                .values(record)
+                .onConflictDoUpdate({
+                target: [schema_1.medicineDoses.userId, schema_1.medicineDoses.medicineId, schema_1.medicineDoses.day, schema_1.medicineDoses.time],
+                set: record,
+            });
         });
     }
     savePlan(userId, body) {

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cycleEntries = exports.cyclePeriods = exports.waterTaskStates = exports.waterLogs = exports.wellnessSettings = void 0;
+exports.cycleEntries = exports.cyclePeriods = exports.waterTaskStates = exports.medicineDoses = exports.waterLogs = exports.wellnessSettings = void 0;
 const drizzle_orm_1 = require("drizzle-orm");
 const pg_core_1 = require("drizzle-orm/pg-core");
 const users_schema_1 = require("./users.schema");
@@ -34,6 +34,22 @@ exports.waterLogs = (0, pg_core_1.pgTable)('water_logs', {
     (0, pg_core_1.index)('water_logs_user_day').on(table.userId, table.day),
     (0, pg_core_1.uniqueIndex)('water_logs_task_once').on(table.userId, table.taskId),
     (0, pg_core_1.check)('water_log_amount_range', (0, drizzle_orm_1.sql) `${table.amountMl} between 1 and 3000`),
+]);
+exports.medicineDoses = (0, pg_core_1.pgTable)('medicine_doses', {
+    userId: (0, pg_core_1.uuid)('user_id')
+        .notNull()
+        .references(() => users_schema_1.users.id, { onDelete: 'cascade' }),
+    medicineId: (0, pg_core_1.uuid)('medicine_id').notNull(),
+    day: (0, pg_core_1.date)('day', { mode: 'string' }).notNull(),
+    time: (0, pg_core_1.text)('time').notNull(),
+    status: (0, pg_core_1.text)('status').$type().notNull(),
+    recordedAt: (0, pg_core_1.timestamp)('recorded_at', { withTimezone: true }).notNull().defaultNow(),
+    snoozedUntil: (0, pg_core_1.timestamp)('snoozed_until', { withTimezone: true }),
+}, (table) => [
+    (0, pg_core_1.primaryKey)({ columns: [table.userId, table.medicineId, table.day, table.time] }),
+    (0, pg_core_1.index)('medicine_doses_user_day').on(table.userId, table.day),
+    (0, pg_core_1.check)('medicine_dose_status', (0, drizzle_orm_1.sql) `${table.status} in ('taken', 'skipped', 'pending')`),
+    (0, pg_core_1.check)('medicine_dose_clock', (0, drizzle_orm_1.sql) `${table.time} ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'`),
 ]);
 exports.waterTaskStates = (0, pg_core_1.pgTable)('water_task_states', {
     userId: (0, pg_core_1.uuid)('user_id')

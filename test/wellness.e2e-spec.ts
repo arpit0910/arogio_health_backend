@@ -59,6 +59,62 @@ describe('Account-owned wellness HTTP journeys', () => {
       .auth(auth ?? token, { type: 'bearer' })
       .send(body);
   };
+  it('logs and snoozes doses idempotently and keeps them private to the owner', async () => {
+    const id = randomUUID(),
+      day = localDay(new Date(), APP_TIMEZONE);
+    await call('put', `/medicines/${id}`, {
+      name: 'Synthetic prescription',
+      notes: '',
+      enabled: true,
+      doses: [{ time: '00:00', amount: 'As prescribed' }],
+    }).expect(200);
+    const path = `/medicines/${id}/doses/${day}/00:00`;
+    await call('put', `/medicines/${id}`, {
+      name: 'Synthetic prescription',
+      notes: '',
+      enabled: false,
+      doses: [{ time: '00:00', amount: 'As prescribed' }],
+    }).expect(200);
+    await call('put', path, { status: 'pending', snooze: true }).expect(400);
+    await call('put', `/medicines/${id}`, {
+      name: 'Synthetic prescription',
+      notes: '',
+      enabled: true,
+      doses: [{ time: '00:00', amount: 'As prescribed' }],
+    }).expect(200);
+    await call('put', path, { status: 'taken' }, other).expect(404);
+    await call('put', `/medicines/${id}/doses/${day}/09:00`, { status: 'taken' }).expect(404);
+    await call('put', `/medicines/${id}/doses/${addDays(day, 1)}/00:00`, {
+      status: 'taken',
+    }).expect(400);
+    await call('put', path, { status: 'taken', snooze: true }).expect(400);
+    const logged = await call('put', path, { status: 'taken' }).expect(200);
+    expect(logged.body.medicineDoses).toHaveLength(1);
+    const again = await call('put', path, { status: 'taken' }).expect(200);
+    expect(again.body.medicineDoses).toEqual(logged.body.medicineDoses);
+    await call('put', path, { status: 'pending', snooze: true }).expect(409);
+    expect((await call('get', '', undefined, other)).body.medicineDoses).toEqual([]);
+    await call('put', path, { status: 'pending' }).expect(200);
+    await call('put', path, { status: 'skipped' }).expect(200);
+    await call('put', path, { status: 'pending', snooze: true }).expect(409);
+    await call('put', path, { status: 'pending' }).expect(200);
+    // An earlier day cannot be snoozed, independent of the wall clock.
+    await call('put', `/medicines/${id}/doses/${addDays(day, -1)}/00:00`, {
+      status: 'pending',
+      snooze: true,
+    }).expect(400);
+    // At the end of an IST day, moving a dose to tomorrow is rejected.
+    const crossesDay = localDay(new Date(Date.now() + 15 * 60000), APP_TIMEZONE) !== day;
+    const snoozed = await call('put', path, { status: 'pending', snooze: true }).expect(
+      crossesDay ? 400 : 200,
+    );
+    if (!crossesDay) {
+      const retry = await call('put', path, { status: 'pending', snooze: true }).expect(200);
+      expect(retry.body.medicineDoses).toEqual(snoozed.body.medicineDoses);
+    }
+    await call('delete', `/medicines/${id}`).expect(200);
+    expect((await call('get', '')).body.medicineDoses).toEqual([]);
+  });
   it('keeps daily targets and entered totals account-owned, distinct and idempotent', async () => {
     const day = localDay(new Date(), APP_TIMEZONE);
     const goals = {

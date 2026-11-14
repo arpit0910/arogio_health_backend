@@ -71,6 +71,16 @@ export declare const medicineInput: z.ZodObject<{
         amount: z.ZodString;
     }, z.core.$strict>>;
 }, z.core.$strict>;
+export declare const medicineDoseInput: z.ZodObject<{
+    status: z.ZodEnum<{
+        pending: "pending";
+        skipped: "skipped";
+        taken: "taken";
+    }>;
+    snooze: z.ZodDefault<z.ZodBoolean>;
+}, z.core.$strict>;
+export declare const doseDayInput: z.ZodString;
+export declare const doseTimeInput: z.ZodString;
 export declare const activityGoalsInput: z.ZodObject<{
     goals: z.ZodObject<{
         Steps: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;

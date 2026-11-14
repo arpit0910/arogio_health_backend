@@ -12,10 +12,16 @@ const auth_module_1 = require("../auth/auth.module");
 const home_controller_1 = require("./home.controller");
 const home_service_1 = require("./home.service");
 const stormglass_weather_1 = require("./stormglass.weather");
+const care_module_1 = require("../care/care.module");
+const discovery_controller_1 = require("./discovery.controller");
 let HomeModule = class HomeModule {
 };
 exports.HomeModule = HomeModule;
 exports.HomeModule = HomeModule = __decorate([
-    (0, common_1.Module)({ imports: [auth_module_1.AuthModule], controllers: [home_controller_1.HomeController], providers: [home_service_1.HomeService, stormglass_weather_1.StormglassWeather] })
+    (0, common_1.Module)({
+        imports: [auth_module_1.AuthModule, care_module_1.CareModule],
+        controllers: [home_controller_1.HomeController, discovery_controller_1.DiscoveryController],
+        providers: [home_service_1.HomeService, stormglass_weather_1.StormglassWeather],
+    })
 ], HomeModule);
 //# sourceMappingURL=home.module.js.map

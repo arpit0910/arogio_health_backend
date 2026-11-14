@@ -24,7 +24,7 @@ process.env.SWAGGER_ENABLED = persistent ? 'true' : 'false';
 async function main() {
   const { PGlite } = require('@electric-sql/pglite');
   const { drizzle } = require('drizzle-orm/pglite');
-  const { migrate } = require('drizzle-orm/pglite/migrator');
+  const { migrateLocal } = require('./migrate-local.cjs');
   const { Test } = require('@nestjs/testing');
   const { AppModule } = require('../dist/app.module');
   const { DatabaseService } = require('../dist/database/database.service');
@@ -33,7 +33,7 @@ async function main() {
   if (persistent) await mkdir(join(root, '.local'), { recursive: true });
   const database = new PGlite(persistent ? join(root, '.local', 'database') : undefined);
   const db = drizzle(database, { schema });
-  await migrate(db, { migrationsFolder: join(root, 'drizzle') });
+  await migrateLocal(database, join(root, 'drizzle'));
   const module = await Test.createTestingModule({ imports: [AppModule] }).overrideProvider(DatabaseService).useValue({
     db, ping: async () => { await database.query('select 1'); }, onApplicationShutdown: () => database.close(),
   }).compile();

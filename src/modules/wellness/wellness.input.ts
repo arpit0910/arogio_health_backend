@@ -84,6 +84,19 @@ export const medicineInput = z
   })
   .strict();
 
+export const medicineDoseInput = z
+  .object({
+    status: z.enum(['taken', 'skipped', 'pending']),
+    snooze: z.boolean().default(false),
+  })
+  .strict()
+  .refine(
+    (value) => !value.snooze || value.status === 'pending',
+    'Only pending doses can be snoozed.',
+  );
+export const doseDayInput = day;
+export const doseTimeInput = clock;
+
 const activityValues = z
   .object({
     Steps: z.number().int().min(0).max(200000).nullable().optional(),
