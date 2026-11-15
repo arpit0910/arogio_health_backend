@@ -694,3 +694,28 @@ dialog::backdrop {
   border-radius: 12px;
   margin-bottom: 20px;
 }
+.database-reset-review {
+  margin-top: 24px;
+  overflow-wrap: anywhere;
+}
+.database-reset-review label {
+  margin-top: 24px;
+}
+.database-reset-review dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 16px;
+}
+.database-reset-review dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.database-reset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+.database-reset-actions button {
+  min-height: 44px;
+}

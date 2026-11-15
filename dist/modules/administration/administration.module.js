@@ -19,14 +19,32 @@ const password_hashing_service_1 = require("../authentication/services/password-
 const administration_controller_1 = require("./controllers/administration.controller");
 const administration_guard_1 = require("./guards/administration.guard");
 const administration_service_1 = require("./services/administration.service");
+const database_reset_service_1 = require("./services/database-reset.service");
+const database_reset_controller_1 = require("./controllers/database-reset.controller");
 let AdministrationModule = class AdministrationModule {
 };
 exports.AdministrationModule = AdministrationModule;
 exports.AdministrationModule = AdministrationModule = __decorate([
     (0, common_1.Module)({
-        imports: [meditation_library_module_1.MeditationLibraryModule, health_resources_module_1.HealthResourcesModule, authentication_module_1.AuthenticationModule, user_accounts_module_1.UserAccountsModule, personal_wellness_module_1.PersonalWellnessModule],
-        controllers: [administration_controller_1.AdministrationController, health_resources_administration_controller_1.HealthResourcesAdministrationController, meditation_library_administration_controller_1.MeditationLibraryAdministrationController],
-        providers: [administration_guard_1.SuperAdministratorGuard, administration_service_1.AdministrationService, password_hashing_service_1.PasswordHashingService],
+        imports: [
+            meditation_library_module_1.MeditationLibraryModule,
+            health_resources_module_1.HealthResourcesModule,
+            authentication_module_1.AuthenticationModule,
+            user_accounts_module_1.UserAccountsModule,
+            personal_wellness_module_1.PersonalWellnessModule,
+        ],
+        controllers: [
+            administration_controller_1.AdministrationController,
+            health_resources_administration_controller_1.HealthResourcesAdministrationController,
+            meditation_library_administration_controller_1.MeditationLibraryAdministrationController,
+            database_reset_controller_1.DatabaseResetController,
+        ],
+        providers: [
+            administration_guard_1.SuperAdministratorGuard,
+            administration_service_1.AdministrationService,
+            password_hashing_service_1.PasswordHashingService,
+            database_reset_service_1.DatabaseResetService,
+        ],
     })
 ], AdministrationModule);
 //# sourceMappingURL=administration.module.js.map

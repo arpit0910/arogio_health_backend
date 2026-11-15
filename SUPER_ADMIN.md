@@ -31,6 +31,8 @@ After deployment, visit the backend origin followed by `/admin` and sign in with
 
 ## Portal functions
 
+- **Database reset:** review the connected database and every app table count, re-enter the current super-admin password, then type `RESET ALL APP DATA`. The final action permanently clears all app records, including every administrator, session, uploaded database image and audit record. Schema and migration history remain. The portal signs out on success; seed a new administrator from the server to regain access. See [reset instructions](database/RESET.md#admin-panel-reset).
+
 The portal also includes **Meditation** for managing published/draft YouTube videos and guided timed practices, including bilingual text, section/order, preparation, steps and repeats. See [MEDITATION_MODULE.md](MEDITATION_MODULE.md) for editor behavior, API routes, migration `0013_meditation_content.sql` and deployment steps.
 
 - **Overview:** total/active/completed/referred/soft-deleted account counts, 7/30-day registrations, daily registration series, saved care counts, recent accounts and referral leaders. These are database aggregates, not medical or device analytics.

@@ -10,9 +10,27 @@ import { PasswordHashingService } from '../authentication/services/password-hash
 import { AdministrationController } from './controllers/administration.controller';
 import { SuperAdministratorGuard } from './guards/administration.guard';
 import { AdministrationService } from './services/administration.service';
+import { DatabaseResetService } from './services/database-reset.service';
+import { DatabaseResetController } from './controllers/database-reset.controller';
 @Module({
-  imports: [MeditationLibraryModule, HealthResourcesModule, AuthenticationModule, UserAccountsModule, PersonalWellnessModule],
-  controllers: [AdministrationController, HealthResourcesAdministrationController, MeditationLibraryAdministrationController],
-  providers: [SuperAdministratorGuard, AdministrationService, PasswordHashingService],
+  imports: [
+    MeditationLibraryModule,
+    HealthResourcesModule,
+    AuthenticationModule,
+    UserAccountsModule,
+    PersonalWellnessModule,
+  ],
+  controllers: [
+    AdministrationController,
+    HealthResourcesAdministrationController,
+    MeditationLibraryAdministrationController,
+    DatabaseResetController,
+  ],
+  providers: [
+    SuperAdministratorGuard,
+    AdministrationService,
+    PasswordHashingService,
+    DatabaseResetService,
+  ],
 })
 export class AdministrationModule {}

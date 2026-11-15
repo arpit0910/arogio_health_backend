@@ -80,6 +80,13 @@ Public list/detail: `GET /api/v1/public/hospitals` and `/api/v1/public/hospitals
 
 New catalog APIs and administrator operations are documented in [Doctors](src/modules/doctors/README.md) and [Diseases](src/modules/diseases/README.md). Public bases: `/api/v1/public/doctors`, `/api/v1/public/diseases`. Protected administration bases: `/api/v1/admin/doctors`, `/api/v1/admin/diseases`. Both provide list/detail, create/edit/delete and CSV/XLSX template + import preview/apply. Doctors additionally provides `POST /:id/review`, department/hospital links and recorded schedules.
 
-## Provider images
+## Database reset (super-admin only)
+
+- `POST /api/v1/admin/database-reset/preview`: `{password}` returns database identity, app table counts, exact confirmation phrase, expiry and signed `previewToken`. Read-only.
+- `POST /api/v1/admin/database-reset/apply`: `{password, confirmation: "RESET ALL APP DATA", previewToken}` reauthenticates and clears all app tables in one verified transaction. Success returns `{reset: true, tableCount, remainingRecords: 0}`. All users and administrators are removed; discard existing tokens. Schema and migration history remain. Stale inventories, unknown tables and external dependencies prevent reset.
+
+See [the reset guide](database/RESET.md#admin-panel-reset) for administrator recovery and target scope.
+
+## Provider image endpoints
 
 For both `/api/v1/admin/doctors/:id/image` and `/api/v1/admin/hospitals/:id/image`: PUT accepts protected multipart file/alt/expectedVersion, GET previews an image and DELETE requires expected_version. Public GET image URLs live below `/api/v1/public/doctors/:id/image` and `/api/v1/public/hospitals/:id/image` and enforce publication/freshness. See [image contracts and workflow](docs/PROVIDER_IMAGES.md).

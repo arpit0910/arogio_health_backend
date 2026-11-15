@@ -6,7 +6,15 @@ On 15 November 2026, the user authorized clearing both databases, then chose **l
 
 The original local store could not open cleanly, so its authorized reset recreated the database files. Migration history is present in the rebuilt store. Environment files, credentials and source assets were retained. The hosted database was **not changed**. Its credentials in `.env.production` must be corrected before its reset can proceed.
 
-## Read-only inspection
+## Admin panel reset
+
+Open **Database reset** in `/admin` as an active super-admin with a password. Enter the current password and select **Review database reset**. Confirm the displayed environment, host, database and table counts; type `RESET ALL APP DATA`, then select **Permanently reset database**. The review expires after ten minutes and is bound to that administrator, database and table counts. Changed counts require another review. The reset targets the database connected to the running API; it does not separately reset another local or hosted database.
+
+All app records are deleted, including administrators, authentication sessions, database-stored images and audit logs. There is no automatic replacement administrator or seeded content. The schema, indexes, migration journal and provider-owned schemas remain. Unknown public tables or external foreign-key dependencies block the operation. Locks, truncation and zero-row verification run in one transaction; failure rolls back. Completion is recorded in server logs rather than recreating an audit row in the emptied database.
+
+After success, configure `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD` (at least 16 characters) and optionally `SUPER_ADMIN_NAME` privately on the server, then run `npm run seed:super-admin:production`. For local development use `npm run seed:super-admin` with `.env.local`. These commands recreate admin access only; they do not restore deleted records. Adding this feature does not execute a reset or deploy it to production.
+
+## CLI inspection
 
 ```sh
 npm run db:inspect -- --target local

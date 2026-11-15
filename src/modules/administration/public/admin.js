@@ -285,6 +285,8 @@ $('create-user').onclick = () =>
     'The person will complete their profile when signing in. Share initial credentials through your approved secure channel.',
   );
 async function show() {
+  $('create-user').hidden = page === 'database-reset';
+  if (page === 'database-reset') return databaseResetPage();
   if (page === 'overview') return overview();
   if (page === 'people') return people();
   if (page === 'banners') return homeBanners();
