@@ -7,7 +7,7 @@ npm.cmd run db:migrate
 npm.cmd run build
 ```
 
-Migration `drizzle/0004_handy_captain_universe.sql` adds nullable `users.profile_setup` JSONB and `users.profile_completed_at`. Existing users remain incomplete until they finish setup. No existing data is backfilled or discarded.
+Migration `database/migrations/0004_handy_captain_universe.sql` adds nullable `users.profile_setup` JSONB and `users.profile_completed_at`. Existing users remain incomplete until they finish setup. No existing data is backfilled or discarded.
 
 Authenticated `GET /api/v1/users/me` and authentication responses now include `profileSetup` and `profileCompletedAt`.
 

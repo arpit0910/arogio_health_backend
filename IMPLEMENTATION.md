@@ -1,6 +1,8 @@
+> For the current directory structure and feature ownership, see [docs/MODULES.md](docs/MODULES.md). This document also contains earlier implementation decisions.
+
 # Arogio Health Backend — Implementation Plan
 
-This document is the source of truth for the first Arogio Health backend implementation. It consolidates the decisions in the [project discussion](https://chatgpt.com/share/6ad6f8f7-1e00-83ec-8812-fb499372bf1b) and adapts them to the current repository, which is a greenfield repository containing only a README.
+Historical plan for the initial authentication milestone. The repository now includes the healthcare, content, wellness and administration modules documented in [docs/MODULES.md](docs/MODULES.md). The current README and module guide are authoritative for file locations and current scope.
 
 Last updated: 20 October 2026
 
@@ -75,13 +77,20 @@ Use existing project conventions once the scaffold exists. Do not add a dependen
 Controllers validate transport input and map output. Services own use-case logic. Repositories own Drizzle queries where isolating persistence improves clarity or testability. Infrastructure services wrap external providers such as Google or a future SMS gateway.
 
 ```text
-HTTP request
-  -> request ID / logging / security middleware
-  -> DTO validation
-  -> controller
-  -> application service
-  -> repository or external-provider boundary
-  -> PostgreSQL / Google verifier
+src/modules/<feature>/
+  <feature>.module.ts
+  README.md
+  controllers/
+  services/
+  dto/
+  repositories/        # Where the feature has repository-owned queries
+src/database/schema/
+src/database/seeds/
+database/migrations/
+scripts/database/
+scripts/local/
+scripts/verification/
+test/
 ```
 
 Authentication remains stateless for access-token validation. Refresh-session state is stored in PostgreSQL so logout, rotation, expiry, and revocation work across multiple backend instances. No authentication state may depend on process memory.
@@ -115,8 +124,6 @@ src/
   infrastructure/
     google/
       google-token-verifier.service.ts
-    sms/
-      sms-provider.interface.ts
   modules/
     health/
       health.module.ts
@@ -134,7 +141,7 @@ src/
       users.controller.ts
       users.service.ts
       users.repository.ts
-drizzle/
+database/migrations/
 test/
 ```
 

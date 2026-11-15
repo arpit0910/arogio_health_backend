@@ -154,3 +154,8 @@ vite.config.ts.timestamp-*
 
 # Local verification artifacts and isolated browser profiles
 /.tmp/
+
+# Disposable builds and local verification outputs
+*.apk
+*.aab
+/.impeccable/review/

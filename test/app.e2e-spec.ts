@@ -6,9 +6,9 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApplication } from '../src/bootstrap/configure-application';
 import { DatabaseService } from '../src/database/database.service';
-import { AuthRepository } from '../src/modules/auth/auth.repository';
-import { AuthService } from '../src/modules/auth/auth.service';
-import { UsersService } from '../src/modules/users/users.service';
+import { AuthenticationRepository } from '../src/modules/authentication/repositories/authentication.repository';
+import { AuthenticationService } from '../src/modules/authentication/services/authentication.service';
+import { UserAccountsService } from '../src/modules/user-accounts/services/user-accounts.service';
 
 describe('application API', () => {
   let app: NestExpressApplication;
@@ -26,11 +26,11 @@ describe('application API', () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(DatabaseService)
       .useValue(database)
-      .overrideProvider(AuthRepository)
+      .overrideProvider(AuthenticationRepository)
       .useValue({ isAccessSessionActive: () => Promise.resolve(true) })
-      .overrideProvider(AuthService)
+      .overrideProvider(AuthenticationService)
       .useValue(auth)
-      .overrideProvider(UsersService)
+      .overrideProvider(UserAccountsService)
       .useValue(users)
       .compile();
     app = module.createNestApplication<NestExpressApplication>();

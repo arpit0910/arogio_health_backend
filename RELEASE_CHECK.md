@@ -37,7 +37,7 @@ On 2026-10-26, `/health` and `/ready` returned the Node hosting sample page (HTT
 2. Run `npm ci --omit=dev` on Linux. Do not upload Windows node_modules. This package includes the built `dist` directory.
 3. Set the real `DATABASE_URL`, signing secrets, `CORS_ORIGINS`, and `GOOGLE_CLIENT_IDS` through the hosting environment or private `.env`. Nest does not automatically load `.env.production`.
 4. Take the usual database backup, then run `npm run db:migrate:production` using the intended database. This applies the included migrations, including profile setup migration 0004, without development dependencies.
-5. Restart the hosting Node application and run `node scripts/smoke-api.mjs https://backend.arogio.com/api/v1`. All six checks must pass.
+5. Restart the hosting Node application and run `node scripts/verification/smoke-api.mjs https://backend.arogio.com/api/v1`. All six checks must pass.
 6. Build a new APK from `D:/arogio-health-app` with `npx eas-cli@latest build --platform android --profile preview`; verify its signing certificate still matches Google Cloud.
 7. On the new APK, test email signup through completion, relaunch/resume, logout/login, Google account selection, Google cancellation and Google login after profile completion. Real Google sign-in remains unverified until this succeeds.
 

@@ -17,7 +17,7 @@ The shared failure in account database operations is consistent with a missing/o
 
 ## Diagnose in the hosting Node app environment
 
-Pull the new backend files, including `scripts/check-database.cjs`, `package.json`, source and rebuilt `dist/`. In the hosting Node app environment (the same environment holding its production `DATABASE_URL`), run:
+Pull the new backend files, including `scripts/database/check-database.cjs`, `package.json`, source and rebuilt `dist/`. In the hosting Node app environment (the same environment holding its production `DATABASE_URL`), run:
 
 ```sh
 npm run db:diagnose

@@ -2,9 +2,9 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
-import { UsersRepository } from '../modules/users/users.repository';
-import { UsersService } from '../modules/users/users.service';
-import { AuthRepository } from '../modules/auth/auth.repository';
+import { UserAccountsRepository } from '../modules/user-accounts/repositories/user-accounts.repository';
+import { UserAccountsService } from '../modules/user-accounts/services/user-accounts.service';
+import { AuthenticationRepository } from '../modules/authentication/repositories/authentication.repository';
 import type { DatabaseService } from './database.service';
 import * as schema from './schema';
 
@@ -13,7 +13,7 @@ describe('database migrations', () => {
 
   beforeEach(async () => {
     database = new PGlite();
-    const directory = join(process.cwd(), 'drizzle');
+    const directory = join(process.cwd(), 'database', 'migrations');
     const migrationFiles = (await readdir(directory))
       .filter((name) => name.endsWith('.sql'))
       .sort();
@@ -29,12 +29,12 @@ describe('database migrations', () => {
 
   it('applies from zero and enforces unique account identifiers', async () => {
     await database.exec(`
-      insert into users (id, email) values
+      insert into user_accounts (id, email) values
       ('11111111-1111-4111-8111-111111111111', 'user@example.com');
     `);
     await expect(
       database.exec(`
-        insert into users (id, email) values
+        insert into user_accounts (id, email) values
         ('22222222-2222-4222-8222-222222222222', 'user@example.com');
       `),
     ).rejects.toThrow();
@@ -42,8 +42,8 @@ describe('database migrations', () => {
 
   it('assigns unique permanent referral codes and records immutable setup attribution', async () => {
     const serviceDb = { db: drizzle(database, { schema }) } as unknown as DatabaseService;
-    const auth = new AuthRepository(serviceDb),
-      users = new UsersRepository(serviceDb);
+    const auth = new AuthenticationRepository(serviceDb),
+      users = new UserAccountsRepository(serviceDb);
     const inviter = await auth.createPasswordUser({
       email: 'inviter@example.test',
       passwordHash: 'fixture',
@@ -78,20 +78,20 @@ describe('database migrations', () => {
     });
     expect(registered.referredByUserId).toBe(inviter.id);
     await expect(
-      database.query('update users set referral_code = $1 where id = $2', [
+      database.query('update user_accounts set referral_code = $1 where id = $2', [
         inviter.referralCode,
         friend.id,
       ]),
     ).rejects.toThrow();
     await expect(
-      database.query('update users set referred_by_user_id = id where id = $1', [friend.id]),
+      database.query('update user_accounts set referred_by_user_id = id where id = $1', [friend.id]),
     ).rejects.toThrow();
   });
 
   it('backfills existing accounts with distinct codes before making the field required', async () => {
     await database.close();
     database = new PGlite();
-    const directory = join(process.cwd(), 'drizzle');
+    const directory = join(process.cwd(), 'database', 'migrations');
     const files = (await readdir(directory)).filter((name) => name.endsWith('.sql')).sort();
     for (const file of files) {
       if (file.startsWith('0008_'))
@@ -104,7 +104,7 @@ describe('database migrations', () => {
         if (statement.trim()) await database.exec(statement);
     }
     const result = await database.query<{ referral_code: string }>(
-      'select referral_code from users',
+      'select referral_code from user_accounts',
     );
     expect(result.rows).toHaveLength(2);
     expect(result.rows.every((row) => /^[A-F0-9]{12}$/.test(row.referral_code))).toBe(true);
@@ -114,13 +114,13 @@ describe('database migrations', () => {
   it('enforces valid height and weight ranges', async () => {
     await expect(
       database.exec(`
-        insert into users (id, email, height_cm, weight_kg) values
+        insert into user_accounts (id, email, height_cm, weight_kg) values
         ('11111111-1111-4111-8111-111111111111', 'invalid-health@example.com', 40, 700);
       `),
     ).rejects.toThrow();
     await expect(
       database.exec(`
-        insert into users (id, email, height_cm, weight_kg) values
+        insert into user_accounts (id, email, height_cm, weight_kg) values
         ('22222222-2222-4222-8222-222222222222', 'valid-health@example.com', 172.5, 68.4);
       `),
     ).resolves.toEqual(
@@ -130,11 +130,11 @@ describe('database migrations', () => {
 
   it('enforces unique provider subjects and cascades identity/session deletion', async () => {
     await database.exec(`
-      insert into users (id, email) values
+      insert into user_accounts (id, email) values
       ('11111111-1111-4111-8111-111111111111', 'user@example.com');
-      insert into auth_identities (user_id, provider, provider_subject)
+      insert into authentication_identities (user_id, provider, provider_subject)
       values ('11111111-1111-4111-8111-111111111111', 'google', 'google-subject');
-      insert into auth_sessions (id, user_id, token_hash, family_id, expires_at)
+      insert into authentication_sessions (id, user_id, token_hash, family_id, expires_at)
       values (
         '22222222-2222-4222-8222-222222222222',
         '11111111-1111-4111-8111-111111111111',
@@ -142,20 +142,20 @@ describe('database migrations', () => {
         '33333333-3333-4333-8333-333333333333',
         now() + interval '1 day'
       );
-      delete from users where id = '11111111-1111-4111-8111-111111111111';
+      delete from user_accounts where id = '11111111-1111-4111-8111-111111111111';
     `);
     const identities = await database.query<{ count: number }>(
-      'select count(*)::int as count from auth_identities',
+      'select count(*)::int as count from authentication_identities',
     );
     const sessions = await database.query<{ count: number }>(
-      'select count(*)::int as count from auth_sessions',
+      'select count(*)::int as count from authentication_sessions',
     );
     expect(identities.rows[0]?.count).toBe(0);
     expect(sessions.rows[0]?.count).toBe(0);
   });
 
   it('rotates refresh sessions and revokes the token family on reuse', async () => {
-    const repository = new AuthRepository({
+    const repository = new AuthenticationRepository({
       db: drizzle(database, { schema }),
     } as unknown as DatabaseService);
     const user = await repository.createPasswordUser({
@@ -194,13 +194,13 @@ describe('database migrations', () => {
     ).resolves.toEqual({ kind: 'reused' });
 
     const active = await database.query<{ count: number }>(
-      'select count(*)::int as count from auth_sessions where revoked_at is null',
+      'select count(*)::int as count from authentication_sessions where revoked_at is null',
     );
     expect(active.rows[0]?.count).toBe(0);
   });
 
   it('returns the winning Google user after a duplicate identity race', async () => {
-    const repository = new AuthRepository({
+    const repository = new AuthenticationRepository({
       db: drizzle(database, { schema }),
     } as unknown as DatabaseService);
     const first = await repository.createGoogleUser({
@@ -220,12 +220,12 @@ describe('database migrations', () => {
 
   it('persists setup drafts and completes the profile with normalized measurements', async () => {
     const connection = { db: drizzle(database, { schema }) } as unknown as DatabaseService;
-    const auth = new AuthRepository(connection);
+    const auth = new AuthenticationRepository(connection);
     const account = await auth.createPasswordUser({
       email: 'setup@example.com',
       passwordHash: 'private',
     });
-    const service = new UsersService(new UsersRepository(connection));
+    const service = new UserAccountsService(new UserAccountsRepository(connection));
     expect((await service.getMe(account.id)).profileCompletedAt).toBeNull();
     await service.saveSetup(account.id, { step: 1 });
     await service.saveSetup(account.id, {
@@ -270,11 +270,11 @@ describe('database migrations', () => {
 
   it('rejects premature completion and impossible birth dates without persisting', async () => {
     const connection = { db: drizzle(database, { schema }) } as unknown as DatabaseService;
-    const account = await new AuthRepository(connection).createPasswordUser({
+    const account = await new AuthenticationRepository(connection).createPasswordUser({
       email: 'incomplete@example.com',
       passwordHash: 'private',
     });
-    const service = new UsersService(new UsersRepository(connection));
+    const service = new UserAccountsService(new UserAccountsRepository(connection));
     await expect(service.saveSetup(account.id, { complete: true })).rejects.toMatchObject({
       code: 'VALIDATION_FAILED',
     });

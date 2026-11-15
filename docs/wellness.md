@@ -28,7 +28,7 @@ Snapshot reads return the last 90 days of water data (up to 3,000 logs), all per
 ## Deployment
 
 1. Back up the hosted PostgreSQL database using the existing operational process.
-2. Review additive migration `drizzle/0005_majestic_skreet.sql` (five tables, account FKs and constraints).
+2. Review additive migration `database/migrations/0005_majestic_skreet.sql` (five tables, account FKs and constraints).
 3. Build the backend and run its existing production migration command against the intended environment, then deploy the new application version.
 4. Verify authenticated snapshot, plan/log round-trip and CORS PUT preflight against the deployed URL.
 5. Build a fresh app binary with the notifications config plugin; run device acceptance in the companion app's `docs/wellness-tracking.md`.
@@ -43,4 +43,4 @@ The snapshot includes `activityTracking: { goals, days }`. Authenticated PUT `/w
 
 Dates must be within the last 90 days through today in Asia/Kolkata. Entries are replacement totals, not increments. Input limits are storage validation, not recommended health targets. Owner-scoped mutations use the existing user row lock. Connected raw readings and local phone step counts are not uploaded by these routes.
 
-Deploy additive migration `drizzle/0007_daily_activity_targets.sql` before serving this version. No hosted migration or deployment was performed during implementation. Activity HTTP tests cover account isolation, validation, repeated saves, separate calorie fields and deletion using disposable PGlite.
+Deploy additive migration `database/migrations/0007_daily_activity_targets.sql` before serving this version. No hosted migration or deployment was performed during implementation. Activity HTTP tests cover account isolation, validation, repeated saves, separate calorie fields and deletion using disposable PGlite.

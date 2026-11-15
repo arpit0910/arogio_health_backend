@@ -6,11 +6,11 @@
     "deleteOutDir": true,
     "assets": [
       {
-        "include": "modules/status/public/**/*",
+        "include": "modules/system-status/public/**/*",
         "watchAssets": true
       },
       {
-        "include": "modules/admin/public/**/*",
+        "include": "modules/administration/public/**/*",
         "watchAssets": true
       }
     ]

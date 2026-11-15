@@ -9,7 +9,7 @@ import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { ApiExceptionFilter } from '../common/errors/api-exception.filter';
 import { validationExceptionFactory } from '../common/validation/validation-exception.factory';
-import { RequestActivityService } from '../modules/status/request-activity.service';
+import { RequestActivityService } from '../modules/system-status/services/request-activity.service';
 
 export function configureApplication(app: NestExpressApplication): void {
   const config = app.get(ConfigService);
@@ -19,7 +19,7 @@ export function configureApplication(app: NestExpressApplication): void {
     helmet({ contentSecurityPolicy: { directives: { imgSrc: ["'self'", 'data:', 'https:'] } } }),
   );
   app.use(app.get(RequestActivityService).middleware);
-  app.useStaticAssets(join(__dirname, '..', 'modules', 'admin', 'public'), {
+  app.useStaticAssets(join(__dirname, '..', 'modules', 'administration', 'public'), {
     prefix: '/admin-assets/',
     index: false,
     maxAge: 0,
@@ -27,10 +27,10 @@ export function configureApplication(app: NestExpressApplication): void {
   app.use((request: Request, response: Response, next: NextFunction) => {
     if (request.method === 'GET' && (request.path === '/admin' || request.path === '/admin/')) {
       response.setHeader('Cache-Control', 'no-store');
-      response.sendFile(join(__dirname, '..', 'modules', 'admin', 'public', 'index.html'));
+      response.sendFile(join(__dirname, '..', 'modules', 'administration', 'public', 'index.html'));
     } else next();
   });
-  app.useStaticAssets(join(__dirname, '..', 'modules', 'status', 'public'), {
+  app.useStaticAssets(join(__dirname, '..', 'modules', 'system-status', 'public'), {
     prefix: '/status-assets/',
     index: false,
     maxAge: 0,
@@ -43,7 +43,7 @@ export function configureApplication(app: NestExpressApplication): void {
       return;
     }
     response.setHeader('Cache-Control', 'no-store');
-    response.sendFile(join(__dirname, '..', 'modules', 'status', 'public', 'index.html'));
+    response.sendFile(join(__dirname, '..', 'modules', 'system-status', 'public', 'index.html'));
   });
   app.use(json({ limit: '1mb' }));
   app.use(urlencoded({ extended: false, limit: '1mb' }));

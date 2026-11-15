@@ -17,15 +17,15 @@ import {
   localDay,
   waterDay,
   waterSchedule,
-} from '../src/modules/wellness/domain';
+} from '../src/modules/personal-wellness/domain/personal-wellness.domain';
 describe('Account-owned wellness HTTP journeys', () => {
   let app: NestExpressApplication, database: PGlite, token: string, other: string;
   beforeAll(async () => {
     database = new PGlite();
-    for (const name of (await readdir(join(process.cwd(), 'drizzle')))
+    for (const name of (await readdir(join(process.cwd(), 'database', 'migrations')))
       .filter((n) => n.endsWith('.sql'))
       .sort())
-      for (const sql of (await readFile(join(process.cwd(), 'drizzle', name), 'utf8')).split(
+      for (const sql of (await readFile(join(process.cwd(), 'database', 'migrations', name), 'utf8')).split(
         '--> statement-breakpoint',
       ))
         if (sql.trim()) await database.exec(sql);

@@ -1,6 +1,6 @@
 import sharp from 'sharp';
-import { seedSuperAdmin } from '../src/database/seed-super-admin';
-import { PasswordService } from '../src/modules/auth/password.service';
+import { seedSuperAdmin } from '../src/database/seeds/seed-super-admin';
+import { PasswordHashingService } from '../src/modules/authentication/services/password-hashing.service';
 import { getStorageToken, ThrottlerStorageService } from '@nestjs/throttler';
 import { createSign, generateKeyPairSync } from 'node:crypto';
 import { execFile } from 'node:child_process';
@@ -56,10 +56,10 @@ describe('signup, setup and Google HTTP journeys', () => {
 
   beforeAll(async () => {
     database = new PGlite();
-    for (const name of (await readdir(join(process.cwd(), 'drizzle')))
+    for (const name of (await readdir(join(process.cwd(), 'database', 'migrations')))
       .filter((n) => n.endsWith('.sql'))
       .sort()) {
-      for (const statement of (await readFile(join(process.cwd(), 'drizzle', name), 'utf8')).split(
+      for (const statement of (await readFile(join(process.cwd(), 'database', 'migrations', name), 'utf8')).split(
         '--> statement-breakpoint',
       )) {
         if (statement.trim()) await database.exec(statement);
@@ -137,12 +137,12 @@ describe('signup, setup and Google HTTP journeys', () => {
       .send({ confirm: true })
       .expect(200);
     await database.query(
-      "UPDATE users SET recoverable_until = now() - interval '1 second' WHERE id = $1",
+      "UPDATE user_accounts SET recoverable_until = now() - interval '1 second' WHERE id = $1",
       [first.user.id],
     );
     await request(app.getHttpServer()).post('/api/v1/auth/login').send(credentials).expect(403);
     const retained = await database.query<{ email: string; status: string }>(
-      'SELECT email, status FROM users WHERE id = $1',
+      'SELECT email, status FROM user_accounts WHERE id = $1',
       [first.user.id],
     );
     expect(retained.rows[0]).toEqual({ email: credentials.email, status: 'disabled' });
@@ -155,7 +155,7 @@ describe('signup, setup and Google HTTP journeys', () => {
       SUPER_ADMIN_NAME: 'Seeded Administrator',
     };
     const db = app.get(DatabaseService),
-      passwords = new PasswordService();
+      passwords = new PasswordHashingService();
     const first = await seedSuperAdmin(db, passwords, seed);
     expect(first.created).toBe(true);
     expect(
@@ -413,7 +413,7 @@ describe('signup, setup and Google HTTP journeys', () => {
       .expect(401);
     await register('invalid-referral@example.test', '000000000000').expect(400);
     const rows = await database.query<{ referred_by_user_id: string }>(
-      'select referred_by_user_id from users where email in ($1, $2)',
+      'select referred_by_user_id from user_accounts where email in ($1, $2)',
       ['referred-friend@example.test', 'setup-friend@example.test'],
     );
     expect(rows.rows).toHaveLength(2);
@@ -527,7 +527,7 @@ describe('signup, setup and Google HTTP journeys', () => {
     expect(next.body.user.id).toBe(first.body.user.id);
     expect(next.body.user.profileCompletedAt).toBe(completed.profileCompletedAt);
     const count = await database.query<{ count: number }>(
-      "select count(*)::int as count from auth_identities where provider_subject = 'synthetic-google-subject'",
+      "select count(*)::int as count from authentication_identities where provider_subject = 'synthetic-google-subject'",
     );
     expect(count.rows[0]?.count).toBe(1);
   });
@@ -630,7 +630,7 @@ describe('signup, setup and Google HTTP journeys', () => {
   it('passes the release smoke script against a real local HTTP listener', async () => {
     await app.listen(0, '127.0.0.1');
     const baseUrl = `${await app.getUrl()}/api/v1`;
-    const result = await promisify(execFile)(process.execPath, ['scripts/smoke-api.mjs', baseUrl]);
+    const result = await promisify(execFile)(process.execPath, ['scripts/verification/smoke-api.mjs', baseUrl]);
     const checks = result.stdout
       .trim()
       .split('\n')

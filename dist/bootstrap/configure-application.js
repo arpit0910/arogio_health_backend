@@ -13,14 +13,14 @@ const helmet_1 = __importDefault(require("helmet"));
 const nestjs_pino_1 = require("nestjs-pino");
 const api_exception_filter_1 = require("../common/errors/api-exception.filter");
 const validation_exception_factory_1 = require("../common/validation/validation-exception.factory");
-const request_activity_service_1 = require("../modules/status/request-activity.service");
+const request_activity_service_1 = require("../modules/system-status/services/request-activity.service");
 function configureApplication(app) {
     const config = app.get(config_1.ConfigService);
     app.useLogger(app.get(nestjs_pino_1.Logger));
     app.enableShutdownHooks();
     app.use((0, helmet_1.default)({ contentSecurityPolicy: { directives: { imgSrc: ["'self'", 'data:', 'https:'] } } }));
     app.use(app.get(request_activity_service_1.RequestActivityService).middleware);
-    app.useStaticAssets((0, node_path_1.join)(__dirname, '..', 'modules', 'admin', 'public'), {
+    app.useStaticAssets((0, node_path_1.join)(__dirname, '..', 'modules', 'administration', 'public'), {
         prefix: '/admin-assets/',
         index: false,
         maxAge: 0,
@@ -28,12 +28,12 @@ function configureApplication(app) {
     app.use((request, response, next) => {
         if (request.method === 'GET' && (request.path === '/admin' || request.path === '/admin/')) {
             response.setHeader('Cache-Control', 'no-store');
-            response.sendFile((0, node_path_1.join)(__dirname, '..', 'modules', 'admin', 'public', 'index.html'));
+            response.sendFile((0, node_path_1.join)(__dirname, '..', 'modules', 'administration', 'public', 'index.html'));
         }
         else
             next();
     });
-    app.useStaticAssets((0, node_path_1.join)(__dirname, '..', 'modules', 'status', 'public'), {
+    app.useStaticAssets((0, node_path_1.join)(__dirname, '..', 'modules', 'system-status', 'public'), {
         prefix: '/status-assets/',
         index: false,
         maxAge: 0,
@@ -44,7 +44,7 @@ function configureApplication(app) {
             return;
         }
         response.setHeader('Cache-Control', 'no-store');
-        response.sendFile((0, node_path_1.join)(__dirname, '..', 'modules', 'status', 'public', 'index.html'));
+        response.sendFile((0, node_path_1.join)(__dirname, '..', 'modules', 'system-status', 'public', 'index.html'));
     });
     app.use((0, express_1.json)({ limit: '1mb' }));
     app.use((0, express_1.urlencoded)({ extended: false, limit: '1mb' }));

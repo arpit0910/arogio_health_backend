@@ -66,8 +66,8 @@ hosting-managed .htaccess while preserving Passenger directives. It is prepared
 locally, **not installed**. Hosting-owner application and a live retest are required.
 
 ```sh
-node scripts/check-hosting-boundary.mjs https://backend.arogio.com
-node scripts/smoke-api.mjs https://backend.arogio.com/api/v1
+node scripts/verification/check-hosting-boundary.mjs https://backend.arogio.com
+node scripts/verification/smoke-api.mjs https://backend.arogio.com/api/v1
 ```
 
 The first command currently exits 1 for the confirmed exposure. All eight checks
@@ -80,6 +80,6 @@ real devices/accounts. No APK rebuild is required solely for this hosting fix.
 - [Sanitized machine summary](qa/production-2026-11-11.json).
 - Local raw results/logs: .tmp/production-2026-11-11/ (ignored by Git).
 - Native screenshots/XML/results: D:/arogio-health-app/.impeccable/review/production-2026-11-11/.
-- Read-only acceptance tool: scripts/check-hosting-boundary.mjs.
+- Read-only acceptance tool: scripts/verification/check-hosting-boundary.mjs.
 - Mutation scripts are archived behind an approval flag. Do not automatically rerun
   them; this run's authorization covered the two accounts already cleaned up.

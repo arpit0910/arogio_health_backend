@@ -55,13 +55,13 @@ The smoke checks intentionally make unauthenticated or invalid requests to verif
 Existing harmless smoke checks (no accounts or profile writes):
 
 ```sh
-node scripts/smoke-api.mjs https://backend.arogio.com/api/v1
+node scripts/verification/smoke-api.mjs https://backend.arogio.com/api/v1
 ```
 
 Explicit deployed account-flow test, run locally with the app repository next to this backend repository:
 
 ```sh
-node --experimental-strip-types scripts/test-deployed-app-client.mjs --create-test-account
+node --experimental-strip-types scripts/verification/test-deployed-app-client.mjs --create-test-account
 ```
 
 Use `--legacy` to test a deployed server before canonical routes have been released. This uses the app's real HTTP client and response schemas, creates a generated account in production, tests setup/resume/completion/login/refresh/logout, and revokes all issued test sessions. The generated test account remains in the database. No credentials or tokens are printed. A real Google authorization still requires a device and correct Google Cloud configuration.

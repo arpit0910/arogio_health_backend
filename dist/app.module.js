@@ -7,25 +7,25 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
-const directory_module_1 = require("./modules/directory/directory.module");
-const care_module_1 = require("./modules/care/care.module");
-const meditation_module_1 = require("./modules/meditation/meditation.module");
-const admin_module_1 = require("./modules/admin/admin.module");
-const home_module_1 = require("./modules/home/home.module");
-const chat_module_1 = require("./modules/chat/chat.module");
+const health_resources_module_1 = require("./modules/health-resources/health-resources.module");
+const care_directory_module_1 = require("./modules/care-directory/care-directory.module");
+const meditation_library_module_1 = require("./modules/meditation-library/meditation-library.module");
+const administration_module_1 = require("./modules/administration/administration.module");
+const home_dashboard_module_1 = require("./modules/home-dashboard/home-dashboard.module");
+const jeeva_assistant_module_1 = require("./modules/jeeva-assistant/jeeva-assistant.module");
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const core_1 = require("@nestjs/core");
 const throttler_1 = require("@nestjs/throttler");
 const nestjs_pino_1 = require("nestjs-pino");
 const logger_config_1 = require("./common/logging/logger.config");
-const env_schema_1 = require("./config/env.schema");
+const environment_schema_1 = require("./configuration/environment.schema");
 const database_module_1 = require("./database/database.module");
-const health_module_1 = require("./modules/health/health.module");
-const auth_module_1 = require("./modules/auth/auth.module");
-const users_module_1 = require("./modules/users/users.module");
-const status_module_1 = require("./modules/status/status.module");
-const wellness_module_1 = require("./modules/wellness/wellness.module");
+const system_health_module_1 = require("./modules/system-health/system-health.module");
+const authentication_module_1 = require("./modules/authentication/authentication.module");
+const user_accounts_module_1 = require("./modules/user-accounts/user-accounts.module");
+const system_status_module_1 = require("./modules/system-status/system-status.module");
+const personal_wellness_module_1 = require("./modules/personal-wellness/personal-wellness.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -38,7 +38,7 @@ exports.AppModule = AppModule = __decorate([
                 envFilePath: process.env.NODE_ENV === 'production'
                     ? ['.env.production', '.env']
                     : ['.env.local', '.env'],
-                validate: env_schema_1.validateEnvironment,
+                validate: environment_schema_1.validateEnvironment,
             }),
             nestjs_pino_1.LoggerModule.forRootAsync({
                 imports: [config_1.ConfigModule],
@@ -47,17 +47,17 @@ exports.AppModule = AppModule = __decorate([
             }),
             throttler_1.ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
             database_module_1.DatabaseModule,
-            admin_module_1.AdminModule,
-            meditation_module_1.MeditationModule,
-            directory_module_1.DirectoryModule,
-            care_module_1.CareModule,
-            home_module_1.HomeModule,
-            chat_module_1.ChatModule,
-            health_module_1.HealthModule,
-            status_module_1.StatusModule,
-            auth_module_1.AuthModule,
-            users_module_1.UsersModule,
-            wellness_module_1.WellnessModule,
+            administration_module_1.AdministrationModule,
+            meditation_library_module_1.MeditationLibraryModule,
+            health_resources_module_1.HealthResourcesModule,
+            care_directory_module_1.CareDirectoryModule,
+            home_dashboard_module_1.HomeDashboardModule,
+            jeeva_assistant_module_1.JeevaAssistantModule,
+            system_health_module_1.SystemHealthModule,
+            system_status_module_1.SystemStatusModule,
+            authentication_module_1.AuthenticationModule,
+            user_accounts_module_1.UserAccountsModule,
+            personal_wellness_module_1.PersonalWellnessModule,
         ],
         providers: [{ provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard }],
     })

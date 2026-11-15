@@ -15,8 +15,8 @@ describe('Admin-managed meditation library', () => {
   let app: NestExpressApplication, database: PGlite, token: string, reader: string;
   beforeAll(async () => {
     database = new PGlite();
-    for (const name of (await readdir('drizzle')).filter((name) => name.endsWith('.sql')).sort())
-      for (const statement of (await readFile(join('drizzle', name), 'utf8')).split(
+    for (const name of (await readdir('database/migrations')).filter((name) => name.endsWith('.sql')).sort())
+      for (const statement of (await readFile(join('database', 'migrations', name), 'utf8')).split(
         '--> statement-breakpoint',
       ))
         if (statement.trim()) await database.exec(statement);
@@ -34,9 +34,9 @@ describe('Admin-managed meditation library', () => {
       .expect(201);
     token = admin.body.accessToken as string;
     await db
-      .update(schema.users)
+      .update(schema.userAccounts)
       .set({ role: 'super_admin' })
-      .where(eq(schema.users.id, admin.body.user.id as string));
+      .where(eq(schema.userAccounts.id, admin.body.user.id as string));
     const user = await request(app.getHttpServer())
       .post('/api/v1/auth/register')
       .send({ email: 'meditation-reader@example.test', password: 'Health1!' })

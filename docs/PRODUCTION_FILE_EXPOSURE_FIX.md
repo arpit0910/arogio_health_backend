@@ -35,7 +35,7 @@ host's supported document-root/application-root arrangement before moving files.
 Run the read-only acceptance check after applying the change:
 
 ```sh
-node scripts/check-hosting-boundary.mjs https://backend.arogio.com
+node scripts/verification/check-hosting-boundary.mjs https://backend.arogio.com
 ```
 
 All eight checks must pass: private files denied, API and public admin assets

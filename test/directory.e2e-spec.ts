@@ -10,7 +10,7 @@ import { AppModule } from '../src/app.module';
 import { configureApplication } from '../src/bootstrap/configure-application';
 import { DatabaseService } from '../src/database/database.service';
 import * as schema from '../src/database/schema';
-import { articleHeaders, bankHeaders } from '../src/modules/directory/import';
+import { articleHeaders, bankHeaders } from '../src/modules/health-resources/imports/import';
 import { Workbook } from 'exceljs';
 const csv = (headers: string[], rows: Record<string, string | number>[]) =>
   Buffer.from(
@@ -25,10 +25,10 @@ describe('Articles and nearby blood-bank directory', () => {
   let app: NestExpressApplication, database: PGlite, token: string, ordinary: string;
   beforeAll(async () => {
     database = new PGlite();
-    for (const name of (await readdir(join(process.cwd(), 'drizzle')))
+    for (const name of (await readdir(join(process.cwd(), 'database', 'migrations')))
       .filter((name) => name.endsWith('.sql'))
       .sort())
-      for (const statement of (await readFile(join(process.cwd(), 'drizzle', name), 'utf8')).split(
+      for (const statement of (await readFile(join(process.cwd(), 'database', 'migrations', name), 'utf8')).split(
         '--> statement-breakpoint',
       ))
         if (statement.trim()) await database.exec(statement);
@@ -46,9 +46,9 @@ describe('Articles and nearby blood-bank directory', () => {
       .expect(201);
     token = admin.body.accessToken as string;
     await db
-      .update(schema.users)
+      .update(schema.userAccounts)
       .set({ role: 'super_admin' })
-      .where(eq(schema.users.id, admin.body.user.id as string));
+      .where(eq(schema.userAccounts.id, admin.body.user.id as string));
     const user = await request(app.getHttpServer())
       .post('/api/v1/auth/register')
       .send({ email: 'directory-reader@example.com', password: 'Health1!' })
@@ -161,6 +161,7 @@ describe('Articles and nearby blood-bank directory', () => {
       .set(auth())
       .expect(200);
     expect(listing.body.items).toHaveLength(1);
+    expect(listing.body.items[0]).toMatchObject({ reading_minutes_en: 1, reading_minutes_hi: 1 });
     const id = listing.body.items[0].id as string;
     const detail = await request(app.getHttpServer())
       .get(`/api/v1/articles/${id}`)
@@ -215,7 +216,7 @@ describe('Articles and nearby blood-bank directory', () => {
     expect(nearby.body.missingCoordinates).toBe(1);
     expect(nearby.headers['cache-control']).toContain('no-store');
     await database.exec(
-      "update blood_banks set is_verified = true, source_url = 'https://example.test/old-source', verified_at = now()",
+      "update blood_bank_directory_entries set is_verified = true, source_url = 'https://example.test/old-source', verified_at = now()",
     );
     await request(app.getHttpServer())
       .post('/api/v1/admin/content/blood-banks/import/apply')
@@ -226,7 +227,7 @@ describe('Articles and nearby blood-bank directory', () => {
       is_verified: boolean;
       source_url: string | null;
       verified_at: string | null;
-    }>('select is_verified, source_url, verified_at from blood_banks');
+    }>('select is_verified, source_url, verified_at from blood_bank_directory_entries');
     expect(
       afterImport.rows.every(
         (row) => !row.is_verified && row.source_url === null && row.verified_at === null,

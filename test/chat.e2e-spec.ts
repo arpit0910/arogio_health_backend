@@ -12,7 +12,7 @@ import { AppModule } from '../src/app.module';
 import { configureApplication } from '../src/bootstrap/configure-application';
 import { DatabaseService } from '../src/database/database.service';
 import * as schema from '../src/database/schema';
-import { localDay } from '../src/modules/wellness/domain';
+import { localDay } from '../src/modules/personal-wellness/domain/personal-wellness.domain';
 
 describe('Authenticated Jeeva HTTP journey', () => {
   let app: NestExpressApplication,
@@ -23,10 +23,10 @@ describe('Authenticated Jeeva HTTP journey', () => {
   let provider: jest.SpyInstance;
   beforeAll(async () => {
     database = new PGlite();
-    for (const name of (await readdir(join(process.cwd(), 'drizzle')))
+    for (const name of (await readdir(join(process.cwd(), 'database', 'migrations')))
       .filter((name) => name.endsWith('.sql'))
       .sort()) {
-      for (const sql of (await readFile(join(process.cwd(), 'drizzle', name), 'utf8')).split(
+      for (const sql of (await readFile(join(process.cwd(), 'database', 'migrations', name), 'utf8')).split(
         '--> statement-breakpoint',
       ))
         if (sql.trim()) await database.exec(sql);
@@ -61,7 +61,7 @@ describe('Authenticated Jeeva HTTP journey', () => {
     const db = drizzle(database, { schema }),
       today = localDay();
     await db
-      .update(schema.users)
+      .update(schema.userAccounts)
       .set({
         heightCm: 170,
         weightKg: 60,
@@ -71,8 +71,8 @@ describe('Authenticated Jeeva HTTP journey', () => {
           location: 'private-city',
         },
       })
-      .where(eq(schema.users.id, userId));
-    await db.insert(schema.wellnessSettings).values([
+      .where(eq(schema.userAccounts.id, userId));
+    await db.insert(schema.personalWellnessSettings).values([
       {
         userId,
         activityTracking: {
@@ -94,7 +94,7 @@ describe('Authenticated Jeeva HTTP journey', () => {
         activityTracking: { goals: { Steps: 99999 }, days: [] },
       },
     ]);
-    await db.insert(schema.waterLogs).values({
+    await db.insert(schema.waterIntakeLogs).values({
       id: randomUUID(),
       userId,
       amountMl: 500,
@@ -102,7 +102,7 @@ describe('Authenticated Jeeva HTTP journey', () => {
       day: today,
       targetMl: 2000,
     });
-    await db.insert(schema.cycleEntries).values({
+    await db.insert(schema.menstrualDailyLogs).values({
       userId,
       day: today,
       flow: 'light',
@@ -203,9 +203,9 @@ describe('Authenticated Jeeva HTTP journey', () => {
     ])
       expect(contextMessage).not.toContain(privateText);
     await drizzle(database, { schema })
-      .update(schema.users)
+      .update(schema.userAccounts)
       .set({ weightKg: 61 })
-      .where(eq(schema.users.id, userId));
+      .where(eq(schema.userAccounts.id, userId));
     await request(app.getHttpServer())
       .post('/api/v1/chat/messages')
       .auth(token, { type: 'bearer' })

@@ -31,7 +31,7 @@ npm ci
 npm run build
 ```
 
-The deployment must contain `app.js`, `dist/` (including `dist/modules/status/public/`), `drizzle/`, `package.json`, the lockfile and runtime dependencies. Configure production environment variables using the hosting panel or secret manager. Required configuration includes `NODE_ENV=production`, `DATABASE_URL`, `JWT_ACCESS_SECRET`, `GOOGLE_CLIENT_IDS` and `CORS_ORIGINS`. Use the Google **Web** client ID as the accepted token audience. Keep credentials out of the public web directory. Respect the `PORT` supplied by the host.
+The deployment must contain `app.js`, `dist/` (including `dist/modules/status/public/`), `database/migrations/`, `package.json`, the lockfile and runtime dependencies. Configure production environment variables using the hosting panel or secret manager. Required configuration includes `NODE_ENV=production`, `DATABASE_URL`, `JWT_ACCESS_SECRET`, `GOOGLE_CLIENT_IDS` and `CORS_ORIGINS`. Use the Google **Web** client ID as the accepted token audience. Keep credentials out of the public web directory. Respect the `PORT` supplied by the host.
 
 Apply committed database migrations against the intended production database after reviewing/backing up the deployment:
 
@@ -39,7 +39,7 @@ Apply committed database migrations against the intended production database aft
 npm run db:migrate:production
 ```
 
-Start the compiled application with `npm start` (which runs `node dist/main.js`). For this project's shared-hosting configuration, use the existing **`app.js` startup file**, which sets the working directory and starts `dist/main.js`; set the application root to the backend directory containing `package.json` and `app.js`. See [SHARED_HOSTING.md](./SHARED_HOSTING.md). Restart the Node application after uploading/building; confirm its startup log has no missing environment variables, dependencies or assets. Nest's default configuration loads `.env`, not `.env.production`; use hosting environment variables or the private `.env` file.
+Start the compiled application with `npm start` (which runs `node dist/main.js`). For this project's shared-hosting configuration, use the existing **`app.js` startup file**, which sets the working directory and starts `dist/main.js`; set the application root to the backend directory containing `package.json` and `app.js`. See [SHARED_HOSTING.md](./SHARED_HOSTING.md). Restart the Node application after uploading/building; confirm its startup log has no missing environment variables, dependencies or assets. Production configuration checks `.env.production` and then `.env`; hosting environment variables can also supply the configuration.
 
 For cPanel/Passenger-style hosting, confirm the application URL is the **root of `backend.arogio.com`**, not an unintended subpath or a static document root. Replace the host's sample startup-file setting with this project's `app.js`; do not delete unrelated files. If the hosting service does not support a persistent Node HTTP application, it must proxy this domain to a supported Node service instead. Host-specific routing changes require access to that hosting configuration.
 
@@ -54,7 +54,7 @@ For cPanel/Passenger-style hosting, confirm the application URL is the **root of
 Run the existing deployment smoke checks from a trusted machine:
 
 ```sh
-node scripts/smoke-api.mjs https://backend.arogio.com/api/v1
+node scripts/verification/smoke-api.mjs https://backend.arogio.com/api/v1
 ```
 
 These exercise health, readiness, unauthenticated access, invalid login input, invalid Google-token rejection and protected setup. They do not create accounts or alter profiles. Such checks appear as API requests in the monitor, so avoid running them simultaneously when isolating traffic from one APK action.
@@ -71,7 +71,7 @@ npm run start:local:validation
 Open `http://127.0.0.1:3001/`. This runner uses a disposable in-memory database and real application providers. In another terminal, run:
 
 ```sh
-node --experimental-strip-types scripts/test-local-app-client.mjs http://127.0.0.1:3001/api/v1
+node --experimental-strip-types scripts/verification/test-local-app-client.mjs http://127.0.0.1:3001/api/v1
 ```
 
 It exercises the app's actual HTTP client for signup, saved setup, review edits, completion, login, refresh and logout. Local validation does not prove the hosted deployment or a real Google account authorization works.

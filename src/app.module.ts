@@ -1,22 +1,22 @@
-import { DirectoryModule } from './modules/directory/directory.module';
-import { CareModule } from './modules/care/care.module';
-import { MeditationModule } from './modules/meditation/meditation.module';
-import { AdminModule } from './modules/admin/admin.module';
-import { HomeModule } from './modules/home/home.module';
-import { ChatModule } from './modules/chat/chat.module';
+import { HealthResourcesModule } from './modules/health-resources/health-resources.module';
+import { CareDirectoryModule } from './modules/care-directory/care-directory.module';
+import { MeditationLibraryModule } from './modules/meditation-library/meditation-library.module';
+import { AdministrationModule } from './modules/administration/administration.module';
+import { HomeDashboardModule } from './modules/home-dashboard/home-dashboard.module';
+import { JeevaAssistantModule } from './modules/jeeva-assistant/jeeva-assistant.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { createLoggerConfig } from './common/logging/logger.config';
-import { validateEnvironment } from './config/env.schema';
+import { validateEnvironment } from './configuration/environment.schema';
 import { DatabaseModule } from './database/database.module';
-import { HealthModule } from './modules/health/health.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { UsersModule } from './modules/users/users.module';
-import { StatusModule } from './modules/status/status.module';
-import { WellnessModule } from './modules/wellness/wellness.module';
+import { SystemHealthModule } from './modules/system-health/system-health.module';
+import { AuthenticationModule } from './modules/authentication/authentication.module';
+import { UserAccountsModule } from './modules/user-accounts/user-accounts.module';
+import { SystemStatusModule } from './modules/system-status/system-status.module';
+import { PersonalWellnessModule } from './modules/personal-wellness/personal-wellness.module';
 
 @Module({
   imports: [
@@ -36,17 +36,17 @@ import { WellnessModule } from './modules/wellness/wellness.module';
     }),
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     DatabaseModule,
-    AdminModule,
-    MeditationModule,
-    DirectoryModule,
-    CareModule,
-    HomeModule,
-    ChatModule,
-    HealthModule,
-    StatusModule,
-    AuthModule,
-    UsersModule,
-    WellnessModule,
+    AdministrationModule,
+    MeditationLibraryModule,
+    HealthResourcesModule,
+    CareDirectoryModule,
+    HomeDashboardModule,
+    JeevaAssistantModule,
+    SystemHealthModule,
+    SystemStatusModule,
+    AuthenticationModule,
+    UserAccountsModule,
+    PersonalWellnessModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

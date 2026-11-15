@@ -17,8 +17,8 @@ describe('Public care and audited publication', () => {
   let hospital: { id: string; updatedAt: string }, doctor: { id: string; updatedAt: string };
   beforeAll(async () => {
     database = new PGlite();
-    for (const name of (await readdir('drizzle')).filter((name) => name.endsWith('.sql')).sort())
-      for (const statement of (await readFile(join('drizzle', name), 'utf8')).split(
+    for (const name of (await readdir('database/migrations')).filter((name) => name.endsWith('.sql')).sort())
+      for (const statement of (await readFile(join('database', 'migrations', name), 'utf8')).split(
         '--> statement-breakpoint',
       ))
         if (statement.trim()) await database.exec(statement);
@@ -36,9 +36,9 @@ describe('Public care and audited publication', () => {
       .expect(201);
     token = admin.body.accessToken as string;
     await db
-      .update(schema.users)
+      .update(schema.userAccounts)
       .set({ role: 'super_admin' })
-      .where(eq(schema.users.id, admin.body.user.id as string));
+      .where(eq(schema.userAccounts.id, admin.body.user.id as string));
     const ordinary = await request(app.getHttpServer())
       .post('/api/v1/auth/register')
       .send({ email: 'care-reader@example.test', password: 'Health1!' })
@@ -213,7 +213,7 @@ describe('Public care and audited publication', () => {
       .send({ resolution: 'Synthetic test review completed.' })
       .expect(200);
     const events = await database.query<{ action: string }>(
-      "select action from admin_audit where action like 'care.%'",
+      "select action from administration_audit_logs where action like 'care.%'",
     );
     expect(events.rows.some((row) => row.action === 'care.correction.resolve')).toBe(true);
   });
@@ -230,7 +230,7 @@ describe('Public care and audited publication', () => {
   });
   it('handles sourced blood-bank corrections and account-scoped private exports', async () => {
     const [bank] = await drizzle(database, { schema })
-      .insert(schema.bloodBanks)
+      .insert(schema.bloodBankDirectoryEntries)
       .values({
         source_id: 'isolated-test-bank',
         name_en: 'Isolated bank fixture',
