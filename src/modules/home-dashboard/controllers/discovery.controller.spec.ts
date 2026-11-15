@@ -17,8 +17,8 @@ describe('Public Home discovery', () => {
   it('uses public reviewed queries and distinguishes an empty directory from failure', async () => {
     const list = jest.fn().mockResolvedValue({ items: [] });
     const result = await new DiscoveryController({ list } as unknown as CareDirectoryService).discovery();
-    expect(list).toHaveBeenNthCalledWith(1, { kind: 'hospital', city: 'Jaipur', limit: 3 });
-    expect(list).toHaveBeenNthCalledWith(2, { kind: 'doctor', city: 'Jaipur', limit: 3 });
+    expect(list).toHaveBeenNthCalledWith(1, { kind: 'hospital', limit: 3 });
+    expect(list).toHaveBeenNthCalledWith(2, { kind: 'doctor', limit: 3 });
     expect(result.hospitals).toEqual({ status: 'available', items: [] });
   });
 });

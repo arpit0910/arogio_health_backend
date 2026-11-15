@@ -26,6 +26,7 @@ __exportStar(require("./health-article-categories.schema"), exports);
 __exportStar(require("./health-articles.schema"), exports);
 __exportStar(require("./home-banners.schema"), exports);
 __exportStar(require("./medicine-dose-logs.schema"), exports);
+__exportStar(require("./medical-departments.schema"), exports);
 __exportStar(require("./meditation-library-items.schema"), exports);
 __exportStar(require("./menstrual-daily-logs.schema"), exports);
 __exportStar(require("./menstrual-periods.schema"), exports);
@@ -33,4 +34,9 @@ __exportStar(require("./personal-wellness-settings.schema"), exports);
 __exportStar(require("./user-accounts.schema"), exports);
 __exportStar(require("./water-intake-logs.schema"), exports);
 __exportStar(require("./water-reminder-states.schema"), exports);
+__exportStar(require("./hospitals.schema"), exports);
+__exportStar(require("./medical-diseases.schema"), exports);
+__exportStar(require("./doctors.schema"), exports);
+__exportStar(require("./doctor-departments.schema"), exports);
+__exportStar(require("./doctor-hospital-affiliations.schema"), exports);
 //# sourceMappingURL=index.js.map

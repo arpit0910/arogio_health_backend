@@ -134,6 +134,41 @@
       "when": 1794718605685,
       "tag": "0018_descriptive_domain_names",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794721919388,
+      "tag": "0019_medical_departments",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794723340014,
+      "tag": "0020_hospitals",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794724555379,
+      "tag": "0021_medical_diseases",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794725619340,
+      "tag": "0022_doctors",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794727454563,
+      "tag": "0023_provider_images",
+      "breakpoints": true
     }
   ]
 }

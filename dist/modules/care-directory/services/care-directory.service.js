@@ -31,7 +31,8 @@ let CareDirectoryService = class CareDirectoryService {
         return [
             (0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.published, true),
             (0, drizzle_orm_1.gte)(schema_1.careDirectoryEntries.reviewedAt, new Date(Date.now() - 180 * 86400000)),
-            (0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.city, 'Jaipur'),
+            (0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.kind, 'hospital'), (0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.kind, 'doctor'), (0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.city, 'Jaipur')),
+            (0, drizzle_orm_1.sql) `(not exists(select 1 from ${schema_1.doctors} d where d.id=${schema_1.careDirectoryEntries.id}) or exists(select 1 from ${schema_1.doctorDepartments} dd inner join ${schema_1.medicalDepartments} dep on dep.id=dd.department_id where dd.doctor_id=${schema_1.careDirectoryEntries.id} and dep.is_active=true))`,
         ];
     }
     present(row, admin) {
@@ -42,11 +43,16 @@ let CareDirectoryService = class CareDirectoryService {
     }
     async list(query, admin = false) {
         const q = this.parse(care_directory_input_1.careQuery, query);
-        if (q.city.toLowerCase() !== 'jaipur')
+        const cityWasProvided = typeof query === 'object' && query !== null && 'city' in query;
+        if (['hospital', 'doctor'].includes(q.kind ?? '') && !cityWasProvided)
+            q.city = '';
+        if (!['hospital', 'doctor'].includes(q.kind ?? '') && q.city.toLowerCase() !== 'jaipur')
             return { items: [], hasNext: false, page: q.page, coverage: 'unsupported-city' };
         const filters = admin ? [] : this.publicFilter();
         if (q.kind)
             filters.push((0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.kind, q.kind));
+        if ((['hospital', 'doctor'].includes(q.kind ?? '') || (!q.kind && cityWasProvided)) && q.city)
+            filters.push((0, drizzle_orm_1.sql) `lower(btrim(${schema_1.careDirectoryEntries.city})) = ${q.city.toLowerCase()}`);
         if (q.specialty)
             filters.push((0, drizzle_orm_1.sql) `${schema_1.careDirectoryEntries.details}->'specialties' @> ${JSON.stringify([q.specialty])}::jsonb`);
         if (q.search) {
@@ -64,7 +70,7 @@ let CareDirectoryService = class CareDirectoryService {
             items: rows.slice(0, q.limit).map((row) => this.present(row, admin)),
             hasNext: rows.length > q.limit,
             page: q.page,
-            coverage: 'Jaipur',
+            coverage: !q.kind && !cityWasProvided ? 'available-locations' : q.city || 'available-locations',
         };
     }
     async detail(id, admin = false) {
@@ -93,8 +99,26 @@ let CareDirectoryService = class CareDirectoryService {
         };
     }
     async save(id, actor, body) {
+        if (id)
+            this.parse(zod_1.z.uuid(), id);
         const { expectedUpdatedAt, ...data } = this.parse(care_directory_input_1.careInput, body);
         return this.database.db.transaction(async (tx) => {
+            await tx.execute((0, drizzle_orm_1.sql) `select pg_advisory_xact_lock(6389022)`);
+            await tx.execute((0, drizzle_orm_1.sql) `select pg_advisory_xact_lock(6389023)`);
+            await tx.execute((0, drizzle_orm_1.sql) `select pg_advisory_xact_lock(6389025)`);
+            if (id &&
+                (await tx.select({ id: schema_1.doctors.id }).from(schema_1.doctors).where((0, drizzle_orm_1.eq)(schema_1.doctors.id, id))).length)
+                throw new common_1.ConflictException('Use the Doctors administration tab to edit this structured doctor.');
+            if (data.kind === 'hospital')
+                await tx.execute((0, drizzle_orm_1.sql) `select pg_advisory_xact_lock(6389023)`);
+            if (id && data.kind === 'hospital') {
+                const [profile] = await tx
+                    .select({ id: schema_1.hospitals.id })
+                    .from(schema_1.hospitals)
+                    .where((0, drizzle_orm_1.eq)(schema_1.hospitals.id, id));
+                if (profile)
+                    throw new common_1.ConflictException('Use the Hospitals administration tab to edit this structured hospital.');
+            }
             let result;
             if (id) {
                 this.parse(zod_1.z.uuid(), id);
@@ -142,9 +166,19 @@ let CareDirectoryService = class CareDirectoryService {
         this.parse(zod_1.z.uuid(), id);
         const review = this.parse(care_directory_input_1.reviewInput, body);
         return this.database.db.transaction(async (tx) => {
+            await tx.execute((0, drizzle_orm_1.sql) `select pg_advisory_xact_lock(6389022)`);
+            await tx.execute((0, drizzle_orm_1.sql) `select pg_advisory_xact_lock(6389023)`);
+            await tx.execute((0, drizzle_orm_1.sql) `select pg_advisory_xact_lock(6389025)`);
+            if ((await tx.select({ id: schema_1.doctors.id }).from(schema_1.doctors).where((0, drizzle_orm_1.eq)(schema_1.doctors.id, id))).length)
+                throw new common_1.ConflictException('Use the Doctors administration tab for source review.');
             const [row] = await tx.select().from(schema_1.careDirectoryEntries).where((0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.id, id)).for('update');
             if (!row)
                 throw new common_1.NotFoundException();
+            const [profile] = row.kind === 'hospital'
+                ? await tx.select().from(schema_1.hospitals).where((0, drizzle_orm_1.eq)(schema_1.hospitals.id, id))
+                : [];
+            if (profile && review.publish && !profile.source_url)
+                throw new common_1.BadRequestException('A hospital source URL is required before publication.');
             if (row.updatedAt.toISOString() !== review.expectedUpdatedAt)
                 throw new common_1.ConflictException('Entry changed. Reload before reviewing.');
             if (review.publish && row.kind !== 'medicine' && (!row.address || !row.phone))
@@ -169,6 +203,11 @@ let CareDirectoryService = class CareDirectoryService {
             })
                 .where((0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.id, id))
                 .returning();
+            if (profile)
+                await tx
+                    .update(schema_1.hospitals)
+                    .set({ version: profile.version + 1, updated_at: new Date() })
+                    .where((0, drizzle_orm_1.eq)(schema_1.hospitals.id, id));
             await tx.insert(schema_1.administrationAuditLogs).values({
                 actorId: actor,
                 action: review.publish ? 'care.review.publish' : 'care.withdraw',
@@ -185,6 +224,9 @@ let CareDirectoryService = class CareDirectoryService {
             .object({ hospitalIds: zod_1.z.array(zod_1.z.uuid()).max(30), expectedUpdatedAt: zod_1.z.iso.datetime() })
             .strict(), body);
         return this.database.db.transaction(async (tx) => {
+            await tx.execute((0, drizzle_orm_1.sql) `select pg_advisory_xact_lock(6389025)`);
+            if ((await tx.select({ id: schema_1.doctors.id }).from(schema_1.doctors).where((0, drizzle_orm_1.eq)(schema_1.doctors.id, id))).length)
+                throw new common_1.ConflictException('Use the Doctors administration tab to manage recorded affiliations.');
             const [doctor] = await tx.select().from(schema_1.careDirectoryEntries).where((0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.id, id)).for('update');
             if (doctor?.kind !== 'doctor')
                 throw new common_1.BadRequestException('Choose a doctor entry.');
@@ -245,7 +287,9 @@ let CareDirectoryService = class CareDirectoryService {
         if (!bank)
             throw new common_1.NotFoundException();
         const data = this.parse(care_directory_input_1.correctionInput, body);
-        await this.database.db.insert(schema_1.bloodBankCorrections).values({ bankId: id, message: data.message });
+        await this.database.db
+            .insert(schema_1.bloodBankCorrections)
+            .values({ bankId: id, message: data.message });
         return { received: true };
     }
     async reviewBank(id, actor, body) {
@@ -260,7 +304,11 @@ let CareDirectoryService = class CareDirectoryService {
             }),
         }), body);
         return this.database.db.transaction(async (tx) => {
-            const [bank] = await tx.select().from(schema_1.bloodBankDirectoryEntries).where((0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.id, id)).for('update');
+            const [bank] = await tx
+                .select()
+                .from(schema_1.bloodBankDirectoryEntries)
+                .where((0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.id, id))
+                .for('update');
             if (!bank)
                 throw new common_1.NotFoundException();
             if (bank.updated_at.toISOString() !== review.expectedUpdatedAt)
@@ -280,9 +328,7 @@ let CareDirectoryService = class CareDirectoryService {
             })
                 .where((0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.id, id))
                 .returning();
-            await tx
-                .insert(schema_1.administrationAuditLogs)
-                .values({
+            await tx.insert(schema_1.administrationAuditLogs).values({
                 actorId: actor,
                 action: review.publish ? 'blood-bank.review.publish' : 'blood-bank.withdraw',
                 targetId: id,

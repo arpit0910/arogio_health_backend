@@ -7,7 +7,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
+const diseases_module_1 = require("./modules/diseases/diseases.module");
+const doctors_module_1 = require("./modules/doctors/doctors.module");
+const hospitals_module_1 = require("./modules/hospitals/hospitals.module");
 const health_resources_module_1 = require("./modules/health-resources/health-resources.module");
+const medical_departments_module_1 = require("./modules/medical-departments/medical-departments.module");
 const care_directory_module_1 = require("./modules/care-directory/care-directory.module");
 const meditation_library_module_1 = require("./modules/meditation-library/meditation-library.module");
 const administration_module_1 = require("./modules/administration/administration.module");
@@ -47,6 +51,10 @@ exports.AppModule = AppModule = __decorate([
             }),
             throttler_1.ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
             database_module_1.DatabaseModule,
+            medical_departments_module_1.MedicalDepartmentsModule,
+            hospitals_module_1.HospitalsModule,
+            doctors_module_1.DoctorsModule,
+            diseases_module_1.DiseasesModule,
             administration_module_1.AdministrationModule,
             meditation_library_module_1.MeditationLibraryModule,
             health_resources_module_1.HealthResourcesModule,

@@ -12,9 +12,15 @@ Each table has its own source file in `src/database/schema/`. Physical names use
 | `care_directory_corrections` | `care-directory` | [care-directory-corrections.schema.ts](../src/database/schema/care-directory-corrections.schema.ts) | `care_corrections` |
 | `care_directory_entries` | `care-directory` | [care-directory-entries.schema.ts](../src/database/schema/care-directory-entries.schema.ts) | `care_entries` |
 | `care_provider_affiliations` | `care-directory` | [care-provider-affiliations.schema.ts](../src/database/schema/care-provider-affiliations.schema.ts) | `care_affiliations` |
+| `medical_diseases` | `diseases` | [medical-diseases.schema.ts](../src/database/schema/medical-diseases.schema.ts) | New in migration 0021 |
+| `doctors` | `doctors` | [doctors.schema.ts](../src/database/schema/doctors.schema.ts) | New in migration 0022 |
+| `doctor_departments` | `doctors` | [doctor-departments.schema.ts](../src/database/schema/doctor-departments.schema.ts) | New in migration 0022 |
+| `doctor_hospital_affiliations` | `doctors` | [doctor-hospital-affiliations.schema.ts](../src/database/schema/doctor-hospital-affiliations.schema.ts) | New in migration 0022 |
 | `health_article_categories` | `health-resources` | [health-article-categories.schema.ts](../src/database/schema/health-article-categories.schema.ts) | `article_categories` |
 | `health_articles` | `health-resources` | [health-articles.schema.ts](../src/database/schema/health-articles.schema.ts) | `articles` |
+| `hospitals` | `hospitals` | [hospitals.schema.ts](../src/database/schema/hospitals.schema.ts) | New in migration 0020; shares care identity |
 | `home_banners` | `home-dashboard` | [home-banners.schema.ts](../src/database/schema/home-banners.schema.ts) | `home_banners` |
+| `medical_departments` | `medical-departments` | [medical-departments.schema.ts](../src/database/schema/medical-departments.schema.ts) | New in migration 0019 |
 | `medicine_dose_logs` | `personal-wellness` | [medicine-dose-logs.schema.ts](../src/database/schema/medicine-dose-logs.schema.ts) | `medicine_doses` |
 | `meditation_library_items` | `meditation-library` | [meditation-library-items.schema.ts](../src/database/schema/meditation-library-items.schema.ts) | `meditation_content` |
 | `menstrual_daily_logs` | `personal-wellness` | [menstrual-daily-logs.schema.ts](../src/database/schema/menstrual-daily-logs.schema.ts) | `cycle_entries` |

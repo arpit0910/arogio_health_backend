@@ -16,9 +16,9 @@ export declare class MeditationLibraryAdministrationController {
             title_en: string;
             title_hi: string;
             sortOrder: number;
-            section: "affirmations" | "meditation" | "breathing" | "grounding";
             description_en: string;
             description_hi: string;
+            section: "affirmations" | "meditation" | "breathing" | "grounding";
             preparation_en: string;
             preparation_hi: string;
             author: string;
@@ -37,9 +37,9 @@ export declare class MeditationLibraryAdministrationController {
             title_en: string;
             title_hi: string;
             sortOrder: number;
-            section: "affirmations" | "meditation" | "breathing" | "grounding";
             description_en: string;
             description_hi: string;
+            section: "affirmations" | "meditation" | "breathing" | "grounding";
             preparation_en: string;
             preparation_hi: string;
             author: string;
@@ -61,9 +61,9 @@ export declare class MeditationLibraryAdministrationController {
         title_en: string;
         title_hi: string;
         sortOrder: number;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
         description_en: string;
         description_hi: string;
+        section: "affirmations" | "meditation" | "breathing" | "grounding";
         preparation_en: string;
         preparation_hi: string;
         author: string;
@@ -82,9 +82,9 @@ export declare class MeditationLibraryAdministrationController {
         title_en: string;
         title_hi: string;
         sortOrder: number;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
         description_en: string;
         description_hi: string;
+        section: "affirmations" | "meditation" | "breathing" | "grounding";
         preparation_en: string;
         preparation_hi: string;
         author: string;
@@ -102,9 +102,9 @@ export declare class MeditationLibraryAdministrationController {
         title_en: string;
         title_hi: string;
         sortOrder: number;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
         description_en: string;
         description_hi: string;
+        section: "affirmations" | "meditation" | "breathing" | "grounding";
         preparation_en: string;
         preparation_hi: string;
         author: string;
@@ -123,9 +123,9 @@ export declare class MeditationLibraryAdministrationController {
         title_en: string;
         title_hi: string;
         sortOrder: number;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
         description_en: string;
         description_hi: string;
+        section: "affirmations" | "meditation" | "breathing" | "grounding";
         preparation_en: string;
         preparation_hi: string;
         author: string;
@@ -143,9 +143,9 @@ export declare class MeditationLibraryAdministrationController {
         title_en: string;
         title_hi: string;
         sortOrder: number;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
         description_en: string;
         description_hi: string;
+        section: "affirmations" | "meditation" | "breathing" | "grounding";
         preparation_en: string;
         preparation_hi: string;
         author: string;
@@ -164,9 +164,9 @@ export declare class MeditationLibraryAdministrationController {
         title_en: string;
         title_hi: string;
         sortOrder: number;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
         description_en: string;
         description_hi: string;
+        section: "affirmations" | "meditation" | "breathing" | "grounding";
         preparation_en: string;
         preparation_hi: string;
         author: string;

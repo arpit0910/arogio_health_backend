@@ -7,6 +7,10 @@
 | [personal-wellness](../src/modules/personal-wellness/README.md) | Water intake, menstrual tracking, medicine schedules and doses, activity targets and data export. |
 | [care-directory](../src/modules/care-directory/README.md) | Hospitals, doctors, labs, pharmacies, medicine information, affiliations and correction requests. |
 | [health-resources](../src/modules/health-resources/README.md) | Health articles, article categories, blood-bank discovery and their shared CSV/workbook import workflow. |
+| [doctors](../src/modules/doctors/README.md) | Structured bilingual doctors, department/hospital relations, recorded schedules, source review and file imports. |
+| [diseases](../src/modules/diseases/README.md) | Bilingual disease catalog, department links, administration and preview/apply imports. |
+| [hospitals](../src/modules/hospitals/README.md) | Structured bilingual hospitals, multi-city discovery, source review and transactional file imports. |
+| [medical-departments](../src/modules/medical-departments/README.md) | Bilingual department taxonomy, protected administration, public discovery and preview/apply file imports. |
 | [meditation-library](../src/modules/meditation-library/README.md) | Published meditation videos and guided practices. |
 | [home-dashboard](../src/modules/home-dashboard/README.md) | Home content, care discovery and weather integration. |
 | [jeeva-assistant](../src/modules/jeeva-assistant/README.md) | AI conversations, application guidance, safety rules and optional saved-health context. |

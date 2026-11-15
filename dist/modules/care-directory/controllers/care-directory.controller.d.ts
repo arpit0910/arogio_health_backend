@@ -18,6 +18,8 @@ export declare class CareDirectorySearchController {
                 nameHi: string;
                 address: string;
                 addressHi: string;
+                imageUrl: string | null;
+                imageAlt: string;
                 sourceUrl: string;
                 details: import("../../../database/schema").CareDetails;
                 published: boolean;
@@ -39,6 +41,8 @@ export declare class CareDirectorySearchController {
                 nameHi: string;
                 address: string;
                 addressHi: string;
+                imageUrl: string | null;
+                imageAlt: string;
                 sourceUrl: string;
                 details: import("../../../database/schema").CareDetails;
                 published: boolean;
@@ -137,6 +141,8 @@ export declare class CareDirectoryController {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -158,6 +164,8 @@ export declare class CareDirectoryController {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -179,6 +187,8 @@ export declare class CareDirectoryController {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -200,6 +210,8 @@ export declare class CareDirectoryController {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -215,6 +227,8 @@ export declare class CareDirectoryController {
         nameHi: string;
         address: string;
         addressHi: string;
+        imageUrl: string | null;
+        imageAlt: string;
         sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;
@@ -233,6 +247,8 @@ export declare class CareDirectoryController {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -254,6 +270,8 @@ export declare class CareDirectoryController {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -273,6 +291,8 @@ export declare class CareDirectoryController {
         nameHi: string;
         address: string;
         addressHi: string;
+        imageUrl: string | null;
+        imageAlt: string;
         sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;
@@ -328,6 +348,8 @@ export declare class CareDirectoryAdministrationController {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -349,6 +371,8 @@ export declare class CareDirectoryAdministrationController {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -382,6 +406,8 @@ export declare class CareDirectoryAdministrationController {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -403,6 +429,8 @@ export declare class CareDirectoryAdministrationController {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -418,6 +446,8 @@ export declare class CareDirectoryAdministrationController {
         nameHi: string;
         address: string;
         addressHi: string;
+        imageUrl: string | null;
+        imageAlt: string;
         sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;
@@ -436,6 +466,8 @@ export declare class CareDirectoryAdministrationController {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -457,6 +489,8 @@ export declare class CareDirectoryAdministrationController {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -476,6 +510,8 @@ export declare class CareDirectoryAdministrationController {
         nameHi: string;
         address: string;
         addressHi: string;
+        imageUrl: string | null;
+        imageAlt: string;
         sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;
@@ -492,6 +528,8 @@ export declare class CareDirectoryAdministrationController {
         nameHi: string;
         address: string;
         addressHi: string;
+        imageUrl: string | null;
+        imageAlt: string;
         sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;
@@ -510,6 +548,8 @@ export declare class CareDirectoryAdministrationController {
         nameHi: string;
         address: string;
         addressHi: string;
+        imageUrl: string | null;
+        imageAlt: string;
         sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;
@@ -527,6 +567,8 @@ export declare class CareDirectoryAdministrationController {
         address: string;
         addressHi: string;
         phone: string | null;
+        imageUrl: string | null;
+        imageAlt: string;
         sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;

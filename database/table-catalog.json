@@ -112,5 +112,41 @@
     "previousTable": "cycle_entries",
     "schemaFile": "src/database/schema/menstrual-daily-logs.schema.ts",
     "export": "menstrualDailyLogs"
+  },
+  {
+    "table": "medical_departments",
+    "previousTable": "medical_departments",
+    "schemaFile": "src/database/schema/medical-departments.schema.ts",
+    "export": "medicalDepartments"
+  },
+  {
+    "table": "hospitals",
+    "previousTable": "hospitals",
+    "schemaFile": "src/database/schema/hospitals.schema.ts",
+    "export": "hospitals"
+  },
+  {
+    "table": "medical_diseases",
+    "previousTable": "medical_diseases",
+    "schemaFile": "src/database/schema/medical-diseases.schema.ts",
+    "export": "medicalDiseases"
+  },
+  {
+    "table": "doctors",
+    "previousTable": "doctors",
+    "schemaFile": "src/database/schema/doctors.schema.ts",
+    "export": "doctors"
+  },
+  {
+    "table": "doctor_departments",
+    "previousTable": "doctor_departments",
+    "schemaFile": "src/database/schema/doctor-departments.schema.ts",
+    "export": "doctorDepartments"
+  },
+  {
+    "table": "doctor_hospital_affiliations",
+    "previousTable": "doctor_hospital_affiliations",
+    "schemaFile": "src/database/schema/doctor-hospital-affiliations.schema.ts",
+    "export": "doctorHospitalAffiliations"
   }
 ]

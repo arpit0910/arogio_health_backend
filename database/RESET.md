@@ -34,3 +34,19 @@ The local database has `0018_descriptive_domain_names` applied. Its old-to-new t
 Normal API startup does not create an administrator. Use the explicit `seed:super-admin` command only when you intend to create the new administrator. Historical migrations contain six meditation seed rows; a reset after migration removes them, and the retained migration journal prevents them from reappearing on the next persistent startup.
 
 Device bookmarks, sensor history and installed-app storage are separate from these backend databases and are not erased by this utility.
+
+## Medical Departments follow-up
+
+The separately approved Medical Departments module adds migration `0019_medical_departments`. It was applied locally on 15 November 2026 without seed data. Local verification now finds **20 application tables and zero rows in every table**. Hosted data and schema remain unchanged.
+
+## Hospitals follow-up
+
+The separately approved Hospitals module adds migration `0020_hospitals`, applied locally on 15 November 2026. Verification now finds **21 application tables and zero rows in every table**. No hospital, doctor, affiliation or administrator records were imported or seeded. Hosted data and schema remain unchanged.
+
+## Diseases and Doctors follow-up
+
+The individually approved Diseases and Doctors modules add `0021_medical_diseases` and `0022_doctors`, applied locally on 15 November 2026. Verification finds **25 application tables and zero rows in every table**. The changes add empty schemas only: no doctors, diseases, departments, hospitals, affiliations or administrator accounts were imported or seeded. Hosted data and schema remain unchanged.
+
+## Provider image follow-up
+
+Migration `0023_provider_images` was applied locally on 15 November 2026. It adds image columns to existing tables only. Verification still finds **25 application tables and zero application rows**. No image files or sample records were uploaded into the app database. Hosted schema and data remain unchanged.

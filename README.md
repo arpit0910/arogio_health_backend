@@ -41,7 +41,7 @@ src/
     migrate.ts            # Production PostgreSQL migration runner
   modules/
     authentication/ user-accounts/ personal-wellness/ care-directory/
-    health-resources/ meditation-library/ home-dashboard/ jeeva-assistant/
+    health-resources/ hospitals/ doctors/ diseases/ medical-departments/ meditation-library/ home-dashboard/ jeeva-assistant/
     administration/ system-health/ system-status/
 test/                     # Cross-module HTTP and database integration tests
 dist/                     # Generated deployment output; edit src instead
@@ -85,5 +85,7 @@ Detailed setup, environment and authentication explanations are in [docs/guides/
 ## Naming and fresh databases
 
 - [Module naming map](docs/NAMING.md)
-- [All 19 database tables](database/TABLES.md)
+- [All 25 database tables](database/TABLES.md)
 - [Explicit database inspection/reset](database/RESET.md)
+
+Doctor/hospital primary photo uploads and mobile directory integration: [Provider images](docs/PROVIDER_IMAGES.md).

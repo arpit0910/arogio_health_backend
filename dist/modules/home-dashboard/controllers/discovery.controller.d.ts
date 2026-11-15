@@ -17,6 +17,8 @@ export declare class DiscoveryController {
                 nameHi: string;
                 address: string;
                 addressHi: string;
+                imageUrl: string | null;
+                imageAlt: string;
                 sourceUrl: string;
                 details: import("../../../database/schema").CareDetails;
                 published: boolean;
@@ -38,6 +40,8 @@ export declare class DiscoveryController {
                 nameHi: string;
                 address: string;
                 addressHi: string;
+                imageUrl: string | null;
+                imageAlt: string;
                 sourceUrl: string;
                 details: import("../../../database/schema").CareDetails;
                 published: boolean;
@@ -60,6 +64,8 @@ export declare class DiscoveryController {
                 nameHi: string;
                 address: string;
                 addressHi: string;
+                imageUrl: string | null;
+                imageAlt: string;
                 sourceUrl: string;
                 details: import("../../../database/schema").CareDetails;
                 published: boolean;
@@ -81,6 +87,8 @@ export declare class DiscoveryController {
                 nameHi: string;
                 address: string;
                 addressHi: string;
+                imageUrl: string | null;
+                imageAlt: string;
                 sourceUrl: string;
                 details: import("../../../database/schema").CareDetails;
                 published: boolean;

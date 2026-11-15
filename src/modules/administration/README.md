@@ -44,3 +44,5 @@ Entry point: [administration.module.ts](administration.module.ts).
 - `administration_audit_logs` ? [administration-audit-logs.schema.ts](../../../src/database/schema/administration-audit-logs.schema.ts)
 
 [All modules](../README.md) ? [Table catalog](../../../database/TABLES.md)
+
+The portal also loads [Doctors](../doctors/README.md), [Diseases](../diseases/README.md), [Hospitals](../hospitals/README.md) and [Medical Departments](../medical-departments/README.md) through their matching public scripts. Domain validation and writes belong to those feature modules.

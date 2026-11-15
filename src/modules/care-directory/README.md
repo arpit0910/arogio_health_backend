@@ -24,3 +24,5 @@ Entry point: [care-directory.module.ts](care-directory.module.ts).
 - `blood_bank_corrections` ? [blood-bank-corrections.schema.ts](../../../src/database/schema/blood-bank-corrections.schema.ts)
 
 [All modules](../README.md) ? [Table catalog](../../../database/TABLES.md)
+
+Structured [Doctors](../doctors/README.md) and [Hospitals](../hospitals/README.md) own their profiles and update these care rows as compatibility projections with the same UUID. Manage structured doctors through Doctors administration; generic care editing, review and affiliation replacement are blocked for them. Public doctor/hospital discovery supports recorded cities; other legacy kinds keep their existing coverage rules.

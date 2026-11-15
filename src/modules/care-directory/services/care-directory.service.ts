@@ -14,8 +14,17 @@ import {
   administrationAuditLogs,
   bloodBankCorrections,
   bloodBankDirectoryEntries,
+  hospitals,
+  doctors,
+  doctorDepartments,
+  medicalDepartments,
 } from '../../../database/schema';
-import { careInput, careQuery, correctionInput, reviewInput } from '../requests/care-directory.input';
+import {
+  careInput,
+  careQuery,
+  correctionInput,
+  reviewInput,
+} from '../requests/care-directory.input';
 
 @Injectable()
 export class CareDirectoryService {
@@ -30,7 +39,8 @@ export class CareDirectoryService {
     return [
       eq(entries.published, true),
       gte(entries.reviewedAt, new Date(Date.now() - 180 * 86400000)),
-      eq(entries.city, 'Jaipur'),
+      or(eq(entries.kind, 'hospital'), eq(entries.kind, 'doctor'), eq(entries.city, 'Jaipur'))!,
+      sql`(not exists(select 1 from ${doctors} d where d.id=${entries.id}) or exists(select 1 from ${doctorDepartments} dd inner join ${medicalDepartments} dep on dep.id=dd.department_id where dd.doctor_id=${entries.id} and dep.is_active=true))`,
     ];
   }
   private present(row: typeof entries.$inferSelect, admin: boolean) {
@@ -40,10 +50,14 @@ export class CareDirectoryService {
   }
   async list(query: unknown, admin = false) {
     const q = this.parse(careQuery, query);
-    if (q.city.toLowerCase() !== 'jaipur')
+    const cityWasProvided = typeof query === 'object' && query !== null && 'city' in query;
+    if (['hospital', 'doctor'].includes(q.kind ?? '') && !cityWasProvided) q.city = '';
+    if (!['hospital', 'doctor'].includes(q.kind ?? '') && q.city.toLowerCase() !== 'jaipur')
       return { items: [], hasNext: false, page: q.page, coverage: 'unsupported-city' };
     const filters: SQL[] = admin ? [] : this.publicFilter();
     if (q.kind) filters.push(eq(entries.kind, q.kind));
+    if ((['hospital', 'doctor'].includes(q.kind ?? '') || (!q.kind && cityWasProvided)) && q.city)
+      filters.push(sql`lower(btrim(${entries.city})) = ${q.city.toLowerCase()}`);
     if (q.specialty)
       filters.push(
         sql`${entries.details}->'specialties' @> ${JSON.stringify([q.specialty])}::jsonb`,
@@ -70,7 +84,8 @@ export class CareDirectoryService {
       items: rows.slice(0, q.limit).map((row) => this.present(row, admin)),
       hasNext: rows.length > q.limit,
       page: q.page,
-      coverage: 'Jaipur',
+      coverage:
+        !q.kind && !cityWasProvided ? 'available-locations' : q.city || 'available-locations',
     };
   }
   async detail(id: string, admin = false) {
@@ -99,8 +114,30 @@ export class CareDirectoryService {
     };
   }
   async save(id: string | null, actor: string, body: unknown) {
+    if (id) this.parse(z.uuid(), id);
     const { expectedUpdatedAt, ...data } = this.parse(careInput, body);
     return this.database.db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(6389022)`);
+      await tx.execute(sql`select pg_advisory_xact_lock(6389023)`);
+      await tx.execute(sql`select pg_advisory_xact_lock(6389025)`);
+      if (
+        id &&
+        (await tx.select({ id: doctors.id }).from(doctors).where(eq(doctors.id, id))).length
+      )
+        throw new ConflictException(
+          'Use the Doctors administration tab to edit this structured doctor.',
+        );
+      if (data.kind === 'hospital') await tx.execute(sql`select pg_advisory_xact_lock(6389023)`);
+      if (id && data.kind === 'hospital') {
+        const [profile] = await tx
+          .select({ id: hospitals.id })
+          .from(hospitals)
+          .where(eq(hospitals.id, id));
+        if (profile)
+          throw new ConflictException(
+            'Use the Hospitals administration tab to edit this structured hospital.',
+          );
+      }
       let result: typeof entries.$inferSelect | undefined;
       if (id) {
         this.parse(z.uuid(), id);
@@ -147,8 +184,19 @@ export class CareDirectoryService {
     this.parse(z.uuid(), id);
     const review = this.parse(reviewInput, body);
     return this.database.db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(6389022)`);
+      await tx.execute(sql`select pg_advisory_xact_lock(6389023)`);
+      await tx.execute(sql`select pg_advisory_xact_lock(6389025)`);
+      if ((await tx.select({ id: doctors.id }).from(doctors).where(eq(doctors.id, id))).length)
+        throw new ConflictException('Use the Doctors administration tab for source review.');
       const [row] = await tx.select().from(entries).where(eq(entries.id, id)).for('update');
       if (!row) throw new NotFoundException();
+      const [profile] =
+        row.kind === 'hospital'
+          ? await tx.select().from(hospitals).where(eq(hospitals.id, id))
+          : [];
+      if (profile && review.publish && !profile.source_url)
+        throw new BadRequestException('A hospital source URL is required before publication.');
       if (row.updatedAt.toISOString() !== review.expectedUpdatedAt)
         throw new ConflictException('Entry changed. Reload before reviewing.');
       if (review.publish && row.kind !== 'medicine' && (!row.address || !row.phone))
@@ -183,6 +231,11 @@ export class CareDirectoryService {
         })
         .where(eq(entries.id, id))
         .returning();
+      if (profile)
+        await tx
+          .update(hospitals)
+          .set({ version: profile.version + 1, updated_at: new Date() })
+          .where(eq(hospitals.id, id));
       await tx.insert(administrationAuditLogs).values({
         actorId: actor,
         action: review.publish ? 'care.review.publish' : 'care.withdraw',
@@ -202,6 +255,11 @@ export class CareDirectoryService {
       body,
     );
     return this.database.db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(6389025)`);
+      if ((await tx.select({ id: doctors.id }).from(doctors).where(eq(doctors.id, id))).length)
+        throw new ConflictException(
+          'Use the Doctors administration tab to manage recorded affiliations.',
+        );
       const [doctor] = await tx.select().from(entries).where(eq(entries.id, id)).for('update');
       if (doctor?.kind !== 'doctor') throw new BadRequestException('Choose a doctor entry.');
       if (doctor.updatedAt.toISOString() !== data.expectedUpdatedAt)
@@ -268,7 +326,9 @@ export class CareDirectoryService {
       );
     if (!bank) throw new NotFoundException();
     const data = this.parse(correctionInput, body);
-    await this.database.db.insert(bloodBankCorrections).values({ bankId: id, message: data.message });
+    await this.database.db
+      .insert(bloodBankCorrections)
+      .values({ bankId: id, message: data.message });
     return { received: true };
   }
   async reviewBank(id: string, actor: string, body: unknown) {
@@ -286,7 +346,11 @@ export class CareDirectoryService {
       body,
     );
     return this.database.db.transaction(async (tx) => {
-      const [bank] = await tx.select().from(bloodBankDirectoryEntries).where(eq(bloodBankDirectoryEntries.id, id)).for('update');
+      const [bank] = await tx
+        .select()
+        .from(bloodBankDirectoryEntries)
+        .where(eq(bloodBankDirectoryEntries.id, id))
+        .for('update');
       if (!bank) throw new NotFoundException();
       if (bank.updated_at.toISOString() !== review.expectedUpdatedAt)
         throw new ConflictException('Bank changed. Reload before reviewing.');
@@ -309,20 +373,18 @@ export class CareDirectoryService {
         })
         .where(eq(bloodBankDirectoryEntries.id, id))
         .returning();
-      await tx
-        .insert(administrationAuditLogs)
-        .values({
-          actorId: actor,
-          action: review.publish ? 'blood-bank.review.publish' : 'blood-bank.withdraw',
-          targetId: id,
-          outcome: 'succeeded',
-          metadata: {
-            sourceUrl: review.sourceUrl,
-            reviewer: review.reviewerName,
-            qualification: review.reviewerQualification,
-            evidence: review.evidence,
-          },
-        });
+      await tx.insert(administrationAuditLogs).values({
+        actorId: actor,
+        action: review.publish ? 'blood-bank.review.publish' : 'blood-bank.withdraw',
+        targetId: id,
+        outcome: 'succeeded',
+        metadata: {
+          sourceUrl: review.sourceUrl,
+          reviewer: review.reviewerName,
+          qualification: review.reviewerQualification,
+          evidence: review.evidence,
+        },
+      });
       return saved;
     });
   }

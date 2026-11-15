@@ -188,6 +188,7 @@ function field(name, label, value = '', type = 'text', options) {
   return wrap;
 }
 function openEditor(title, fields, onSave, description = '') {
+  $('save-editor').textContent = 'Save changes';
   $('editor-title').textContent = title;
   $('editor-description').textContent = description;
   $('editor-fields').replaceChildren(...fields);
@@ -288,6 +289,10 @@ async function show() {
   if (page === 'people') return people();
   if (page === 'banners') return homeBanners();
   if (page === 'meditation') return meditationPage();
+  if (page === 'departments') return departmentsPage();
+  if (page === 'hospitals') return hospitalsPage();
+  if (page === 'doctors') return doctorsPage();
+  if (page === 'diseases') return diseasesPage();
   if (page === 'care') return carePage();
   if (page === 'articles' || page === 'blood-banks') return directoryPage(page);
   return audit();

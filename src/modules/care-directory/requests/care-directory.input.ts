@@ -5,6 +5,7 @@ const https = z
   .url()
   .max(2000)
   .refine((value) => {
+    if (!URL.canParse(value)) return false;
     const url = new URL(value);
     return url.protocol === 'https:' && !url.username && !url.password;
   }, 'Use an HTTPS source without credentials.');

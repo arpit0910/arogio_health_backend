@@ -17,6 +17,8 @@ export declare class CareDirectoryService {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -38,6 +40,8 @@ export declare class CareDirectoryService {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -59,6 +63,8 @@ export declare class CareDirectoryService {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -80,6 +86,8 @@ export declare class CareDirectoryService {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -95,6 +103,8 @@ export declare class CareDirectoryService {
         nameHi: string;
         address: string;
         addressHi: string;
+        imageUrl: string | null;
+        imageAlt: string;
         sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;
@@ -113,6 +123,8 @@ export declare class CareDirectoryService {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -134,6 +146,8 @@ export declare class CareDirectoryService {
             nameHi: string;
             address: string;
             addressHi: string;
+            imageUrl: string | null;
+            imageAlt: string;
             sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
@@ -153,6 +167,8 @@ export declare class CareDirectoryService {
         nameHi: string;
         address: string;
         addressHi: string;
+        imageUrl: string | null;
+        imageAlt: string;
         sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;
@@ -169,6 +185,8 @@ export declare class CareDirectoryService {
         nameHi: string;
         address: string;
         addressHi: string;
+        imageUrl: string | null;
+        imageAlt: string;
         sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;
@@ -186,6 +204,8 @@ export declare class CareDirectoryService {
         address: string;
         addressHi: string;
         phone: string | null;
+        imageUrl: string | null;
+        imageAlt: string;
         sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;

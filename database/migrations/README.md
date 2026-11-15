@@ -32,3 +32,15 @@ See [the database guide](../README.md) for migration, seed, test and production 
 ## Descriptive names
 
 [0018_descriptive_domain_names.sql](0018_descriptive_domain_names.sql) renames application tables, constraints and indexes while preserving rows and columns. See [the table catalog](../TABLES.md).
+
+## Medical departments
+
+[0019_medical_departments.sql](0019_medical_departments.sql) adds the empty, independently approved department taxonomy. No seed records or doctor/disease relationships are added.
+
+## Hospitals
+
+[0020_hospitals.sql](0020_hospitals.sql) adds structured hospital profiles with the same UUID as their shared care entry. No hospital, doctor or affiliation data is seeded.
+
+`0021_medical_diseases` adds the approved bilingual disease catalog and department foreign key. `0022_doctors` adds structured profiles, department links and hospital affiliations with recorded schedules. Both migrations create empty tables and preserve existing care IDs; neither imports or seeds data.
+
+`0023_provider_images` adds database-backed primary photos and image metadata to Doctors/Hospitals, and compatibility image URLs/alt text to care entries. It creates no application tables and imports no records.

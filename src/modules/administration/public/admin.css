@@ -661,3 +661,36 @@ dialog::backdrop {
     padding: 8px 14px;
   }
 }
+
+/* Doctor profile relationships share the portal form spacing and colors. */
+.doctors-management .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.doctor-affiliation {
+  border: 1px solid #c9d9ce;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 12px 0;
+  min-width: 0;
+}
+.doctor-affiliation legend {
+  padding: 0 8px;
+  font-weight: 600;
+}
+.doctor-affiliation .check {
+  gap: 8px;
+}
+#editor input[type='checkbox'] {
+  accent-color: #165640;
+}
+
+.provider-image-preview {
+  width: 100%;
+  height: 220px;
+  object-fit: contain;
+  background: #edf4ef;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}

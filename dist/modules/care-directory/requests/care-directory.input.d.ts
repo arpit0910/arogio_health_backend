@@ -1,7 +1,7 @@
 import { z } from 'zod';
 export declare const careKind: z.ZodEnum<{
-    hospital: "hospital";
     doctor: "doctor";
+    hospital: "hospital";
     medicine: "medicine";
     lab: "lab";
     pharmacy: "pharmacy";
@@ -9,8 +9,8 @@ export declare const careKind: z.ZodEnum<{
 export declare const careQuery: z.ZodObject<{
     search: z.ZodDefault<z.ZodString>;
     kind: z.ZodOptional<z.ZodEnum<{
-        hospital: "hospital";
         doctor: "doctor";
+        hospital: "hospital";
         medicine: "medicine";
         lab: "lab";
         pharmacy: "pharmacy";
@@ -23,8 +23,8 @@ export declare const careQuery: z.ZodObject<{
 export declare const careInput: z.ZodObject<{
     sourceKey: z.ZodString;
     kind: z.ZodEnum<{
-        hospital: "hospital";
         doctor: "doctor";
+        hospital: "hospital";
         medicine: "medicine";
         lab: "lab";
         pharmacy: "pharmacy";

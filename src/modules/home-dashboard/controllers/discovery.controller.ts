@@ -10,15 +10,15 @@ export class DiscoveryController {
   @Header('Cache-Control', 'no-store')
   async discovery() {
     const [hospitals, doctors] = await Promise.allSettled([
-      this.care.list({ kind: 'hospital', city: 'Jaipur', limit: 3 }),
-      this.care.list({ kind: 'doctor', city: 'Jaipur', limit: 3 }),
+      this.care.list({ kind: 'hospital', limit: 3 }),
+      this.care.list({ kind: 'doctor', limit: 3 }),
     ]);
     const section = (result: typeof hospitals) =>
       result.status === 'fulfilled'
         ? { status: 'available' as const, items: result.value.items }
         : { status: 'unavailable' as const, items: [] };
     return {
-      coverage: 'Jaipur',
+      coverage: 'available-locations',
       hospitals: section(hospitals),
       doctors: section(doctors),
       availability: 'contact-provider',

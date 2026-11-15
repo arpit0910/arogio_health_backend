@@ -1,4 +1,8 @@
+import { DiseasesModule } from './modules/diseases/diseases.module';
+import { DoctorsModule } from './modules/doctors/doctors.module';
+import { HospitalsModule } from './modules/hospitals/hospitals.module';
 import { HealthResourcesModule } from './modules/health-resources/health-resources.module';
+import { MedicalDepartmentsModule } from './modules/medical-departments/medical-departments.module';
 import { CareDirectoryModule } from './modules/care-directory/care-directory.module';
 import { MeditationLibraryModule } from './modules/meditation-library/meditation-library.module';
 import { AdministrationModule } from './modules/administration/administration.module';
@@ -36,6 +40,10 @@ import { PersonalWellnessModule } from './modules/personal-wellness/personal-wel
     }),
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     DatabaseModule,
+    MedicalDepartmentsModule,
+    HospitalsModule,
+    DoctorsModule,
+    DiseasesModule,
     AdministrationModule,
     MeditationLibraryModule,
     HealthResourcesModule,

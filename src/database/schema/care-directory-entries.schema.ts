@@ -23,6 +23,8 @@ export const careDirectoryEntries = pgTable(
     address: text('address').notNull().default(''),
     addressHi: text('address_hi').notNull().default(''),
     phone: text('phone'),
+    imageUrl: text('image_url'),
+    imageAlt: text('image_alt').notNull().default(''),
     sourceUrl: text('source_url').notNull(),
     details: jsonb('details').$type<CareDetails>().notNull(),
     published: boolean('published').notNull().default(false),

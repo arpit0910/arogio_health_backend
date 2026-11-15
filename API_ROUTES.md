@@ -67,3 +67,19 @@ node --experimental-strip-types scripts/verification/test-deployed-app-client.mj
 Use `--legacy` to test a deployed server before canonical routes have been released. This uses the app's real HTTP client and response schemas, creates a generated account in production, tests setup/resume/completion/login/refresh/logout, and revokes all issued test sessions. The generated test account remains in the database. No credentials or tokens are printed. A real Google authorization still requires a device and correct Google Cloud configuration.
 
 If no terminal is available, use the hosting Node application manager's **Run JS script / Run Script** control, select `db:diagnose`, and inspect its JSON output. To apply reviewed pending migrations after a backup, select `db:migrate:production` in that same control. These are existing package scripts; no public migration endpoint is exposed.
+
+## Medical departments
+
+Public list/detail: `GET /api/v1/public/departments` and `/api/v1/public/departments/:id`. Protected CRUD/templates/import preview/apply: `/api/v1/admin/departments`. See [the module API and import guide](src/modules/medical-departments/README.md).
+
+## Structured hospitals
+
+Public list/detail: `GET /api/v1/public/hospitals` and `/api/v1/public/hospitals/:id`. Protected management, source review and import templates/preview/apply: `/api/v1/admin/hospitals`. Existing `/care` hospital IDs remain compatible. See [the Hospitals guide](src/modules/hospitals/README.md).
+
+## Doctors and Diseases
+
+New catalog APIs and administrator operations are documented in [Doctors](src/modules/doctors/README.md) and [Diseases](src/modules/diseases/README.md). Public bases: `/api/v1/public/doctors`, `/api/v1/public/diseases`. Protected administration bases: `/api/v1/admin/doctors`, `/api/v1/admin/diseases`. Both provide list/detail, create/edit/delete and CSV/XLSX template + import preview/apply. Doctors additionally provides `POST /:id/review`, department/hospital links and recorded schedules.
+
+## Provider images
+
+For both `/api/v1/admin/doctors/:id/image` and `/api/v1/admin/hospitals/:id/image`: PUT accepts protected multipart file/alt/expectedVersion, GET previews an image and DELETE requires expected_version. Public GET image URLs live below `/api/v1/public/doctors/:id/image` and `/api/v1/public/hospitals/:id/image` and enforce publication/freshness. See [image contracts and workflow](docs/PROVIDER_IMAGES.md).
