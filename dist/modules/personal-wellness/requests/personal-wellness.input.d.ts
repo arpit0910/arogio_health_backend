@@ -66,9 +66,47 @@ export declare const medicineInput: z.ZodObject<{
     name: z.ZodString;
     notes: z.ZodString;
     enabled: z.ZodBoolean;
+    alertType: z.ZodOptional<z.ZodEnum<{
+        default: "default";
+        gentle: "gentle";
+        vibrate: "vibrate";
+    }>>;
+    form: z.ZodOptional<z.ZodEnum<{
+        Tablet: "Tablet";
+        Capsule: "Capsule";
+        Syrup: "Syrup";
+        Drops: "Drops";
+        Inhaler: "Inhaler";
+        Injection: "Injection";
+    }>>;
+    strength: z.ZodOptional<z.ZodString>;
+    unit: z.ZodOptional<z.ZodEnum<{
+        mg: "mg";
+        ml: "ml";
+        mcg: "mcg";
+    }>>;
+    recurrence: z.ZodOptional<z.ZodEnum<{
+        daily: "daily";
+        weekly: "weekly";
+        cycle: "cycle";
+        sos: "sos";
+    }>>;
+    weekdays: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
+    startDate: z.ZodOptional<z.ZodString>;
+    endDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    cycleOnDays: z.ZodOptional<z.ZodNumber>;
+    cycleOffDays: z.ZodOptional<z.ZodNumber>;
+    expectedStock: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    stock: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    lowStockThreshold: z.ZodOptional<z.ZodNumber>;
     doses: z.ZodArray<z.ZodObject<{
         time: z.ZodString;
         amount: z.ZodString;
+        meal: z.ZodOptional<z.ZodEnum<{
+            any: "any";
+            before: "before";
+            after: "after";
+        }>>;
     }, z.core.$strict>>;
 }, z.core.$strict>;
 export declare const medicineDoseInput: z.ZodObject<{
@@ -78,6 +116,7 @@ export declare const medicineDoseInput: z.ZodObject<{
         skipped: "skipped";
     }>;
     snooze: z.ZodDefault<z.ZodBoolean>;
+    snoozeMinutes: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strict>;
 export declare const doseDayInput: z.ZodString;
 export declare const doseTimeInput: z.ZodString;

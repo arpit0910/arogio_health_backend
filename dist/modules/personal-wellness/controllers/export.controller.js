@@ -13,6 +13,9 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExportController = void 0;
+const drizzle_orm_1 = require("drizzle-orm");
+const database_service_1 = require("../../../database/database.service");
+const schema_1 = require("../../../database/schema");
 const common_1 = require("@nestjs/common");
 const throttler_1 = require("@nestjs/throttler");
 const current_user_decorator_1 = require("../../../common/authentication/current-user.decorator");
@@ -20,22 +23,26 @@ const jwt_auth_guard_1 = require("../../../common/authentication/jwt-auth.guard"
 const user_accounts_service_1 = require("../../user-accounts/services/user-accounts.service");
 const personal_wellness_service_1 = require("../services/personal-wellness.service");
 let ExportController = class ExportController {
+    database;
     users;
     wellness;
-    constructor(users, wellness) {
+    constructor(database, users, wellness) {
+        this.database = database;
         this.users = users;
         this.wellness = wellness;
     }
     async get(user) {
-        const [profile, wellness] = await Promise.all([
+        const [feedback, profile, wellness] = await Promise.all([
+            this.database.db.select().from(schema_1.supportFeedback).where((0, drizzle_orm_1.eq)(schema_1.supportFeedback.userId, user.userId)).orderBy((0, drizzle_orm_1.desc)(schema_1.supportFeedback.createdAt)).limit(1000),
             this.users.getMe(user.userId),
             this.wellness.snapshot(user.userId),
         ]);
         return {
             exportedAt: new Date().toISOString(),
-            scope: 'Profile and retained wellness snapshot. Water and medicine dose history is limited to 90 days. Device readings and chat are not included.',
+            scope: 'Profile, retained wellness snapshot and up to 1,000 recent support feedback records. Water and medicine dose history is limited to 90 days. Device readings and chat are not included.',
             profile,
             wellness,
+            feedback,
         };
     }
 };
@@ -52,7 +59,8 @@ __decorate([
 exports.ExportController = ExportController = __decorate([
     (0, common_1.Controller)('profile/export'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __metadata("design:paramtypes", [user_accounts_service_1.UserAccountsService,
+    __metadata("design:paramtypes", [database_service_1.DatabaseService,
+        user_accounts_service_1.UserAccountsService,
         personal_wellness_service_1.PersonalWellnessService])
 ], ExportController);
 //# sourceMappingURL=export.controller.js.map

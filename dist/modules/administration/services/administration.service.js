@@ -45,6 +45,14 @@ let AdministrationService = class AdministrationService {
         this.wellness = wellness;
         this.profiles = profiles;
     }
+    async reviewFeedback(id, body) {
+        const uuid = this.parse(zod_1.z.uuid(), id), value = this.parse(zod_1.z.object({ state: zod_1.z.enum(['open', 'reviewed']) }).strict(), body);
+        const [row] = await this.database.db.update(schema_1.supportFeedback).set(value).where((0, drizzle_orm_1.eq)(schema_1.supportFeedback.id, uuid)).returning();
+        if (!row)
+            throw new common_1.NotFoundException('Feedback not found.');
+        return row;
+    }
+    feedback() { return this.database.db.select().from(schema_1.supportFeedback).orderBy((0, drizzle_orm_1.desc)(schema_1.supportFeedback.createdAt)).limit(100); }
     parse(schema, input) {
         const result = schema.safeParse(input);
         if (!result.success)

@@ -1,10 +1,12 @@
+import { DatabaseService } from '../../../database/database.service';
 import type { RequestUser } from '../../../common/authentication/request-user';
 import { UserAccountsService } from '../../user-accounts/services/user-accounts.service';
 import { PersonalWellnessService } from '../services/personal-wellness.service';
 export declare class ExportController {
+    private readonly database;
     private readonly users;
     private readonly wellness;
-    constructor(users: UserAccountsService, wellness: PersonalWellnessService);
+    constructor(database: DatabaseService, users: UserAccountsService, wellness: PersonalWellnessService);
     get(user: RequestUser): Promise<{
         exportedAt: string;
         scope: string;
@@ -16,9 +18,23 @@ export declare class ExportController {
                 name: string;
                 notes: string;
                 enabled: boolean;
+                form?: string;
+                strength?: string;
+                unit?: string;
+                alertType?: "default" | "gentle" | "vibrate";
+                recurrence?: "daily" | "weekly" | "cycle" | "sos";
+                weekdays?: number[];
+                startDate?: string;
+                endDate?: string | null;
+                cycleOnDays?: number;
+                cycleOffDays?: number;
+                stock?: number | null;
+                lowStockThreshold?: number;
+                stockDebits?: Record<string, number>;
                 doses: {
                     time: string;
                     amount: string;
+                    meal?: "any" | "before" | "after";
                 }[];
             }[];
             medicineDoses: {
@@ -76,5 +92,13 @@ export declare class ExportController {
                 notes: string;
             }[];
         };
+        feedback: {
+            id: string;
+            userId: string;
+            subject: string;
+            message: string;
+            state: string;
+            createdAt: Date;
+        }[];
     }>;
 }

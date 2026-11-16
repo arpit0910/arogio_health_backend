@@ -287,6 +287,7 @@ $('create-user').onclick = () =>
 async function show() {
   $('create-user').hidden = page === 'database-reset';
   if (page === 'database-reset') return databaseResetPage();
+  if (page === 'feedback') return feedbackPage();
   if (page === 'overview') return overview();
   if (page === 'people') return people();
   if (page === 'banners') return homeBanners();
@@ -988,5 +989,15 @@ async function audit() {
     auditPage = n;
     await audit();
   });
+  content.append(p);
+}
+
+async function feedbackPage() {
+  reset('Support feedback');
+  const rev = requestRevision, rows = await api('/admin/feedback');
+  if (rev !== requestRevision) return;
+  const p = panel('Recent feedback');
+  p.append(el('p', 'Latest 100 messages. Handle these as private account support records.'));
+  p.append(table(['When', 'Account', 'Subject', 'Message', 'State', 'Action'], rows.map(r => [date(r.createdAt), r.userId, r.subject, r.message, r.state, button(r.state === 'reviewed' ? 'Reopen' : 'Mark reviewed', async () => { await api(`/admin/feedback/${r.id}`, { method: 'PATCH', body: JSON.stringify({state:r.state === 'reviewed' ? 'open' : 'reviewed'}) }); await feedbackPage(); })])));
   content.append(p);
 }

@@ -67,6 +67,8 @@ let AdministrationController = class AdministrationController {
     remove(u, id) {
         return this.service.audit(u.userId, 'banner.delete', id, () => this.service.deleteBanner(id));
     }
+    reviewFeedback(u, id, body) { return this.service.audit(u.userId, 'feedback.review', id, () => this.service.reviewFeedback(id, body)); }
+    feedback(u) { return this.service.audit(u.userId, 'feedback.list', null, () => this.service.feedback()); }
     audit(page) {
         return this.service.auditLog(page);
     }
@@ -186,6 +188,22 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], AdministrationController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Patch)('feedback/:id'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], AdministrationController.prototype, "reviewFeedback", null);
+__decorate([
+    (0, common_1.Get)('feedback'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AdministrationController.prototype, "feedback", null);
 __decorate([
     (0, common_1.Get)('audit'),
     __param(0, (0, common_1.Query)('page', new common_1.ParseIntPipe({ optional: true }))),

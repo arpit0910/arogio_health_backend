@@ -59,6 +59,38 @@ describe('Account-owned wellness HTTP journeys', () => {
       .auth(auth ?? token, { type: 'bearer' })
       .send(body);
   };
+  it('stores feedback idempotently and limits reads to its owner', async () => {
+    const id = randomUUID(), value = { subject: 'Fixture feedback', message: 'Synthetic app feedback for local validation.' };
+    const feedback = (auth: string) => request(app.getHttpServer()).put(`/api/v1/support/feedback/${id}`).auth(auth, { type: 'bearer' }).send(value);
+    await feedback(token).expect(200);
+    await feedback(token).expect(200);
+    await feedback(other).expect(409);
+    const list = await request(app.getHttpServer()).get('/api/v1/support/feedback').auth(token, { type: 'bearer' }).expect(200);
+    expect(list.body).toHaveLength(1);
+    const hidden = await request(app.getHttpServer()).get('/api/v1/support/feedback').auth(other, { type: 'bearer' }).expect(200);
+    expect(hidden.body).toEqual([]);
+    await request(app.getHttpServer()).get('/api/v1/admin/feedback').auth(token, { type: 'bearer' }).expect(403);
+  });
+  it('persists structured schedules and changes stock once per logged dose, including undo after edits', async () => {
+    const id = randomUUID(), day = localDay(new Date(), APP_TIMEZONE);
+    const medicine = { name: 'Stock fixture', notes: '', enabled: false, form: 'Tablet', strength: '10', unit: 'mg', recurrence: 'daily', startDate: day, endDate: addDays(day, 6), stock: 10, lowStockThreshold: 3, doses: [{ time: '08:00', amount: '2 tablets', meal: 'after' }] };
+    const saved = await call('put', `/medicines/${id}`, medicine).expect(200);
+    expect((saved.body as { medicines: { id: string; stock: number; stockDebits?: unknown }[] }).medicines.find((m: { id: string }) => m.id === id)).toMatchObject(medicine);
+    const path = `/medicines/${id}/doses/${day}/08:00`;
+    const taken = await call('put', path, { status: 'taken' }).expect(200);
+    expect((taken.body as { medicines: { id: string; stock: number }[] }).medicines.find((m: { id: string }) => m.id === id)!.stock).toBe(8);
+    const retry = await call('put', path, { status: 'taken' }).expect(200);
+    expect((retry.body as { medicines: { id: string; stock: number }[] }).medicines.find((m: { id: string }) => m.id === id)!.stock).toBe(8);
+    await call('put', `/medicines/${id}`, { ...medicine, stock: 8, doses: [{ time: '08:00', amount: '3 tablets', meal: 'before' }] }).expect(200);
+    const undo = await call('put', path, { status: 'pending' }).expect(200);
+    expect((undo.body as { medicines: { id: string; stock: number; stockDebits?: unknown }[] }).medicines.find((m: { id: string }) => m.id === id)!.stock).toBe(10);
+    expect((undo.body as { medicines: { id: string; stock: number; stockDebits?: unknown }[] }).medicines.find((m: { id: string }) => m.id === id)!.stockDebits).toBeUndefined();
+    await call('put', `/medicines/${id}`, { ...medicine, recurrence: 'weekly', weekdays: [(new Date(day + 'T12:00:00Z').getUTCDay() + 1) % 7] }).expect(200);
+    await call('put', path, { status: 'taken' }).expect(400);
+    await call('put', `/medicines/${id}`, { ...medicine, stock: 1 }).expect(200);
+    await call('put', path, { status: 'taken' }).expect(400);
+    await call('delete', `/medicines/${id}`).expect(200);
+  });
   it('logs and snoozes doses idempotently and keeps them private to the owner', async () => {
     const id = randomUUID(),
       day = localDay(new Date(), APP_TIMEZONE);
@@ -103,6 +135,17 @@ describe('Account-owned wellness HTTP journeys', () => {
       status: 'pending',
       snooze: true,
     }).expect(400);
+    for (const snoozeMinutes of [0, 7, 65, 15.5]) await call('put', path, { status: 'pending', snooze: true, snoozeMinutes }).expect(400);
+    await call('put', path, { status: 'taken', snoozeMinutes: 30 }).expect(400);
+    const customCrossesDay = localDay(new Date(Date.now() + 30 * 60000), APP_TIMEZONE) !== day;
+    const beforeSnooze = Date.now();
+    const customSnooze = await call('put', path, { status: 'pending', snooze: true, snoozeMinutes: 30 }).expect(customCrossesDay ? 400 : 200);
+    if (!customCrossesDay) {
+      const until = Date.parse((customSnooze.body as { medicineDoses: { snoozedUntil: string }[] }).medicineDoses[0].snoozedUntil);
+      expect(until).toBeGreaterThanOrEqual(beforeSnooze + 30 * 60000);
+      expect(until).toBeLessThanOrEqual(Date.now() + 30 * 60000);
+    }
+    await call('put', path, { status: 'pending' }).expect(200);
     // At the end of an IST day, moving a dose to tomorrow is rejected.
     const crossesDay = localDay(new Date(Date.now() + 15 * 60000), APP_TIMEZONE) !== day;
     const snoozed = await call('put', path, { status: 'pending', snooze: true }).expect(

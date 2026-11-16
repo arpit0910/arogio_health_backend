@@ -43,6 +43,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PersonalWellnessService = void 0;
+const medicine_rules_1 = require("../domain/medicine-rules");
 const common_1 = require("@nestjs/common");
 const node_crypto_1 = require("node:crypto");
 const drizzle_orm_1 = require("drizzle-orm");
@@ -100,7 +101,7 @@ let PersonalWellnessService = class PersonalWellnessService {
         ]);
         return {
             activityTracking: preferences[0]?.activityTracking ?? { goals: {}, days: [] },
-            medicines: preferences[0]?.medicines ?? [],
+            medicines: (preferences[0]?.medicines ?? []).map(medicine => { const publicMedicine = { ...medicine }; delete publicMedicine.stockDebits; return publicMedicine; }),
             medicineDoses: doseRecords.map((row) => ({
                 medicineId: row.medicineId,
                 day: row.day,
@@ -209,13 +210,16 @@ let PersonalWellnessService = class PersonalWellnessService {
     }
     saveMedicine(userId, id, body) {
         this.uuid(id);
-        const medicine = this.parse(input.medicineInput, body);
+        const { expectedStock, ...medicine } = this.parse(input.medicineInput, body);
         return this.mutate(userId, async (tx) => {
             const [row] = await tx.select().from(schema_1.personalWellnessSettings).where((0, drizzle_orm_1.eq)(schema_1.personalWellnessSettings.userId, userId));
             const current = row?.medicines ?? [];
             if (current.length >= 30 && !current.some((m) => m.id === id))
                 throw new common_1.BadRequestException('You can save up to 30 medicines.');
-            const medicines = [...current.filter((m) => m.id !== id), { id, ...medicine }];
+            const previous = current.find(m => m.id === id);
+            if (expectedStock !== undefined && (previous?.stock ?? null) !== expectedStock)
+                throw new common_1.ConflictException('Stock changed while you were editing. Refresh your medicines and review the current stock.');
+            const medicines = [...current.filter((m) => m.id !== id), { id, ...previous, ...medicine, stockDebits: previous?.stockDebits ?? {} }];
             await tx
                 .insert(schema_1.personalWellnessSettings)
                 .values({ userId, medicines })
@@ -249,6 +253,8 @@ let PersonalWellnessService = class PersonalWellnessService {
             const medicine = row?.medicines.find((m) => m.id === id && m.doses.some((d) => d.time === time));
             if (!medicine)
                 throw new common_1.NotFoundException('This medicine or dose time has changed. Refresh your schedule.');
+            if (medicine.recurrence !== 'sos' && !(0, medicine_rules_1.medicineDueOn)(medicine, day))
+                throw new common_1.BadRequestException('This medicine is not scheduled on this date.');
             if (value.snooze && (!medicine.enabled || (0, personal_wellness_domain_1.zonedInstant)(day, time, personal_wellness_domain_1.APP_TIMEZONE) > now))
                 throw new common_1.BadRequestException('Snooze is available when a dose is due and reminders are enabled.');
             const filter = (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.medicineDoseLogs.userId, userId), (0, drizzle_orm_1.eq)(schema_1.medicineDoseLogs.medicineId, id), (0, drizzle_orm_1.eq)(schema_1.medicineDoseLogs.day, day), (0, drizzle_orm_1.eq)(schema_1.medicineDoseLogs.time, time));
@@ -260,9 +266,25 @@ let PersonalWellnessService = class PersonalWellnessService {
                     ? !existing.snoozedUntil
                     : existing.snoozedUntil && existing.snoozedUntil > now))
                 return;
-            const snoozedUntil = value.snooze ? new Date(now.getTime() + 15 * 60000) : null;
+            const snoozedUntil = value.snooze ? new Date(now.getTime() + (value.snoozeMinutes ?? 15) * 60000) : null;
             if (snoozedUntil && (0, personal_wellness_domain_1.localDay)(snoozedUntil, personal_wellness_domain_1.APP_TIMEZONE) !== today)
                 throw new common_1.BadRequestException('A snooze cannot move this dose into the next day.');
+            if (medicine.stock != null) {
+                const quantity = (0, medicine_rules_1.doseQuantity)(medicine.doses.find(d => d.time === time).amount);
+                if (quantity == null && value.status === 'taken')
+                    throw new common_1.BadRequestException('Use a numeric dose amount to track stock.');
+                const key = `${day}:${time}`, stockDebits = { ...medicine.stockDebits };
+                const previous = stockDebits[key] ?? 0;
+                const debit = value.status === 'taken' ? (existing?.status === 'taken' ? previous : quantity ?? 0) : 0;
+                const stock = medicine.stock + previous - debit;
+                if (stock < 0)
+                    throw new common_1.BadRequestException('Not enough stock for this dose. Correct your current stock before logging.');
+                if (debit)
+                    stockDebits[key] = debit;
+                else
+                    delete stockDebits[key];
+                await tx.update(schema_1.personalWellnessSettings).set({ medicines: row.medicines.map(m => m.id === id ? { ...m, stock, stockDebits } : m), updatedAt: now }).where((0, drizzle_orm_1.eq)(schema_1.personalWellnessSettings.userId, userId));
+            }
             const record = {
                 userId,
                 medicineId: id,

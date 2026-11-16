@@ -9,6 +9,7 @@ import { z } from 'zod';
 import sharp from 'sharp';
 import { DatabaseService } from '../../../database/database.service';
 import {
+  supportFeedback,
   administrationAuditLogs,
   authenticationSessions,
   homeBanners,
@@ -41,6 +42,13 @@ export class AdministrationService {
     private readonly wellness: PersonalWellnessService,
     private readonly profiles: UserAccountsService,
   ) {}
+  async reviewFeedback(id: string, body: unknown) {
+    const uuid = this.parse(z.uuid(), id), value = this.parse(z.object({ state: z.enum(['open', 'reviewed']) }).strict(), body);
+    const [row] = await this.database.db.update(supportFeedback).set(value).where(eq(supportFeedback.id, uuid)).returning();
+    if (!row) throw new NotFoundException('Feedback not found.');
+    return row;
+  }
+  feedback() { return this.database.db.select().from(supportFeedback).orderBy(desc(supportFeedback.createdAt)).limit(100); }
   private parse<T>(schema: z.ZodType<T>, input: unknown) {
     const result = schema.safeParse(input);
     if (!result.success)

@@ -82,9 +82,23 @@ export declare class AdministrationController {
                 name: string;
                 notes: string;
                 enabled: boolean;
+                form?: string;
+                strength?: string;
+                unit?: string;
+                alertType?: "default" | "gentle" | "vibrate";
+                recurrence?: "daily" | "weekly" | "cycle" | "sos";
+                weekdays?: number[];
+                startDate?: string;
+                endDate?: string | null;
+                cycleOnDays?: number;
+                cycleOffDays?: number;
+                stock?: number | null;
+                lowStockThreshold?: number;
+                stockDebits?: Record<string, number>;
                 doses: {
                     time: string;
                     amount: string;
+                    meal?: "any" | "before" | "after";
                 }[];
             }[];
             medicineDoses: {
@@ -194,9 +208,23 @@ export declare class AdministrationController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -273,6 +301,22 @@ export declare class AdministrationController {
     remove(u: RequestUser, id: string): Promise<{
         deleted: boolean;
     }>;
+    reviewFeedback(u: RequestUser, id: string, body: unknown): Promise<{
+        id: string;
+        userId: string;
+        subject: string;
+        message: string;
+        state: string;
+        createdAt: Date;
+    }>;
+    feedback(u: RequestUser): Promise<{
+        id: string;
+        userId: string;
+        subject: string;
+        message: string;
+        state: string;
+        createdAt: Date;
+    }[]>;
     audit(page?: number): Promise<{
         id: string;
         actorId: string;

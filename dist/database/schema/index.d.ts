@@ -23,3 +23,4 @@ export * from './medical-diseases.schema';
 export * from './doctors.schema';
 export * from './doctor-departments.schema';
 export * from './doctor-hospital-affiliations.schema';
+export * from './support-feedback.schema';

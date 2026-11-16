@@ -1,3 +1,4 @@
+import { SupportController } from './controllers/support.controller';
 import { Module } from '@nestjs/common';
 import { AuthenticationModule } from '../authentication/authentication.module';
 import { PersonalWellnessController } from './controllers/personal-wellness.controller';
@@ -7,7 +8,7 @@ import { UserAccountsModule } from '../user-accounts/user-accounts.module';
 @Module({
   exports: [PersonalWellnessService],
   imports: [AuthenticationModule, UserAccountsModule],
-  controllers: [PersonalWellnessController, ExportController],
+  controllers: [PersonalWellnessController, ExportController, SupportController],
   providers: [PersonalWellnessService],
 })
 export class PersonalWellnessModule {}

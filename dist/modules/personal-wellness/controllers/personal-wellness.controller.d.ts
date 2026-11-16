@@ -10,9 +10,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -77,9 +91,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -144,9 +172,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -211,9 +253,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -278,9 +334,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -345,9 +415,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -412,9 +496,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -479,9 +577,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -546,9 +658,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -613,9 +739,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -680,9 +820,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -747,9 +901,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -814,9 +982,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -881,9 +1063,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -948,9 +1144,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -1015,9 +1225,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -1082,9 +1306,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {
@@ -1149,9 +1387,23 @@ export declare class PersonalWellnessController {
             name: string;
             notes: string;
             enabled: boolean;
+            form?: string;
+            strength?: string;
+            unit?: string;
+            alertType?: "default" | "gentle" | "vibrate";
+            recurrence?: "daily" | "weekly" | "cycle" | "sos";
+            weekdays?: number[];
+            startDate?: string;
+            endDate?: string | null;
+            cycleOnDays?: number;
+            cycleOffDays?: number;
+            stock?: number | null;
+            lowStockThreshold?: number;
+            stockDebits?: Record<string, number>;
             doses: {
                 time: string;
                 amount: string;
+                meal?: "any" | "before" | "after";
             }[];
         }[];
         medicineDoses: {

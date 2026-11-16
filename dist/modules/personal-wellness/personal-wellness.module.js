@@ -7,6 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PersonalWellnessModule = void 0;
+const support_controller_1 = require("./controllers/support.controller");
 const common_1 = require("@nestjs/common");
 const authentication_module_1 = require("../authentication/authentication.module");
 const personal_wellness_controller_1 = require("./controllers/personal-wellness.controller");
@@ -20,7 +21,7 @@ exports.PersonalWellnessModule = PersonalWellnessModule = __decorate([
     (0, common_1.Module)({
         exports: [personal_wellness_service_1.PersonalWellnessService],
         imports: [authentication_module_1.AuthenticationModule, user_accounts_module_1.UserAccountsModule],
-        controllers: [personal_wellness_controller_1.PersonalWellnessController, export_controller_1.ExportController],
+        controllers: [personal_wellness_controller_1.PersonalWellnessController, export_controller_1.ExportController, support_controller_1.SupportController],
         providers: [personal_wellness_service_1.PersonalWellnessService],
     })
 ], PersonalWellnessModule);

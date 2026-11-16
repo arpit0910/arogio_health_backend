@@ -64,20 +64,37 @@ exports.medicineInput = zod_1.z
     name: zod_1.z.string().trim().min(1).max(80),
     notes: zod_1.z.string().trim().max(1000),
     enabled: zod_1.z.boolean(),
+    alertType: zod_1.z.enum(['default', 'gentle', 'vibrate']).optional(),
+    form: zod_1.z.enum(['Tablet', 'Capsule', 'Syrup', 'Drops', 'Inhaler', 'Injection']).optional(),
+    strength: zod_1.z.string().trim().max(30).optional(),
+    unit: zod_1.z.enum(['mg', 'ml', 'mcg']).optional(),
+    recurrence: zod_1.z.enum(['daily', 'weekly', 'cycle', 'sos']).optional(),
+    weekdays: zod_1.z.array(zod_1.z.number().int().min(0).max(6)).max(7).optional(),
+    startDate: day.optional(), endDate: day.nullable().optional(),
+    cycleOnDays: zod_1.z.number().int().min(1).max(365).optional(),
+    cycleOffDays: zod_1.z.number().int().min(1).max(365).optional(),
+    expectedStock: zod_1.z.number().min(0).max(100000).nullable().optional(),
+    stock: zod_1.z.number().min(0).max(100000).nullable().optional(),
+    lowStockThreshold: zod_1.z.number().min(0).max(100000).optional(),
     doses: zod_1.z
-        .array(zod_1.z.object({ time: clock, amount: zod_1.z.string().trim().min(1).max(80) }).strict())
+        .array(zod_1.z.object({ time: clock, amount: zod_1.z.string().trim().min(1).max(80), meal: zod_1.z.enum(['any', 'before', 'after']).optional() }).strict())
         .min(1)
         .max(12)
         .refine((doses) => new Set(doses.map((d) => d.time)).size === doses.length, 'Choose a different time for each dose.'),
 })
-    .strict();
+    .strict()
+    .refine(m => !m.endDate || (!!m.startDate && m.endDate >= m.startDate), 'Choose an end date on or after the start.')
+    .refine(m => m.recurrence !== 'weekly' || !!m.weekdays?.length, 'Choose at least one weekday.')
+    .refine(m => m.recurrence !== 'cycle' || !!m.startDate, 'Choose a cycle start date.');
 exports.medicineDoseInput = zod_1.z
     .object({
     status: zod_1.z.enum(['taken', 'skipped', 'pending']),
     snooze: zod_1.z.boolean().default(false),
+    snoozeMinutes: zod_1.z.number().int().min(5).max(60).multipleOf(5).optional(),
 })
     .strict()
-    .refine((value) => !value.snooze || value.status === 'pending', 'Only pending doses can be snoozed.');
+    .refine((value) => !value.snooze || value.status === 'pending', 'Only pending doses can be snoozed.')
+    .refine(value => value.snoozeMinutes === undefined || value.snooze, 'Snooze duration requires a snooze action.');
 exports.doseDayInput = day;
 exports.doseTimeInput = clock;
 const activityValues = zod_1.z

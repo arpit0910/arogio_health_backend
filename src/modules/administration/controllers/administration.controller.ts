@@ -110,6 +110,8 @@ export class AdministrationController {
   @Delete('banners/:id') remove(@CurrentUser() u: RequestUser, @Param('id') id: string) {
     return this.service.audit(u.userId, 'banner.delete', id, () => this.service.deleteBanner(id));
   }
+  @Patch('feedback/:id') reviewFeedback(@CurrentUser() u: RequestUser, @Param('id') id: string, @Body() body: unknown) { return this.service.audit(u.userId, 'feedback.review', id, () => this.service.reviewFeedback(id, body)); }
+  @Get('feedback') feedback(@CurrentUser() u: RequestUser) { return this.service.audit(u.userId, 'feedback.list', null, () => this.service.feedback()); }
   @Get('audit') audit(@Query('page', new ParseIntPipe({ optional: true })) page?: number) {
     return this.service.auditLog(page);
   }

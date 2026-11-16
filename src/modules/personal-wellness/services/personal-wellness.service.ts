@@ -1,3 +1,4 @@
+import { medicineDueOn, doseQuantity } from '../domain/medicine-rules';
 import {
   BadRequestException,
   ConflictException,
@@ -85,7 +86,7 @@ export class PersonalWellnessService {
     ]);
     return {
       activityTracking: preferences[0]?.activityTracking ?? { goals: {}, days: [] },
-      medicines: preferences[0]?.medicines ?? [],
+      medicines: (preferences[0]?.medicines ?? []).map(medicine => { const publicMedicine = { ...medicine }; delete publicMedicine.stockDebits; return publicMedicine; }),
       medicineDoses: doseRecords.map((row) => ({
         medicineId: row.medicineId,
         day: row.day,
@@ -190,13 +191,15 @@ export class PersonalWellnessService {
   }
   saveMedicine(userId: string, id: string, body: unknown) {
     this.uuid(id);
-    const medicine = this.parse(input.medicineInput, body);
+    const { expectedStock, ...medicine } = this.parse(input.medicineInput, body);
     return this.mutate(userId, async (tx) => {
       const [row] = await tx.select().from(settings).where(eq(settings.userId, userId));
       const current = row?.medicines ?? [];
       if (current.length >= 30 && !current.some((m) => m.id === id))
         throw new BadRequestException('You can save up to 30 medicines.');
-      const medicines = [...current.filter((m) => m.id !== id), { id, ...medicine }];
+      const previous = current.find(m => m.id === id);
+      if (expectedStock !== undefined && (previous?.stock ?? null) !== expectedStock) throw new ConflictException('Stock changed while you were editing. Refresh your medicines and review the current stock.');
+      const medicines = [...current.filter((m) => m.id !== id), { id, ...previous, ...medicine, stockDebits: previous?.stockDebits ?? {} }];
       await tx
         .insert(settings)
         .values({ userId, medicines })
@@ -237,6 +240,8 @@ export class PersonalWellnessService {
         throw new NotFoundException(
           'This medicine or dose time has changed. Refresh your schedule.',
         );
+      if (medicine.recurrence !== 'sos' && !medicineDueOn(medicine, day))
+        throw new BadRequestException('This medicine is not scheduled on this date.');
       if (value.snooze && (!medicine.enabled || zonedInstant(day, time, APP_TIMEZONE) > now))
         throw new BadRequestException(
           'Snooze is available when a dose is due and reminders are enabled.',
@@ -258,9 +263,20 @@ export class PersonalWellnessService {
           : existing.snoozedUntil && existing.snoozedUntil > now)
       )
         return;
-      const snoozedUntil = value.snooze ? new Date(now.getTime() + 15 * 60000) : null;
+      const snoozedUntil = value.snooze ? new Date(now.getTime() + (value.snoozeMinutes ?? 15) * 60000) : null;
       if (snoozedUntil && localDay(snoozedUntil, APP_TIMEZONE) !== today)
         throw new BadRequestException('A snooze cannot move this dose into the next day.');
+      if (medicine.stock != null) {
+        const quantity = doseQuantity(medicine.doses.find(d => d.time === time)!.amount);
+        if (quantity == null && value.status === 'taken') throw new BadRequestException('Use a numeric dose amount to track stock.');
+        const key = `${day}:${time}`, stockDebits = { ...medicine.stockDebits };
+        const previous = stockDebits[key] ?? 0;
+        const debit = value.status === 'taken' ? (existing?.status === 'taken' ? previous : quantity ?? 0) : 0;
+        const stock = medicine.stock + previous - debit;
+        if (stock < 0) throw new BadRequestException('Not enough stock for this dose. Correct your current stock before logging.');
+        if (debit) stockDebits[key] = debit; else delete stockDebits[key];
+        await tx.update(settings).set({ medicines: row!.medicines.map(m => m.id === id ? { ...m, stock, stockDebits } : m), updatedAt: now }).where(eq(settings.userId, userId));
+      }
       const record = {
         userId,
         medicineId: id,

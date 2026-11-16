@@ -39,4 +39,5 @@ __exportStar(require("./medical-diseases.schema"), exports);
 __exportStar(require("./doctors.schema"), exports);
 __exportStar(require("./doctor-departments.schema"), exports);
 __exportStar(require("./doctor-hospital-affiliations.schema"), exports);
+__exportStar(require("./support-feedback.schema"), exports);
 //# sourceMappingURL=index.js.map

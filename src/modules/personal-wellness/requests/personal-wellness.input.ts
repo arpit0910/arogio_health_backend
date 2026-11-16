@@ -73,8 +73,20 @@ export const medicineInput = z
     name: z.string().trim().min(1).max(80),
     notes: z.string().trim().max(1000),
     enabled: z.boolean(),
+    alertType: z.enum(['default', 'gentle', 'vibrate']).optional(),
+    form: z.enum(['Tablet', 'Capsule', 'Syrup', 'Drops', 'Inhaler', 'Injection']).optional(),
+    strength: z.string().trim().max(30).optional(),
+    unit: z.enum(['mg', 'ml', 'mcg']).optional(),
+    recurrence: z.enum(['daily', 'weekly', 'cycle', 'sos']).optional(),
+    weekdays: z.array(z.number().int().min(0).max(6)).max(7).optional(),
+    startDate: day.optional(), endDate: day.nullable().optional(),
+    cycleOnDays: z.number().int().min(1).max(365).optional(),
+    cycleOffDays: z.number().int().min(1).max(365).optional(),
+    expectedStock: z.number().min(0).max(100000).nullable().optional(),
+    stock: z.number().min(0).max(100000).nullable().optional(),
+    lowStockThreshold: z.number().min(0).max(100000).optional(),
     doses: z
-      .array(z.object({ time: clock, amount: z.string().trim().min(1).max(80) }).strict())
+      .array(z.object({ time: clock, amount: z.string().trim().min(1).max(80), meal: z.enum(['any', 'before', 'after']).optional() }).strict())
       .min(1)
       .max(12)
       .refine(
@@ -82,18 +94,23 @@ export const medicineInput = z
         'Choose a different time for each dose.',
       ),
   })
-  .strict();
+  .strict()
+  .refine(m => !m.endDate || (!!m.startDate && m.endDate >= m.startDate), 'Choose an end date on or after the start.')
+  .refine(m => m.recurrence !== 'weekly' || !!m.weekdays?.length, 'Choose at least one weekday.')
+  .refine(m => m.recurrence !== 'cycle' || !!m.startDate, 'Choose a cycle start date.');
 
 export const medicineDoseInput = z
   .object({
     status: z.enum(['taken', 'skipped', 'pending']),
     snooze: z.boolean().default(false),
+    snoozeMinutes: z.number().int().min(5).max(60).multipleOf(5).optional(),
   })
   .strict()
   .refine(
     (value) => !value.snooze || value.status === 'pending',
     'Only pending doses can be snoozed.',
-  );
+  )
+  .refine(value => value.snoozeMinutes === undefined || value.snooze, 'Snooze duration requires a snooze action.');
 export const doseDayInput = day;
 export const doseTimeInput = clock;
 
