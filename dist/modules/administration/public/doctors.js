@@ -57,7 +57,7 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
   reset('Doctors');
   const rev = requestRevision,
     section = panel(),
-    tools = el('form', null, 'toolbar');
+    tools = el('form', null, 'toolbar directory-index-tools');
   section.classList.add('doctors-management');
   const search = el('input');
   search.type = 'search';
@@ -68,29 +68,13 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
   location.value = city;
   location.placeholder = 'City (all locations if empty)';
   location.setAttribute('aria-label', 'Filter doctor city');
-  const filter = el('select');
-  filter.setAttribute('aria-label', 'Doctor publication status');
-  for (const [value, label] of [
-    ['all', 'All doctors'],
-    ['draft', 'Drafts'],
-    ['published', 'Published'],
-  ]) {
-    const option = el('option', label);
-    option.value = value;
-    filter.append(option);
-  }
-  filter.value = status;
+  const filter = directoryStatusFilter('doctors', status, next => doctorsPage(1, search.value.trim(), location.value.trim(), next));
   const searchButton = el('button', 'Search');
   searchButton.type = 'submit';
   tools.addEventListener('submit', (event) => {
     event.preventDefault();
     void safely(() => doctorsPage(1, search.value.trim(), location.value.trim(), filter.value));
   });
-  filter.addEventListener(
-    'change',
-    () =>
-      void safely(() => doctorsPage(1, search.value.trim(), location.value.trim(), filter.value)),
-  );
   tools.append(
     search,
     location,
@@ -202,9 +186,12 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
     `/admin/doctors?page=${current}&search=${encodeURIComponent(term)}&city=${encodeURIComponent(city)}&status=${status}`,
   );
   if (rev !== requestRevision) return;
+  section.append(directorySummary('doctors', data.summary, next => doctorsPage(1, term, city, next)));
+  const bulk = directoryBulkApproval('doctors', data.items, () => doctorsPage(current, term, city, status));
+  section.append(bulk.section, bulk.results);
   section.append(
     table(
-      ['Doctor', 'Location', 'Registration', 'Publication', 'Actions'],
+      ['Select', 'Doctor', 'Location', 'Registration', 'Status', 'Completeness', 'Review date', 'Actions'],
       data.items.map((row) => {
         const actions = el('div', null, 'actions');
         actions.append(
@@ -225,14 +212,14 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
             ),
           ),
         );
-        const stale =
-          row.published &&
-          (!row.reviewedAt || new Date(row.reviewedAt).getTime() < Date.now() - 180 * 86400000);
         return [
+          bulk.checkbox(row),
           row.name_en,
           [row.city, row.state].join(', '),
           row.registration_number || 'Not added',
-          stale ? 'Review expired' : row.published ? 'Published' : 'Draft',
+          directoryStatusCell(row),
+          directoryCompletenessCell(row),
+          date(row.reviewedAt),
           actions,
         ];
       }),

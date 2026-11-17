@@ -1,3 +1,4 @@
+import { directoryCountFields, directoryPredicates, directoryStatusInput, directoryRowStatus, activeDoctorDepartment } from '../../../common/directory/admin-status';
 import {
   decodeProviderImage,
   providerImageInput,
@@ -56,6 +57,7 @@ const { image_data: binaryImage, ...profileColumns } = getTableColumns(doctors);
 void binaryImage;
 const fields = {
   ...profileColumns,
+  activeDepartment: activeDoctorDepartment,
   image_url: sql<
     string | null
   >`case when ${doctors.image_revision} is null then null else '/api/v1/public/doctors/' || ${doctors.id} || '/image?v=' || ${doctors.image_revision} end`,
@@ -97,8 +99,6 @@ export class DoctorsService {
     const q = this.parse(admin ? doctorAdminQuery : doctorQuery, query),
       conditions: SQL[] = [];
     if (!admin) conditions.push(this.visible()!);
-    else if ('status' in q && q.status !== 'all')
-      conditions.push(eq(care.published, q.status === 'published'));
     if (q.city) conditions.push(sql`lower(btrim(${doctors.city}))=${q.city.toLowerCase()}`);
     if (q.state) conditions.push(sql`lower(btrim(${doctors.state}))=${q.state.toLowerCase()}`);
     if (q.department_id)
@@ -121,6 +121,10 @@ export class DoctorsService {
         )!,
       );
     }
+    const baseWhere = and(...conditions), statusPredicates = directoryPredicates('doctors');
+    const status = directoryStatusInput.parse('status' in q ? q.status : 'all');
+    if (admin && status !== 'all') conditions.push(status === 'published' ? sql`${care.published}=true` : statusPredicates[status]);
+    const summary = admin ? (await this.database.db.select(directoryCountFields(statusPredicates)).from(doctors).innerJoin(care, eq(care.id, doctors.id)).where(baseWhere))[0] : undefined;
     const where = and(...conditions),
       [items, total] = await Promise.all([
         this.database.db
@@ -148,9 +152,11 @@ export class DoctorsService {
       items: await Promise.all(
         items.map(async (row) => ({
           ...this.present(row, admin),
+          ...(admin ? { adminStatus: directoryRowStatus('doctors', row) } : {}),
           ...(await this.relations(this.database.db, row.id, admin)),
         })),
       ),
+      ...(admin ? { summary } : {}),
       total: total[0]!.count,
       page: q.page,
       hasNext: q.page * q.limit < total[0]!.count,

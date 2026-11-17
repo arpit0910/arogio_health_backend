@@ -1,3 +1,4 @@
+import { directoryStatusInput } from '../../../common/directory/admin-status';
 import { z } from 'zod';
 
 const line = z.string().trim().max(200);
@@ -172,7 +173,7 @@ export const doctorQuery = z
   })
   .strict();
 export const doctorAdminQuery = doctorQuery.extend({
-  status: z.enum(['all', 'published', 'draft']).default('all'),
+  status: directoryStatusInput,
 });
 export const doctorReview = z
   .object({

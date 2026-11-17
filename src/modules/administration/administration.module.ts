@@ -1,4 +1,8 @@
 import { HealthResourcesModule } from '../health-resources/health-resources.module';
+import { HospitalsModule } from '../hospitals/hospitals.module';
+import { DoctorsModule } from '../doctors/doctors.module';
+import { CareDirectoryModule } from '../care-directory/care-directory.module';
+import { DirectoryApprovalsController } from './controllers/directory-approvals.controller';
 import { MeditationLibraryModule } from '../meditation-library/meditation-library.module';
 import { MeditationLibraryAdministrationController } from './controllers/meditation-library-administration.controller';
 import { HealthResourcesAdministrationController } from './controllers/health-resources-administration.controller';
@@ -14,6 +18,9 @@ import { DatabaseResetService } from './services/database-reset.service';
 import { DatabaseResetController } from './controllers/database-reset.controller';
 @Module({
   imports: [
+    HospitalsModule,
+    DoctorsModule,
+    CareDirectoryModule,
     MeditationLibraryModule,
     HealthResourcesModule,
     AuthenticationModule,
@@ -21,6 +28,7 @@ import { DatabaseResetController } from './controllers/database-reset.controller
     PersonalWellnessModule,
   ],
   controllers: [
+    DirectoryApprovalsController,
     AdministrationController,
     HealthResourcesAdministrationController,
     MeditationLibraryAdministrationController,

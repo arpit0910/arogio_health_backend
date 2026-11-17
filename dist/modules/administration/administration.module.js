@@ -8,6 +8,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdministrationModule = void 0;
 const health_resources_module_1 = require("../health-resources/health-resources.module");
+const hospitals_module_1 = require("../hospitals/hospitals.module");
+const doctors_module_1 = require("../doctors/doctors.module");
+const care_directory_module_1 = require("../care-directory/care-directory.module");
+const directory_approvals_controller_1 = require("./controllers/directory-approvals.controller");
 const meditation_library_module_1 = require("../meditation-library/meditation-library.module");
 const meditation_library_administration_controller_1 = require("./controllers/meditation-library-administration.controller");
 const health_resources_administration_controller_1 = require("./controllers/health-resources-administration.controller");
@@ -27,6 +31,9 @@ exports.AdministrationModule = AdministrationModule;
 exports.AdministrationModule = AdministrationModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            hospitals_module_1.HospitalsModule,
+            doctors_module_1.DoctorsModule,
+            care_directory_module_1.CareDirectoryModule,
             meditation_library_module_1.MeditationLibraryModule,
             health_resources_module_1.HealthResourcesModule,
             authentication_module_1.AuthenticationModule,
@@ -34,6 +41,7 @@ exports.AdministrationModule = AdministrationModule = __decorate([
             personal_wellness_module_1.PersonalWellnessModule,
         ],
         controllers: [
+            directory_approvals_controller_1.DirectoryApprovalsController,
             administration_controller_1.AdministrationController,
             health_resources_administration_controller_1.HealthResourcesAdministrationController,
             meditation_library_administration_controller_1.MeditationLibraryAdministrationController,

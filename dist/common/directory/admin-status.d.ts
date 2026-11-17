@@ -1,0 +1,57 @@
+import { type SQL } from 'drizzle-orm';
+import { z } from 'zod';
+export declare const directoryStatuses: readonly ["all", "active", "inactive", "draft", "incomplete", "approved", "expired", "withdrawn", "ready", "published"];
+export declare const directoryStatusInput: z.ZodDefault<z.ZodEnum<{
+    active: "active";
+    published: "published";
+    expired: "expired";
+    all: "all";
+    inactive: "inactive";
+    draft: "draft";
+    incomplete: "incomplete";
+    approved: "approved";
+    withdrawn: "withdrawn";
+    ready: "ready";
+}>>;
+export type DirectoryKind = 'hospitals' | 'doctors' | 'blood-banks';
+export declare const activeDoctorDepartment: SQL<boolean>;
+export declare function directoryPredicates(kind: DirectoryKind): {
+    active: SQL<unknown>;
+    inactive: SQL<unknown>;
+    draft: SQL<unknown>;
+    withdrawn: SQL<unknown>;
+    incomplete: SQL<unknown>;
+    approved: SQL<unknown>;
+    expired: SQL<unknown>;
+    ready: SQL<unknown>;
+};
+export declare function directoryCountFields(predicates: ReturnType<typeof directoryPredicates>): Record<string, SQL<number>>;
+type StatusRow = {
+    name_en: string;
+    city: string;
+    state: string;
+    source_url?: string | null;
+    address_line1?: string;
+    address_en?: string;
+    phone_1?: string | null;
+    phone?: string | null;
+    listed?: boolean;
+    published?: boolean;
+    reviewedAt?: Date | string | null;
+    is_active?: boolean;
+    is_verified?: boolean;
+    verified_at?: Date | string | null;
+    registration_number?: string;
+    medical_council?: string;
+    qualifications?: string[];
+    activeDepartment?: boolean;
+};
+export declare function directoryRowStatus(kind: DirectoryKind, row: StatusRow): {
+    active: boolean;
+    approved: boolean;
+    missingFields: string[];
+    complete: boolean;
+    reviewStatus: string;
+    visibility: string;
+};
+export {};

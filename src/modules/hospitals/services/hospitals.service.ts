@@ -1,3 +1,4 @@
+import { directoryCountFields, directoryPredicates, directoryStatusInput, directoryRowStatus } from '../../../common/directory/admin-status';
 import {
   decodeProviderImage,
   providerImageInput,
@@ -87,8 +88,6 @@ export class HospitalsService {
     const q = this.parse(admin ? hospitalAdminQuery : hospitalQuery, query),
       conditions: SQL[] = [];
     if (!admin) conditions.push(this.visible());
-    else if ('status' in q && q.status !== 'all')
-      conditions.push(eq(care.published, q.status === 'published'));
     if (q.city) conditions.push(sql`lower(btrim(${hospitals.city}))=${q.city.toLowerCase()}`);
     if (q.state) conditions.push(sql`lower(btrim(${hospitals.state}))=${q.state.toLowerCase()}`);
     if (q.type) conditions.push(sql`lower(${hospitals.hospital_type})=${q.type.toLowerCase()}`);
@@ -114,6 +113,10 @@ export class HospitalsService {
         )!,
       );
     }
+    const baseWhere = and(...conditions), statusPredicates = directoryPredicates('hospitals');
+    const status = directoryStatusInput.parse('status' in q ? q.status : 'all');
+    if (admin && status !== 'all') conditions.push(status === 'published' ? sql`${care.published}=true` : statusPredicates[status]);
+    const summary = admin ? (await this.database.db.select(directoryCountFields(statusPredicates)).from(hospitals).innerJoin(care, eq(care.id, hospitals.id)).where(baseWhere))[0] : undefined;
     const where = and(...conditions),
       [items, total] = await Promise.all([
         this.database.db
@@ -138,7 +141,8 @@ export class HospitalsService {
           .where(where),
       ]);
     return {
-      items: items.map((row) => this.present(row, admin)),
+      items: items.map((row) => ({ ...this.present(row, admin), ...(admin ? { adminStatus: directoryRowStatus('hospitals', row) } : {}) })),
+      ...(admin ? { summary } : {}),
       total: total[0]!.count,
       page: q.page,
       hasNext: q.page * q.limit < total[0]!.count,

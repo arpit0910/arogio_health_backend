@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DoctorsService = void 0;
+const admin_status_1 = require("../../../common/directory/admin-status");
 const provider_image_1 = require("../../../common/media/provider-image");
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
@@ -28,6 +29,7 @@ const { image_data: binaryImage, ...profileColumns } = (0, drizzle_orm_1.getTabl
 void binaryImage;
 const fields = {
     ...profileColumns,
+    activeDepartment: admin_status_1.activeDoctorDepartment,
     image_url: (0, drizzle_orm_1.sql) `case when ${schema_1.doctors.image_revision} is null then null else '/api/v1/public/doctors/' || ${schema_1.doctors.id} || '/image?v=' || ${schema_1.doctors.image_revision} end`,
     published: schema_1.careDirectoryEntries.published,
     reviewedAt: schema_1.careDirectoryEntries.reviewedAt,
@@ -57,8 +59,6 @@ let DoctorsService = class DoctorsService {
         const q = this.parse(admin ? doctors_input_1.doctorAdminQuery : doctors_input_1.doctorQuery, query), conditions = [];
         if (!admin)
             conditions.push(this.visible());
-        else if ('status' in q && q.status !== 'all')
-            conditions.push((0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.published, q.status === 'published'));
         if (q.city)
             conditions.push((0, drizzle_orm_1.sql) `lower(btrim(${schema_1.doctors.city}))=${q.city.toLowerCase()}`);
         if (q.state)
@@ -71,6 +71,11 @@ let DoctorsService = class DoctorsService {
             const term = `%${q.search.replace(/[\\%_]/g, '\\$&')}%`;
             conditions.push((0, drizzle_orm_1.or)((0, drizzle_orm_1.ilike)(schema_1.doctors.name_en, term), (0, drizzle_orm_1.ilike)(schema_1.doctors.name_hi, term), (0, drizzle_orm_1.ilike)(schema_1.doctors.address_line1, term), (0, drizzle_orm_1.ilike)(schema_1.doctors.city, term), (0, drizzle_orm_1.ilike)(schema_1.doctors.landmark, term)));
         }
+        const baseWhere = (0, drizzle_orm_1.and)(...conditions), statusPredicates = (0, admin_status_1.directoryPredicates)('doctors');
+        const status = admin_status_1.directoryStatusInput.parse('status' in q ? q.status : 'all');
+        if (admin && status !== 'all')
+            conditions.push(status === 'published' ? (0, drizzle_orm_1.sql) `${schema_1.careDirectoryEntries.published}=true` : statusPredicates[status]);
+        const summary = admin ? (await this.database.db.select((0, admin_status_1.directoryCountFields)(statusPredicates)).from(schema_1.doctors).innerJoin(schema_1.careDirectoryEntries, (0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.id, schema_1.doctors.id)).where(baseWhere))[0] : undefined;
         const where = (0, drizzle_orm_1.and)(...conditions), [items, total] = await Promise.all([
             this.database.db
                 .select(fields)
@@ -91,8 +96,10 @@ let DoctorsService = class DoctorsService {
         return {
             items: await Promise.all(items.map(async (row) => ({
                 ...this.present(row, admin),
+                ...(admin ? { adminStatus: (0, admin_status_1.directoryRowStatus)('doctors', row) } : {}),
                 ...(await this.relations(this.database.db, row.id, admin)),
             }))),
+            ...(admin ? { summary } : {}),
             total: total[0].count,
             page: q.page,
             hasNext: q.page * q.limit < total[0].count,

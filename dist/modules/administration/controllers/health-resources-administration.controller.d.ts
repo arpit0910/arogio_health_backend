@@ -51,6 +51,14 @@ export declare class HealthResourcesAdministrationController {
         total: number;
     } | {
         items: {
+            adminStatus?: {
+                active: boolean;
+                approved: boolean;
+                missingFields: string[];
+                complete: boolean;
+                reviewStatus: string;
+                visibility: string;
+            } | undefined;
             id: string;
             source_id: string;
             name_en: string;
@@ -84,6 +92,10 @@ export declare class HealthResourcesAdministrationController {
         page: number;
         hasNext: boolean;
         missingCoordinates: number;
+        summary?: {
+            [x: string]: number;
+        } | undefined;
+        total?: number | undefined;
     }>;
     template(kind: string, response: Response): Promise<void>;
     get(kind: string, id: string): Promise<{

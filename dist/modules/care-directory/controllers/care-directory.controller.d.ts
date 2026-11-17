@@ -87,6 +87,14 @@ export declare class CareDirectorySearchController {
         };
         bloodBanks: {
             items: {
+                adminStatus?: {
+                    active: boolean;
+                    approved: boolean;
+                    missingFields: string[];
+                    complete: boolean;
+                    reviewStatus: string;
+                    visibility: string;
+                } | undefined;
                 id: string;
                 source_id: string;
                 name_en: string;
@@ -120,6 +128,10 @@ export declare class CareDirectorySearchController {
             page: number;
             hasNext: boolean;
             missingCoordinates: number;
+            summary?: {
+                [x: string]: number;
+            } | undefined;
+            total?: number | undefined;
         };
     }>;
 }

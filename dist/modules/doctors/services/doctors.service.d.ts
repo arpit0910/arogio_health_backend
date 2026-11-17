@@ -8,6 +8,12 @@ export declare class DoctorsService {
     private visible;
     private present;
     list(query: unknown, admin?: boolean): Promise<{
+        total: number;
+        page: number;
+        hasNext: boolean;
+        summary?: {
+            [x: string]: number;
+        } | undefined;
         items: {
             department_ids: string[];
             departments: {
@@ -30,6 +36,15 @@ export declare class DoctorsService {
                 end_time: string | null;
                 consultation_fee: number | null;
             }[];
+            adminStatus?: {
+                active: boolean;
+                approved: boolean;
+                missingFields: string[];
+                complete: boolean;
+                reviewStatus: string;
+                visibility: string;
+            } | undefined;
+            activeDepartment: boolean;
             image_url: string | null;
             published: boolean;
             reviewedAt: Date | null;
@@ -69,9 +84,6 @@ export declare class DoctorsService {
             created_at: Date;
             updated_at: Date;
         }[];
-        total: number;
-        page: number;
-        hasNext: boolean;
     }>;
     detail(id: string, admin?: boolean): Promise<{
         department_ids: string[];
@@ -95,6 +107,7 @@ export declare class DoctorsService {
             end_time: string | null;
             consultation_fee: number | null;
         }[];
+        activeDepartment: boolean;
         image_url: string | null;
         published: boolean;
         reviewedAt: Date | null;

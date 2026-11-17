@@ -210,9 +210,16 @@ export declare const hospitalAdminQuery: z.ZodObject<{
     page: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     status: z.ZodDefault<z.ZodEnum<{
+        active: "active";
         published: "published";
+        expired: "expired";
         all: "all";
+        inactive: "inactive";
         draft: "draft";
+        incomplete: "incomplete";
+        approved: "approved";
+        withdrawn: "withdrawn";
+        ready: "ready";
     }>>;
 }, z.core.$strict>;
 export declare const hospitalReview: z.ZodObject<{

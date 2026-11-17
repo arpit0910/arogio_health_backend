@@ -85,6 +85,18 @@ export declare const listInput: z.ZodObject<{
         true: "true";
         false: "false";
     }>>;
+    status: z.ZodDefault<z.ZodEnum<{
+        active: "active";
+        published: "published";
+        expired: "expired";
+        all: "all";
+        inactive: "inactive";
+        draft: "draft";
+        incomplete: "incomplete";
+        approved: "approved";
+        withdrawn: "withdrawn";
+        ready: "ready";
+    }>>;
 }, z.core.$strict>;
 export declare const nearbyInput: z.ZodObject<{
     latitude: z.ZodNumber;

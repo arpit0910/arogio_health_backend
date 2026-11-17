@@ -1,3 +1,4 @@
+import { directoryStatusInput } from '../../../common/directory/admin-status';
 import { z } from 'zod';
 export const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] as const;
 const line = z.string().trim().max(300),
@@ -95,6 +96,7 @@ export const listInput = z
     language: z.enum(['en', 'hi']).default('en'),
     bloodGroup: z.enum(bloodGroups).optional(),
     only24h: z.enum(['true', 'false']).optional(),
+    status: directoryStatusInput,
   })
   .strict();
 export const nearbyInput = z

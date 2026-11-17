@@ -719,3 +719,24 @@ dialog::backdrop {
 .database-reset-actions button {
   min-height: 44px;
 }
+.directory-summary { margin: 20px 0; }
+.directory-summary > p { font-size: 13px; color: #486357; }
+.directory-summary .metrics { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 12px 0; }
+.directory-metric { text-align: left; color: #163d30; background: #edf4ef; border: 1px solid #d5e5db; }
+.directory-metric:hover { background: #d8eee1; }
+.directory-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 0; border-top: 1px solid #d5e5db; }
+.directory-bulk .check { margin: 0; }
+.directory-status, .directory-completeness { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 130px; }
+.directory-completeness span { font-size: 13px; color: #486357; }
+.status-label { border-radius: 6px; padding: 3px 8px; background: #eef0e9; color: #3d493c; font-size: 13px; }
+.status-active, .status-approved { background: #d8eee1; color: #12543b; }
+.status-inactive { background: #f4e4de; color: #792e20; }
+.directory-approval-results:not(:empty) { margin: 16px 0; padding: 16px; background: #edf4ef; }
+.directory-overview-row + .directory-overview-row { border-top: 1px solid #d5e5db; padding-top: 20px; }
+
+.directory-index-tools input, .directory-index-tools select { flex: 1 1 180px; width: 180px; }
+.directory-summary .directory-metric { padding: 10px 12px; min-height: 88px; border-radius: 10px; }
+.directory-summary .directory-metric strong { font-size: 25px; margin: 4px 0 0; }
+.directory-summary .directory-metric span { font-size: 12px; line-height: 16px; }
+
+.directory-selected-records { max-height: 150px; overflow: auto; margin: 0; padding: 12px 12px 12px 30px; background: #edf4ef; border-radius: 8px; }

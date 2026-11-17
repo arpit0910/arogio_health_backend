@@ -49,6 +49,8 @@ const rows = [
 const code =
   fs.readFileSync(path.join(dir, 'admin.js'), 'utf8') +
   '\n' +
+  fs.readFileSync(path.join(dir, 'directory-admin.js'), 'utf8') +
+  '\n' +
   fs.readFileSync(path.join(dir, 'hospitals.js'), 'utf8') +
   '\n' +
   fs.readFileSync(path.join(dir, 'provider-images.js'), 'utf8');

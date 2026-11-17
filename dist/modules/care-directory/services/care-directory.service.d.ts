@@ -233,7 +233,7 @@ export declare class CareDirectoryService {
     reportBank(id: string, body: unknown): Promise<{
         received: boolean;
     }>;
-    reviewBank(id: string, actor: string, body: unknown): Promise<{
+    reviewBank(id: string, actor: string, body: unknown, requireActive?: boolean): Promise<{
         id: string;
         source_id: string;
         name_en: string;

@@ -8,7 +8,21 @@ export declare class HospitalsService {
     private visible;
     private present;
     list(query: unknown, admin?: boolean): Promise<{
+        total: number;
+        page: number;
+        hasNext: boolean;
+        summary?: {
+            [x: string]: number;
+        } | undefined;
         items: {
+            adminStatus?: {
+                active: boolean;
+                approved: boolean;
+                missingFields: string[];
+                complete: boolean;
+                reviewStatus: string;
+                visibility: string;
+            } | undefined;
             image_url: string | null;
             published: boolean;
             reviewedAt: Date | null;
@@ -54,9 +68,6 @@ export declare class HospitalsService {
             created_at: Date;
             updated_at: Date;
         }[];
-        total: number;
-        page: number;
-        hasNext: boolean;
     }>;
     detail(id: string, admin?: boolean): Promise<{
         image_url: string | null;

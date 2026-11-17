@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.nearbyInput = exports.listInput = exports.bankInput = exports.articleInput = exports.categoryInput = exports.thumbnailInput = exports.bloodGroups = void 0;
+const admin_status_1 = require("../../../common/directory/admin-status");
 const zod_1 = require("zod");
 exports.bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 const line = zod_1.z.string().trim().max(300), optional = zod_1.z.string().trim().max(1000).nullable().default(null);
@@ -93,6 +94,7 @@ exports.listInput = zod_1.z
     language: zod_1.z.enum(['en', 'hi']).default('en'),
     bloodGroup: zod_1.z.enum(exports.bloodGroups).optional(),
     only24h: zod_1.z.enum(['true', 'false']).optional(),
+    status: admin_status_1.directoryStatusInput,
 })
     .strict();
 exports.nearbyInput = zod_1.z

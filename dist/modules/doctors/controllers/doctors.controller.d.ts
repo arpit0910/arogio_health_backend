@@ -5,6 +5,12 @@ export declare class PublicDoctorsController {
     private readonly service;
     constructor(service: DoctorsService);
     list(query: unknown): Promise<{
+        total: number;
+        page: number;
+        hasNext: boolean;
+        summary?: {
+            [x: string]: number;
+        } | undefined;
         items: {
             department_ids: string[];
             departments: {
@@ -27,6 +33,15 @@ export declare class PublicDoctorsController {
                 end_time: string | null;
                 consultation_fee: number | null;
             }[];
+            adminStatus?: {
+                active: boolean;
+                approved: boolean;
+                missingFields: string[];
+                complete: boolean;
+                reviewStatus: string;
+                visibility: string;
+            } | undefined;
+            activeDepartment: boolean;
             image_url: string | null;
             published: boolean;
             reviewedAt: Date | null;
@@ -66,9 +81,6 @@ export declare class PublicDoctorsController {
             created_at: Date;
             updated_at: Date;
         }[];
-        total: number;
-        page: number;
-        hasNext: boolean;
     }>;
     image(id: string, response: Response): Promise<void>;
     detail(id: string): Promise<{
@@ -93,6 +105,7 @@ export declare class PublicDoctorsController {
             end_time: string | null;
             consultation_fee: number | null;
         }[];
+        activeDepartment: boolean;
         image_url: string | null;
         published: boolean;
         reviewedAt: Date | null;
@@ -151,6 +164,12 @@ export declare class DoctorsAdministrationController {
         reviewRequired: boolean;
     }>;
     list(query: unknown): Promise<{
+        total: number;
+        page: number;
+        hasNext: boolean;
+        summary?: {
+            [x: string]: number;
+        } | undefined;
         items: {
             department_ids: string[];
             departments: {
@@ -173,6 +192,15 @@ export declare class DoctorsAdministrationController {
                 end_time: string | null;
                 consultation_fee: number | null;
             }[];
+            adminStatus?: {
+                active: boolean;
+                approved: boolean;
+                missingFields: string[];
+                complete: boolean;
+                reviewStatus: string;
+                visibility: string;
+            } | undefined;
+            activeDepartment: boolean;
             image_url: string | null;
             published: boolean;
             reviewedAt: Date | null;
@@ -212,9 +240,6 @@ export declare class DoctorsAdministrationController {
             created_at: Date;
             updated_at: Date;
         }[];
-        total: number;
-        page: number;
-        hasNext: boolean;
     }>;
     template(format: string | undefined, response: Response): Promise<void>;
     preview(user: RequestUser, file?: Express.Multer.File): Promise<{
@@ -303,6 +328,7 @@ export declare class DoctorsAdministrationController {
             end_time: string | null;
             consultation_fee: number | null;
         }[];
+        activeDepartment: boolean;
         image_url: string | null;
         published: boolean;
         reviewedAt: Date | null;

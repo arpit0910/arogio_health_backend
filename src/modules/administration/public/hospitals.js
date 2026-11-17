@@ -62,7 +62,7 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
   reset('Hospitals');
   const rev = requestRevision,
     section = panel(),
-    tools = el('form', null, 'toolbar');
+    tools = el('form', null, 'toolbar directory-index-tools');
   const search = el('input');
   search.type = 'search';
   search.value = term;
@@ -72,29 +72,13 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
   location.value = city;
   location.placeholder = 'City (all locations if empty)';
   location.setAttribute('aria-label', 'Filter hospital city');
-  const filter = el('select');
-  filter.setAttribute('aria-label', 'Hospital source-review status');
-  for (const [value, label] of [
-    ['all', 'All hospitals'],
-    ['draft', 'Not source reviewed'],
-    ['published', 'Source reviewed'],
-  ]) {
-    const option = el('option', label);
-    option.value = value;
-    filter.append(option);
-  }
-  filter.value = status;
+  const filter = directoryStatusFilter('hospitals', status, next => hospitalsPage(1, search.value.trim(), location.value.trim(), next));
   const searchButton = el('button', 'Search');
   searchButton.type = 'submit';
   tools.addEventListener('submit', (event) => {
     event.preventDefault();
     void safely(() => hospitalsPage(1, search.value.trim(), location.value.trim(), filter.value));
   });
-  filter.addEventListener(
-    'change',
-    () =>
-      void safely(() => hospitalsPage(1, search.value.trim(), location.value.trim(), filter.value)),
-  );
   tools.append(
     search,
     location,
@@ -206,9 +190,12 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
     `/admin/hospitals?page=${current}&search=${encodeURIComponent(term)}&city=${encodeURIComponent(city)}&status=${status}`,
   );
   if (rev !== requestRevision) return;
+  section.append(directorySummary('hospitals', data.summary, next => hospitalsPage(1, term, city, next)));
+  const bulk = directoryBulkApproval('hospitals', data.items, () => hospitalsPage(current, term, city, status));
+  section.append(bulk.section, bulk.results);
   section.append(
     table(
-      ['Hospital', 'Location', 'Type', 'App visibility / source review', 'Actions'],
+      ['Select', 'Hospital', 'Location', 'Type', 'Status', 'Completeness', 'Review date', 'Actions'],
       data.items.map((row) => {
         const actions = el('div', null, 'actions');
         actions.append(
@@ -230,14 +217,14 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
             ),
           ),
         );
-        const stale =
-          row.published &&
-          (!row.reviewedAt || new Date(row.reviewedAt).getTime() < Date.now() - 180 * 86400000);
         return [
+          bulk.checkbox(row),
           row.name_en,
           [row.city, row.state].join(', '),
           row.hospital_type || 'Not added',
-          !row.listed ? 'Hidden from app' : stale ? 'Listed - review expired' : row.published ? 'Listed - source reviewed' : 'Listed - not source reviewed',
+          directoryStatusCell(row),
+          directoryCompletenessCell(row),
+          date(row.reviewedAt),
           actions,
         ];
       }),

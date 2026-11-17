@@ -41,13 +41,13 @@ const labelFor = (key) =>
   key
     .replace(/_/g, ' ')
     .replace(/\b(en|hi)\b/g, (value) => (value === 'en' ? '(English)' : '(Hindi)'));
-async function directoryPage(kind, current = 1, term = '') {
+async function directoryPage(kind, current = 1, term = '', status = 'all') {
   const articles = kind === 'articles',
     title = articles ? 'Articles' : 'Blood banks';
   reset(title);
   const rev = requestRevision,
     section = panel(),
-    tools = el('form', null, 'toolbar');
+    tools = el('form', null, 'toolbar directory-index-tools');
   const input = el('input');
   input.type = 'search';
   input.placeholder = articles ? 'Search titles or categories' : 'Search name, city or pincode';
@@ -55,12 +55,14 @@ async function directoryPage(kind, current = 1, term = '') {
   input.setAttribute('aria-label', input.placeholder);
   tools.addEventListener('submit', (event) => {
     event.preventDefault();
-    void safely(() => directoryPage(kind, 1, input.value.trim()));
+    void safely(() => directoryPage(kind, 1, input.value.trim(), filter?.value ?? status));
   });
+  const filter = articles ? null : directoryStatusFilter('blood-banks', status, next => directoryPage(kind, 1, input.value.trim(), next));
   const submit = el('button', 'Search');
   submit.type = 'submit';
   tools.append(
     input,
+    ...(filter ? [filter] : []),
     submit,
     button(articles ? 'Create article' : 'Add blood bank', () => directoryEditor(kind)),
   );
@@ -165,16 +167,18 @@ async function directoryPage(kind, current = 1, term = '') {
   );
   content.append(uploader);
   const data = await api(
-    `/admin/content/${kind}?page=${current}&search=${encodeURIComponent(term)}`,
+    `/admin/content/${kind}?page=${current}&search=${encodeURIComponent(term)}${articles ? '' : `&status=${status}`}`,
   );
   if (rev !== requestRevision) return;
+  const bulk = articles ? null : directoryBulkApproval('blood-banks', data.items, () => directoryPage(kind, current, term, status));
+  if (bulk) section.append(directorySummary('blood-banks', data.summary, next => directoryPage(kind, 1, term, next)), bulk.section, bulk.results);
   if (!articles && data.missingCoordinates)
     section.append(el('p', `${data.missingCoordinates} matching listings need coordinates.`));
   section.append(
     table(
       articles
         ? ['Thumbnail', 'Title', 'Category', 'Status', 'Updated', 'Actions']
-        : ['Name', 'City', 'Coordinates', 'Status', 'Actions'],
+        : ['Select', 'Name', 'City', 'Coordinates', 'Status', 'Completeness', 'Review date', 'Actions'],
       data.items.map((row) => {
         const actions = el('div', null, 'actions');
         actions.append(
@@ -202,18 +206,21 @@ async function directoryPage(kind, current = 1, term = '') {
               actions,
             ]
           : [
+              bulk.checkbox(row),
               row.name_en,
               `${row.city}, ${row.state}`,
               row.latitude == null ? 'Missing' : 'Added',
-              row.is_active ? 'Visible' : 'Hidden',
+              directoryStatusCell(row),
+              directoryCompletenessCell(row),
+              date(row.verified_at),
               actions,
             ];
       }),
     ),
   );
   if (!data.items.length)
-    section.append(el('p', 'No records found. Import a CSV or add a record.'));
-  pager(section, current, data.hasNext, (next) => directoryPage(kind, next, term));
+    section.append(el('p', articles ? 'No records found. Import a CSV or add a record.' : 'No records match this search and status. Choose All records to view the full index.'));
+  pager(section, current, data.hasNext, (next) => directoryPage(kind, next, term, status));
 }
 async function directoryEditor(kind, id) {
   const articles = kind === 'articles',

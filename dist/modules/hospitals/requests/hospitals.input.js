@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.hospitalDelete = exports.hospitalReview = exports.hospitalAdminQuery = exports.hospitalQuery = exports.hospitalUpdate = exports.hospitalInput = exports.hospitalFields = void 0;
 exports.hospitalPhone = hospitalPhone;
+const admin_status_1 = require("../../../common/directory/admin-status");
 const zod_1 = require("zod");
 const line = zod_1.z.string().trim().max(200);
 const paragraph = zod_1.z.string().trim().max(4000);
@@ -147,7 +148,7 @@ exports.hospitalQuery = zod_1.z
 })
     .strict();
 exports.hospitalAdminQuery = exports.hospitalQuery.extend({
-    status: zod_1.z.enum(['all', 'published', 'draft']).default('all'),
+    status: admin_status_1.directoryStatusInput,
 });
 exports.hospitalReview = zod_1.z
     .object({

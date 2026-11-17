@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doctorDelete = exports.doctorReview = exports.doctorAdminQuery = exports.doctorQuery = exports.doctorUpdate = exports.doctorInput = exports.doctorFields = exports.doctorAffiliation = void 0;
+const admin_status_1 = require("../../../common/directory/admin-status");
 const zod_1 = require("zod");
 const line = zod_1.z.string().trim().max(200);
 const paragraph = zod_1.z.string().trim().max(4000);
@@ -164,7 +165,7 @@ exports.doctorQuery = zod_1.z
 })
     .strict();
 exports.doctorAdminQuery = exports.doctorQuery.extend({
-    status: zod_1.z.enum(['all', 'published', 'draft']).default('all'),
+    status: admin_status_1.directoryStatusInput,
 });
 exports.doctorReview = zod_1.z
     .object({

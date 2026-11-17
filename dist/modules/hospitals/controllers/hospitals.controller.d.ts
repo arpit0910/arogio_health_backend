@@ -5,7 +5,21 @@ export declare class PublicHospitalsController {
     private readonly service;
     constructor(service: HospitalsService);
     list(query: unknown): Promise<{
+        total: number;
+        page: number;
+        hasNext: boolean;
+        summary?: {
+            [x: string]: number;
+        } | undefined;
         items: {
+            adminStatus?: {
+                active: boolean;
+                approved: boolean;
+                missingFields: string[];
+                complete: boolean;
+                reviewStatus: string;
+                visibility: string;
+            } | undefined;
             image_url: string | null;
             published: boolean;
             reviewedAt: Date | null;
@@ -51,9 +65,6 @@ export declare class PublicHospitalsController {
             created_at: Date;
             updated_at: Date;
         }[];
-        total: number;
-        page: number;
-        hasNext: boolean;
     }>;
     image(id: string, response: Response): Promise<void>;
     detail(id: string): Promise<{
@@ -121,7 +132,21 @@ export declare class HospitalsAdministrationController {
         reviewRequired: boolean;
     }>;
     list(query: unknown): Promise<{
+        total: number;
+        page: number;
+        hasNext: boolean;
+        summary?: {
+            [x: string]: number;
+        } | undefined;
         items: {
+            adminStatus?: {
+                active: boolean;
+                approved: boolean;
+                missingFields: string[];
+                complete: boolean;
+                reviewStatus: string;
+                visibility: string;
+            } | undefined;
             image_url: string | null;
             published: boolean;
             reviewedAt: Date | null;
@@ -167,9 +192,6 @@ export declare class HospitalsAdministrationController {
             created_at: Date;
             updated_at: Date;
         }[];
-        total: number;
-        page: number;
-        hasNext: boolean;
     }>;
     template(format: string | undefined, response: Response): Promise<void>;
     preview(user: RequestUser, file?: Express.Multer.File): Promise<{

@@ -1,3 +1,4 @@
+import { directoryCountFields, directoryPredicates, directoryRowStatus } from '../../../common/directory/admin-status';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
@@ -200,6 +201,10 @@ export class HealthResourcesService {
           ].map((column) => ilike(column, `%${q.search}%`)),
         )!,
       );
+    const baseWhere = and(...filters), statusPredicates = directoryPredicates('blood-banks');
+    const summary = admin ? (await this.database.db.select(directoryCountFields(statusPredicates)).from(bloodBankDirectoryEntries).where(baseWhere))[0] : undefined;
+    if (admin && q.status !== 'all') filters.push(q.status === 'published' ? statusPredicates.approved : statusPredicates[q.status]);
+    const matchingTotal = admin ? (await this.database.db.select({ count: count() }).from(bloodBankDirectoryEntries).where(and(...filters)))[0]?.count : undefined;
     const [items, missing] = await Promise.all([
       this.database.db
         .select()
@@ -214,7 +219,8 @@ export class HealthResourcesService {
         .where(and(...filters, or(isNull(bloodBankDirectoryEntries.latitude), isNull(bloodBankDirectoryEntries.longitude)))),
     ]);
     return {
-      items: items.slice(0, q.limit),
+      ...(admin ? { summary, total: matchingTotal ?? 0 } : {}),
+      items: items.slice(0, q.limit).map(row => ({ ...row, ...(admin ? { adminStatus: directoryRowStatus('blood-banks', row) } : {}) })),
       page: q.page,
       hasNext: items.length > q.limit,
       missingCoordinates: missing[0]!.count,

@@ -306,6 +306,7 @@ async function overview() {
   const rev = requestRevision,
     data = await api('/admin/analytics');
   if (rev !== requestRevision) return;
+  void directoryOverviewStatus(rev);
   const metrics = el('div', null, 'metrics');
   for (const [label, value, detail] of [
     ['People', data.accounts.total, `${number(data.accounts.new30)} joined in 30 days`],

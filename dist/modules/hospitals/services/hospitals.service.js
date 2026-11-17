@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HospitalsService = void 0;
+const admin_status_1 = require("../../../common/directory/admin-status");
 const provider_image_1 = require("../../../common/media/provider-image");
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
@@ -56,8 +57,6 @@ let HospitalsService = class HospitalsService {
         const q = this.parse(admin ? hospitals_input_1.hospitalAdminQuery : hospitals_input_1.hospitalQuery, query), conditions = [];
         if (!admin)
             conditions.push(this.visible());
-        else if ('status' in q && q.status !== 'all')
-            conditions.push((0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.published, q.status === 'published'));
         if (q.city)
             conditions.push((0, drizzle_orm_1.sql) `lower(btrim(${schema_1.hospitals.city}))=${q.city.toLowerCase()}`);
         if (q.state)
@@ -79,6 +78,11 @@ let HospitalsService = class HospitalsService {
             const term = `%${q.search.replace(/[\\%_]/g, '\\$&')}%`;
             conditions.push((0, drizzle_orm_1.or)((0, drizzle_orm_1.ilike)(schema_1.hospitals.name_en, term), (0, drizzle_orm_1.ilike)(schema_1.hospitals.name_hi, term), (0, drizzle_orm_1.ilike)(schema_1.hospitals.address_line1, term), (0, drizzle_orm_1.ilike)(schema_1.hospitals.city, term), (0, drizzle_orm_1.ilike)(schema_1.hospitals.landmark, term)));
         }
+        const baseWhere = (0, drizzle_orm_1.and)(...conditions), statusPredicates = (0, admin_status_1.directoryPredicates)('hospitals');
+        const status = admin_status_1.directoryStatusInput.parse('status' in q ? q.status : 'all');
+        if (admin && status !== 'all')
+            conditions.push(status === 'published' ? (0, drizzle_orm_1.sql) `${schema_1.careDirectoryEntries.published}=true` : statusPredicates[status]);
+        const summary = admin ? (await this.database.db.select((0, admin_status_1.directoryCountFields)(statusPredicates)).from(schema_1.hospitals).innerJoin(schema_1.careDirectoryEntries, (0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.id, schema_1.hospitals.id)).where(baseWhere))[0] : undefined;
         const where = (0, drizzle_orm_1.and)(...conditions), [items, total] = await Promise.all([
             this.database.db
                 .select(fields)
@@ -97,7 +101,8 @@ let HospitalsService = class HospitalsService {
                 .where(where),
         ]);
         return {
-            items: items.map((row) => this.present(row, admin)),
+            items: items.map((row) => ({ ...this.present(row, admin), ...(admin ? { adminStatus: (0, admin_status_1.directoryRowStatus)('hospitals', row) } : {}) })),
+            ...(admin ? { summary } : {}),
             total: total[0].count,
             page: q.page,
             hasNext: q.page * q.limit < total[0].count,

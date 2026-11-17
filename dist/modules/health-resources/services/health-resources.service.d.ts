@@ -72,6 +72,14 @@ export declare class HealthResourcesService {
     private bankFilters;
     listBanks(query: unknown, admin?: boolean, sourced?: boolean): Promise<{
         items: {
+            adminStatus?: {
+                active: boolean;
+                approved: boolean;
+                missingFields: string[];
+                complete: boolean;
+                reviewStatus: string;
+                visibility: string;
+            } | undefined;
             id: string;
             source_id: string;
             name_en: string;
@@ -105,6 +113,10 @@ export declare class HealthResourcesService {
         page: number;
         hasNext: boolean;
         missingCoordinates: number;
+        summary?: {
+            [x: string]: number;
+        } | undefined;
+        total?: number | undefined;
     }>;
     nearby(body: unknown, sourced?: boolean): Promise<{
         items: {
@@ -179,6 +191,14 @@ export declare class HealthResourcesService {
         total: number;
     } | {
         items: {
+            adminStatus?: {
+                active: boolean;
+                approved: boolean;
+                missingFields: string[];
+                complete: boolean;
+                reviewStatus: string;
+                visibility: string;
+            } | undefined;
             id: string;
             source_id: string;
             name_en: string;
@@ -212,6 +232,10 @@ export declare class HealthResourcesService {
         page: number;
         hasNext: boolean;
         missingCoordinates: number;
+        summary?: {
+            [x: string]: number;
+        } | undefined;
+        total?: number | undefined;
     }>;
     bank(id: string): Promise<{
         id: string;

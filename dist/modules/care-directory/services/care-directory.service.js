@@ -292,7 +292,7 @@ let CareDirectoryService = class CareDirectoryService {
             .values({ bankId: id, message: data.message });
         return { received: true };
     }
-    async reviewBank(id, actor, body) {
+    async reviewBank(id, actor, body, requireActive = false) {
         this.parse(zod_1.z.uuid(), id);
         const review = this.parse(care_directory_input_1.reviewInput.extend({
             sourceUrl: zod_1.z
@@ -311,13 +311,14 @@ let CareDirectoryService = class CareDirectoryService {
                 .for('update');
             if (!bank)
                 throw new common_1.NotFoundException();
+            if (requireActive && !bank.is_active)
+                throw new common_1.ConflictException('Inactive blood bank. Activate this record before approving.');
             if (bank.updated_at.toISOString() !== review.expectedUpdatedAt)
                 throw new common_1.ConflictException('Bank changed. Reload before reviewing.');
             if (review.publish &&
-                (bank.city !== 'Jaipur' ||
-                    !bank.address_en ||
+                (!bank.address_en ||
                     !/^\+?\d{6,15}$/.test((bank.phone ?? '').replace(/[ ()-]/g, ''))))
-                throw new common_1.BadRequestException('A sourced Jaipur address and usable phone number are required.');
+                throw new common_1.BadRequestException('A sourced address and usable phone number are required.');
             const [saved] = await tx
                 .update(schema_1.bloodBankDirectoryEntries)
                 .set({

@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthResourcesService = void 0;
+const admin_status_1 = require("../../../common/directory/admin-status");
 const common_1 = require("@nestjs/common");
 const node_crypto_1 = require("node:crypto");
 const drizzle_orm_1 = require("drizzle-orm");
@@ -166,6 +167,11 @@ let HealthResourcesService = class HealthResourcesService {
                 schema_1.bloodBankDirectoryEntries.state,
                 schema_1.bloodBankDirectoryEntries.pincode,
             ].map((column) => (0, drizzle_orm_1.ilike)(column, `%${q.search}%`))));
+        const baseWhere = (0, drizzle_orm_1.and)(...filters), statusPredicates = (0, admin_status_1.directoryPredicates)('blood-banks');
+        const summary = admin ? (await this.database.db.select((0, admin_status_1.directoryCountFields)(statusPredicates)).from(schema_1.bloodBankDirectoryEntries).where(baseWhere))[0] : undefined;
+        if (admin && q.status !== 'all')
+            filters.push(q.status === 'published' ? statusPredicates.approved : statusPredicates[q.status]);
+        const matchingTotal = admin ? (await this.database.db.select({ count: (0, drizzle_orm_1.count)() }).from(schema_1.bloodBankDirectoryEntries).where((0, drizzle_orm_1.and)(...filters)))[0]?.count : undefined;
         const [items, missing] = await Promise.all([
             this.database.db
                 .select()
@@ -180,7 +186,8 @@ let HealthResourcesService = class HealthResourcesService {
                 .where((0, drizzle_orm_1.and)(...filters, (0, drizzle_orm_1.or)((0, drizzle_orm_1.isNull)(schema_1.bloodBankDirectoryEntries.latitude), (0, drizzle_orm_1.isNull)(schema_1.bloodBankDirectoryEntries.longitude)))),
         ]);
         return {
-            items: items.slice(0, q.limit),
+            ...(admin ? { summary, total: matchingTotal ?? 0 } : {}),
+            items: items.slice(0, q.limit).map(row => ({ ...row, ...(admin ? { adminStatus: (0, admin_status_1.directoryRowStatus)('blood-banks', row) } : {}) })),
             page: q.page,
             hasNext: items.length > q.limit,
             missingCoordinates: missing[0].count,
