@@ -21,6 +21,7 @@ export const hospitals = pgTable(
       .primaryKey()
       .references(() => careDirectoryEntries.id, { onDelete: 'cascade' }),
     source_key: text('source_key').notNull().unique(),
+    listed: boolean('listed').notNull().default(true),
     name_en: text('name_en').notNull(),
     name_hi: text('name_hi').notNull().default(''),
     hospital_type: text('hospital_type').notNull().default(''),

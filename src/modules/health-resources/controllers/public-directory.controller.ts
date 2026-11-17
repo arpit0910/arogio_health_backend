@@ -13,11 +13,11 @@ export class PublicHealthResourcesController {
     return this.directory.article(id);
   }
   @Get('blood-banks') banks(@Query() query: unknown) {
-    return this.directory.listBanks(query, false, true);
+    return this.directory.listBanks(query);
   }
   @Post('blood-banks/nearby') @HttpCode(200) @Header('Cache-Control', 'private, no-store') nearby(
     @Body() body: unknown,
   ) {
-    return this.directory.nearby(body, true);
+    return this.directory.nearby(body);
   }
 }

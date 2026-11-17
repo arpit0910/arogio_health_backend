@@ -130,7 +130,7 @@ describe('Structured hospital directory', () => {
       .expect(201);
     const id = created.body.id as string;
     expect(created.body).toMatchObject({ version: 1, published: false, accepts_esic: null });
-    await request(app.getHttpServer()).get(`/api/v1/public/hospitals/${id}`).expect(404);
+    await request(app.getHttpServer()).get(`/api/v1/public/hospitals/${id}`).expect(200);
     await request(app.getHttpServer()).get(`/api/v1/care/${id}`).expect(404);
     await request(app.getHttpServer())
       .post(`/api/v1/admin/hospitals/${id}/review`)
@@ -247,7 +247,7 @@ describe('Structured hospital directory', () => {
       (await database.query('select count(*)::int as count from care_directory_entries')).rows,
     ).toEqual([{ count: 0 }]);
   });
-  it('requires sourced contact data and expires review consistently in both public APIs', async () => {
+  it('requires sourced contact data and keeps expired review separate from directory visibility', async () => {
     const created = await request(app.getHttpServer())
         .post('/api/v1/admin/hospitals')
         .set(auth())
@@ -284,7 +284,7 @@ describe('Structured hospital directory', () => {
       id,
     ]);
     await request(app.getHttpServer()).get(`/api/v1/care/${id}`).expect(404);
-    await request(app.getHttpServer()).get(`/api/v1/public/hospitals/${id}`).expect(404);
+    await request(app.getHttpServer()).get(`/api/v1/public/hospitals/${id}`).expect(200);
     await request(app.getHttpServer())
       .get('/api/v1/public/hospitals?benefit=esic')
       .expect(200)
@@ -447,4 +447,19 @@ describe('Structured hospital directory', () => {
     expect(script.text).toContain('hospitalReviewEditor');
     expect(script.text).toContain('/admin/hospitals/import/preview');
   });
+  it('lists imports without a verification claim and gives admins an explicit audited hide/show control', async () => {
+    const created = await request(app.getHttpServer()).post('/api/v1/admin/hospitals').set(auth()).send(draft('visibility-fixture')).expect(201);
+    const id = created.body.id as string;
+    const visible = await request(app.getHttpServer()).get(`/api/v1/public/hospitals/${id}`).expect(200);
+    expect(visible.body.published).toBe(false);
+    expect(visible.body.reviewedAt).toBeNull();
+    expect(visible.body.reviewedBy).toBeUndefined();
+    await request(app.getHttpServer()).post(`/api/v1/admin/hospitals/${id}/visibility`).set({ Authorization: `Bearer ${ordinary}` }).send({ listed: false, expectedVersion: 1 }).expect(403);
+    await request(app.getHttpServer()).post(`/api/v1/admin/hospitals/${id}/visibility`).set(auth()).send({ listed: false, expectedVersion: 1 }).expect(201);
+    await request(app.getHttpServer()).get(`/api/v1/public/hospitals/${id}`).expect(404);
+    await request(app.getHttpServer()).post(`/api/v1/admin/hospitals/${id}/visibility`).set(auth()).send({ listed: true, expectedVersion: 1 }).expect(409);
+    await request(app.getHttpServer()).post(`/api/v1/admin/hospitals/${id}/visibility`).set(auth()).send({ listed: true, expectedVersion: 2 }).expect(201);
+    await request(app.getHttpServer()).get(`/api/v1/public/hospitals/${id}`).expect(200);
+  });
+
 });

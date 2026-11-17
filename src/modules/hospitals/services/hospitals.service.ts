@@ -16,7 +16,6 @@ import {
   asc,
   count,
   eq,
-  gte,
   ilike,
   inArray,
   or,
@@ -76,10 +75,7 @@ export class HospitalsService {
     return result.data;
   }
   private visible() {
-    return and(
-      eq(care.published, true),
-      gte(care.reviewedAt, new Date(Date.now() - 180 * 86400000)),
-    );
+    return eq(hospitals.listed, true);
   }
   private present<T extends { reviewedBy: unknown; reviewEvidence: unknown }>(
     row: T,
@@ -90,7 +86,7 @@ export class HospitalsService {
   async list(query: unknown, admin = false) {
     const q = this.parse(admin ? hospitalAdminQuery : hospitalQuery, query),
       conditions: SQL[] = [];
-    if (!admin) conditions.push(this.visible()!);
+    if (!admin) conditions.push(this.visible());
     else if ('status' in q && q.status !== 'all')
       conditions.push(eq(care.published, q.status === 'published'));
     if (q.city) conditions.push(sql`lower(btrim(${hospitals.city}))=${q.city.toLowerCase()}`);
@@ -156,7 +152,7 @@ export class HospitalsService {
       .innerJoin(care, eq(care.id, hospitals.id))
       .where(and(eq(hospitals.id, id), admin ? undefined : this.visible()))
       .limit(1);
-    if (!row) throw new NotFoundException('Hospital not found or awaiting source review.');
+    if (!row) throw new NotFoundException('Hospital not found or hidden from the directory.');
     return this.present(row, admin);
   }
   private async write<T>(operation: (tx: Transaction) => Promise<T>) {
@@ -290,11 +286,22 @@ export class HospitalsService {
         .where(eq(care.id, id));
       const [saved] = await tx
         .update(hospitals)
-        .set({ version: row.version + 1, updated_at: new Date() })
+        .set({ version: row.version + 1, updated_at: new Date(), ...(value.publish ? { listed: true } : { listed: false }) })
         .where(eq(hospitals.id, id))
         .returning();
       await this.audit(tx, actor, value.publish ? 'publish' : 'withdraw', id);
       return { ...omitProviderImage(saved!), published: value.publish };
+    });
+  }
+  visibility(actor: string, id: string, body: unknown) {
+    this.parse(z.uuid(), id);
+    const value = this.parse(z.object({ listed: z.boolean(), expectedVersion: z.number().int().positive() }).strict(), body);
+    return this.write(async tx => {
+      const [row] = await tx.select().from(hospitals).where(eq(hospitals.id, id));
+      if (!row || row.version !== value.expectedVersion) throw new ConflictException('Hospital changed. Reload first.');
+      const [saved] = await tx.update(hospitals).set({ listed: value.listed, version: row.version + 1, updated_at: new Date() }).where(eq(hospitals.id, id)).returning();
+      await this.audit(tx, actor, value.listed ? 'list' : 'hide', id);
+      return omitProviderImage(saved!);
     });
   }
   remove(actor: string, id: string, query: unknown) {

@@ -176,6 +176,13 @@
       "when": 1794845185045,
       "tag": "0024_support_feedback",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794884882847,
+      "tag": "0025_directory_visibility",
+      "breakpoints": true
     }
   ]
 }

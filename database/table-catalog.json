@@ -148,5 +148,11 @@
     "previousTable": "doctor_hospital_affiliations",
     "schemaFile": "src/database/schema/doctor-hospital-affiliations.schema.ts",
     "export": "doctorHospitalAffiliations"
+  },
+  {
+    "table": "support_feedback",
+    "previousTable": "support_feedback",
+    "schemaFile": "src/database/schema/support-feedback.schema.ts",
+    "export": "supportFeedback"
   }
 ]

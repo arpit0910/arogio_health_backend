@@ -113,6 +113,9 @@ let HospitalsAdministrationController = class HospitalsAdministrationController 
     apply(user, file, token) {
         return this.service.apply(user.userId, file, token);
     }
+    visibility(user, id, body) {
+        return this.service.visibility(user.userId, id, body);
+    }
     review(user, id, body) {
         return this.service.review(user.userId, id, body);
     }
@@ -194,6 +197,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object, Object]),
     __metadata("design:returntype", void 0)
 ], HospitalsAdministrationController.prototype, "apply", null);
+__decorate([
+    (0, common_1.Post)(':id/visibility'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], HospitalsAdministrationController.prototype, "visibility", null);
 __decorate([
     (0, common_1.Post)(':id/review'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),

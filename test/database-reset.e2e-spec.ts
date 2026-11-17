@@ -72,7 +72,7 @@ describe('Administrator database reset', () => {
     await post('preview', { password }, ordinary).expect(403);
     await post('preview', { password: 'wrong' }).expect(401);
     const data = await preview();
-    expect(data.tables).toHaveLength(25);
+    expect(data.tables).toHaveLength(26);
     expect(data.tables.find((t) => t.name === 'user_accounts')?.records).toBe('2');
     expect(JSON.stringify(data)).not.toContain('password_hash');
     const again = await preview();
@@ -161,7 +161,7 @@ describe('Administrator database reset', () => {
       confirmation: data.confirmation,
       previewToken: data.previewToken,
     }).expect(201);
-    expect(result.body).toEqual({ reset: true, tableCount: 25, remainingRecords: 0 });
+    expect(result.body).toEqual({ reset: true, tableCount: 26, remainingRecords: 0 });
     for (const table of data.tables) {
       const count = await database.query<{ n: string }>(
         `select count(*)::text as n from public."${table.name}"`,

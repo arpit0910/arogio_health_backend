@@ -36,6 +36,23 @@ export declare const hospitals: import("drizzle-orm/pg-core").PgTableWithColumns
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        listed: import("drizzle-orm/pg-core").PgColumn<{
+            name: "listed";
+            tableName: "hospitals";
+            dataType: "boolean";
+            columnType: "PgBoolean";
+            data: boolean;
+            driverParam: boolean;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         name_en: import("drizzle-orm/pg-core").PgColumn<{
             name: "name_en";
             tableName: "hospitals";

@@ -1,4 +1,4 @@
-/* Structured hospitals use the existing care identity. All imported rows remain drafts. */
+/* Structured hospitals use the existing care identity. Directory visibility and source-review status are separate. */
 const hospitalFlags = [
   'accepts_ayushman',
   'accepts_janaadhaar',
@@ -73,11 +73,11 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
   location.placeholder = 'City (all locations if empty)';
   location.setAttribute('aria-label', 'Filter hospital city');
   const filter = el('select');
-  filter.setAttribute('aria-label', 'Hospital publication status');
+  filter.setAttribute('aria-label', 'Hospital source-review status');
   for (const [value, label] of [
     ['all', 'All hospitals'],
-    ['draft', 'Drafts'],
-    ['published', 'Published'],
+    ['draft', 'Not source reviewed'],
+    ['published', 'Source reviewed'],
   ]) {
     const option = el('option', label);
     option.value = value;
@@ -147,7 +147,7 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
         ),
         el(
           'p',
-          `All imported hospitals require source review. ${data.returnsToDraft} currently published records would return to draft. ${data.ignoredVerificationFlags} legacy verification flags will not be used to publish records.`,
+          `Imported hospitals appear as directory listings; source review is a separate status. ${data.returnsToDraft} currently published records would return to draft. ${data.ignoredVerificationFlags} legacy verification flags will not be used to publish records.`,
         ),
       );
       for (const error of data.errors)
@@ -208,13 +208,14 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
   if (rev !== requestRevision) return;
   section.append(
     table(
-      ['Hospital', 'Location', 'Type', 'Publication', 'Actions'],
+      ['Hospital', 'Location', 'Type', 'App visibility / source review', 'Actions'],
       data.items.map((row) => {
         const actions = el('div', null, 'actions');
         actions.append(
           button('Edit', () => hospitalEditor(row.id)),
           button('Image', () => providerImageEditor('hospitals', row.id)),
           button('Source review', () => hospitalReviewEditor(row.id)),
+          button(row.listed ? 'Hide from app' : 'Show in app', async () => { await api(`/admin/hospitals/${row.id}/visibility`, { method: 'POST', body: { listed: !row.listed, expectedVersion: row.version } }); await hospitalsPage(current, term, city, status); }),
           button('Delete', () =>
             openEditor(
               'Delete hospital?',
@@ -236,7 +237,7 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
           row.name_en,
           [row.city, row.state].join(', '),
           row.hospital_type || 'Not added',
-          stale ? 'Review expired' : row.published ? 'Published' : 'Draft',
+          !row.listed ? 'Hidden from app' : stale ? 'Listed - review expired' : row.published ? 'Listed - source reviewed' : 'Listed - not source reviewed',
           actions,
         ];
       }),
@@ -245,7 +246,7 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
   section.append(
     el(
       'p',
-      `${data.total} matching hospitals. Only published hospitals with current source review appear publicly.`,
+      `${data.total} matching hospitals. Listed hospitals appear in the app. Source review is shown separately; use Hide from app to remove a listing.`,
     ),
   );
   pager(section, current, data.hasNext, (next) => hospitalsPage(next, term, city, status));

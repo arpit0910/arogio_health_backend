@@ -10,6 +10,7 @@ exports.hospitals = (0, pg_core_1.pgTable)('hospitals', {
         .primaryKey()
         .references(() => care_directory_entries_schema_1.careDirectoryEntries.id, { onDelete: 'cascade' }),
     source_key: (0, pg_core_1.text)('source_key').notNull().unique(),
+    listed: (0, pg_core_1.boolean)('listed').notNull().default(true),
     name_en: (0, pg_core_1.text)('name_en').notNull(),
     name_hi: (0, pg_core_1.text)('name_hi').notNull().default(''),
     hospital_type: (0, pg_core_1.text)('hospital_type').notNull().default(''),

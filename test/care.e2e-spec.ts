@@ -286,7 +286,7 @@ describe('Public care and audited publication', () => {
     await request(app.getHttpServer())
       .get('/api/v1/public/blood-banks')
       .expect(200)
-      .expect(({ body }) => expect(body.items).toEqual([]));
+      .expect(({ body }) => { expect(body.items).toHaveLength(1); expect(body.items[0].is_verified).toBe(false); });
     await request(app.getHttpServer())
       .post(`/api/v1/admin/care/blood-banks/${bank!.id}/review`)
       .set(auth())

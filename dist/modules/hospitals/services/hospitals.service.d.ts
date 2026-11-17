@@ -16,6 +16,7 @@ export declare class HospitalsService {
             reviewEvidence: string | null;
             id: string;
             source_key: string;
+            listed: boolean;
             name_en: string;
             name_hi: string;
             hospital_type: string;
@@ -65,6 +66,7 @@ export declare class HospitalsService {
         reviewEvidence: string | null;
         id: string;
         source_key: string;
+        listed: boolean;
         name_en: string;
         name_hi: string;
         hospital_type: string;
@@ -129,6 +131,7 @@ export declare class HospitalsService {
         source_key: string;
         image_alt: string;
         version: number;
+        listed: boolean;
         hospital_type: string;
         address_line1: string;
         address_line2: string;
@@ -171,6 +174,7 @@ export declare class HospitalsService {
         source_key: string;
         image_alt: string;
         version: number;
+        listed: boolean;
         hospital_type: string;
         address_line1: string;
         address_line2: string;
@@ -212,6 +216,7 @@ export declare class HospitalsService {
         source_key: string;
         image_alt: string;
         version: number;
+        listed: boolean;
         hospital_type: string;
         address_line1: string;
         address_line2: string;
@@ -232,6 +237,48 @@ export declare class HospitalsService {
         summary_hi: string;
         image_revision: string | null;
     }>;
+    visibility(actor: string, id: string, body: unknown): Promise<Omit<{
+        id: string;
+        source_key: string;
+        listed: boolean;
+        name_en: string;
+        name_hi: string;
+        hospital_type: string;
+        address_line1: string;
+        address_line2: string;
+        landmark: string;
+        address_hi: string;
+        city: string;
+        state: string;
+        pincode: string;
+        country_code_1: string;
+        phone_1: string | null;
+        country_code_2: string;
+        phone_2: string | null;
+        email: string | null;
+        website: string | null;
+        source_url: string | null;
+        latitude: number | null;
+        longitude: number | null;
+        accepts_ayushman: boolean | null;
+        accepts_janaadhaar: boolean | null;
+        accepts_cghs: boolean | null;
+        accepts_esic: boolean | null;
+        rgahs_approved: boolean | null;
+        is_cashless: boolean | null;
+        nabh_accredited: boolean | null;
+        is_24_7: boolean | null;
+        cashless_schemes: string[];
+        specialties: string[];
+        summary_en: string;
+        summary_hi: string;
+        image_data: Buffer<ArrayBufferLike> | null;
+        image_alt: string;
+        image_revision: string | null;
+        version: number;
+        created_at: Date;
+        updated_at: Date;
+    }, "image_data">>;
     remove(actor: string, id: string, query: unknown): Promise<{
         deleted: boolean;
     }>;

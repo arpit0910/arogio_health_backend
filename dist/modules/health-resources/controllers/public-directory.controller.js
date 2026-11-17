@@ -30,10 +30,10 @@ let PublicHealthResourcesController = class PublicHealthResourcesController {
         return this.directory.article(id);
     }
     banks(query) {
-        return this.directory.listBanks(query, false, true);
+        return this.directory.listBanks(query);
     }
     nearby(body) {
-        return this.directory.nearby(body, true);
+        return this.directory.nearby(body);
     }
 };
 exports.PublicHealthResourcesController = PublicHealthResourcesController;

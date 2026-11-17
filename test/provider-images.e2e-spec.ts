@@ -125,7 +125,7 @@ describe('Provider image uploads', () => {
       .field('alt', 'Synthetic provider photo')
       .attach('file', bytes, { filename: 'photo.png', contentType: 'image/png' });
   for (const kind of ['doctors', 'hospitals'] as const) {
-    it(`${kind}: persists a decoded photo, keeps drafts private and synchronizes app compatibility`, async () => {
+    it(`${kind}: persists a decoded photo, respects provider visibility and synchronizes app compatibility`, async () => {
       await request(app.getHttpServer())
         .get('/admin')
         .expect(200)
@@ -145,7 +145,7 @@ describe('Provider image uploads', () => {
         image_alt: 'Synthetic provider photo',
       });
       expect(upload.body.image_url).toMatch(new RegExp(`/public/${kind}/${row.id}/image`));
-      await request(app.getHttpServer()).get(`/api/v1/public/${kind}/${row.id}/image`).expect(404);
+      await request(app.getHttpServer()).get(`/api/v1/public/${kind}/${row.id}/image`).expect(kind === 'hospitals' ? 200 : 404);
       const admin = await request(app.getHttpServer())
         .get(`/api/v1/admin/${kind}/${row.id}/image`)
         .set(auth())

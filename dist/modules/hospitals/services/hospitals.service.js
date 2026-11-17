@@ -47,7 +47,7 @@ let HospitalsService = class HospitalsService {
         return result.data;
     }
     visible() {
-        return (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.published, true), (0, drizzle_orm_1.gte)(schema_1.careDirectoryEntries.reviewedAt, new Date(Date.now() - 180 * 86400000)));
+        return (0, drizzle_orm_1.eq)(schema_1.hospitals.listed, true);
     }
     present(row, admin) {
         return admin ? row : { ...row, reviewedBy: undefined, reviewEvidence: undefined };
@@ -112,7 +112,7 @@ let HospitalsService = class HospitalsService {
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.hospitals.id, id), admin ? undefined : this.visible()))
             .limit(1);
         if (!row)
-            throw new common_1.NotFoundException('Hospital not found or awaiting source review.');
+            throw new common_1.NotFoundException('Hospital not found or hidden from the directory.');
         return this.present(row, admin);
     }
     async write(operation) {
@@ -238,11 +238,23 @@ let HospitalsService = class HospitalsService {
                 .where((0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.id, id));
             const [saved] = await tx
                 .update(schema_1.hospitals)
-                .set({ version: row.version + 1, updated_at: new Date() })
+                .set({ version: row.version + 1, updated_at: new Date(), ...(value.publish ? { listed: true } : { listed: false }) })
                 .where((0, drizzle_orm_1.eq)(schema_1.hospitals.id, id))
                 .returning();
             await this.audit(tx, actor, value.publish ? 'publish' : 'withdraw', id);
             return { ...(0, provider_image_1.omitProviderImage)(saved), published: value.publish };
+        });
+    }
+    visibility(actor, id, body) {
+        this.parse(zod_1.z.uuid(), id);
+        const value = this.parse(zod_1.z.object({ listed: zod_1.z.boolean(), expectedVersion: zod_1.z.number().int().positive() }).strict(), body);
+        return this.write(async (tx) => {
+            const [row] = await tx.select().from(schema_1.hospitals).where((0, drizzle_orm_1.eq)(schema_1.hospitals.id, id));
+            if (!row || row.version !== value.expectedVersion)
+                throw new common_1.ConflictException('Hospital changed. Reload first.');
+            const [saved] = await tx.update(schema_1.hospitals).set({ listed: value.listed, version: row.version + 1, updated_at: new Date() }).where((0, drizzle_orm_1.eq)(schema_1.hospitals.id, id)).returning();
+            await this.audit(tx, actor, value.listed ? 'list' : 'hide', id);
+            return (0, provider_image_1.omitProviderImage)(saved);
         });
     }
     remove(actor, id, query) {

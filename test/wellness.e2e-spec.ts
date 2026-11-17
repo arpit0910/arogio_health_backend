@@ -141,7 +141,7 @@ describe('Account-owned wellness HTTP journeys', () => {
     const beforeSnooze = Date.now();
     const customSnooze = await call('put', path, { status: 'pending', snooze: true, snoozeMinutes: 30 }).expect(customCrossesDay ? 400 : 200);
     if (!customCrossesDay) {
-      const until = Date.parse((customSnooze.body as { medicineDoses: { snoozedUntil: string }[] }).medicineDoses[0].snoozedUntil);
+      const until = Date.parse((customSnooze.body as { medicineDoses: { snoozedUntil: string }[] }).medicineDoses[0]!.snoozedUntil);
       expect(until).toBeGreaterThanOrEqual(beforeSnooze + 30 * 60000);
       expect(until).toBeLessThanOrEqual(Date.now() + 30 * 60000);
     }

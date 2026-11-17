@@ -113,6 +113,10 @@ export class HospitalsAdministrationController {
   ) {
     return this.service.apply(user.userId, file, token);
   }
+  @Post(':id/visibility')
+  visibility(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body() body: unknown) {
+    return this.service.visibility(user.userId, id, body);
+  }
   @Post(':id/review')
   review(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body() body: unknown) {
     return this.service.review(user.userId, id, body);
