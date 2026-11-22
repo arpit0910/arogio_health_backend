@@ -36,8 +36,24 @@ const date = (value) =>
       })
     : 'Not added';
 const number = (value) => Number(value ?? 0).toLocaleString('en-IN');
+function readPortalSession() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('arogio.admin.session'));
+    if (typeof saved?.accessToken === 'string' && typeof saved.refreshToken === 'string') {
+      return saved;
+    }
+  } catch {}
+  return null;
+}
+function savePortalSession(pair) {
+  tokens = pair;
+  try {
+    if (pair) sessionStorage.setItem('arogio.admin.session', JSON.stringify(pair));
+    else sessionStorage.removeItem('arogio.admin.session');
+  } catch {}
+}
 async function api(path, options = {}) {
-  const session = tokens,
+  const session = options.anonymous ? null : tokens,
     epoch = authEpoch;
   const headers = {
     ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
@@ -60,7 +76,11 @@ async function api(path, options = {}) {
         body: JSON.stringify({ refreshToken: session.refreshToken }),
       })
         .then(async (r) => {
-          if (!r.ok) throw new Error('Your session has expired. Sign in again.');
+          if (r.status === 401) {
+            if (epoch === authEpoch) void signOut(false);
+            throw Object.assign(new Error('Your session has expired. Sign in again.'), { status: 401 });
+          }
+          if (!r.ok) throw new Error('Could not renew the session. Try again.');
           const pair = await r.json();
           if (epoch !== authEpoch || tokens !== session) {
             await fetch('/api/v1/auth/logout', {
@@ -70,19 +90,14 @@ async function api(path, options = {}) {
             }).catch(() => {});
             throw new Error('Session changed. Please sign in again.');
           }
-          tokens = pair;
+          savePortalSession(pair);
         })
         .finally(() => {
           if (renewing?.epoch === epoch) renewing = null;
         });
       renewing = { epoch, promise };
     }
-    try {
-      await renewing.promise;
-    } catch (error) {
-      if (epoch === authEpoch) void signOut(false);
-      throw error;
-    }
+    await renewing.promise;
     if (epoch !== authEpoch) throw new Error('Session changed. Please sign in again.');
     return api(path, { ...options, retried: true });
   }
@@ -92,7 +107,9 @@ async function api(path, options = {}) {
       const body = await response.json();
       message = body.error?.message ?? body.message ?? message;
     } catch {}
-    throw new Error(Array.isArray(message) ? message.join(' ') : message);
+    throw Object.assign(new Error(Array.isArray(message) ? message.join(' ') : message), {
+      status: response.status,
+    });
   }
   if (options.blob) return response.blob();
   return response.status === 204 ? null : response.json();
@@ -212,7 +229,7 @@ $('editor-form').addEventListener('submit', async (e) => {
 $('close-editor').onclick = $('cancel-editor').onclick = () => $('editor').close();
 async function signOut(revoke = true) {
   const previous = tokens;
-  tokens = null;
+  savePortalSession(null);
   authEpoch++;
   currentUser = null;
   $('editor').close();
@@ -231,6 +248,30 @@ async function signOut(revoke = true) {
     }).catch(() => {});
 }
 $('logout').onclick = () => void signOut();
+async function openPortal(user) {
+  currentUser = user;
+  $('login').hidden = true;
+  $('portal').hidden = false;
+  await safely(show);
+}
+async function restorePortal() {
+  const saved = readPortalSession();
+  if (!saved) {
+    $('login').hidden = false;
+    return;
+  }
+  tokens = saved;
+  try {
+    await openPortal(await api('/admin/me'));
+  } catch (error) {
+    if (tokens && (error.status === 401 || error.status === 403)) await signOut(false);
+    $('login').hidden = false;
+    $('login-error').textContent = tokens
+      ? 'Could not restore your session. Reload to try again.'
+      : error.message;
+  }
+}
+document.addEventListener('DOMContentLoaded', restorePortal, { once: true });
 $('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const submit = e.target.querySelector('button');
@@ -238,16 +279,19 @@ $('login-form').addEventListener('submit', async (e) => {
   $('login-error').textContent = '';
   try {
     const data = new FormData(e.target);
-    tokens = await send('/auth/email/login', {
-      email: String(data.get('email')).trim().toLowerCase(),
-      password: data.get('password'),
+    tokens = await api('/auth/email/login', {
+      method: 'POST',
+      anonymous: true,
+      body: JSON.stringify({
+        email: String(data.get('email')).trim().toLowerCase(),
+        password: data.get('password'),
+      }),
     });
-    await api('/admin/me');
+    const user = await api('/admin/me');
+    savePortalSession(tokens);
     e.target.reset();
-    $('login').hidden = true;
-    $('portal').hidden = false;
     page = 'overview';
-    await show();
+    await openPortal(user);
   } catch (error) {
     await signOut();
     $('login-error').textContent = error.message;

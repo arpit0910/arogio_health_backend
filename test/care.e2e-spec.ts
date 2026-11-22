@@ -281,7 +281,7 @@ describe('Public care and audited publication', () => {
       })
       .expect(200);
     expect(edited.body.is_verified).toBe(false);
-    expect(edited.body.source_url).toBeNull();
+    expect(edited.body.source_url).toBe('https://example.test/old-source');
     expect(edited.body.verified_at).toBeNull();
     await request(app.getHttpServer())
       .get('/api/v1/public/blood-banks')

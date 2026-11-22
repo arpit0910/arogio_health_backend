@@ -26,19 +26,27 @@ async function main() {
     const call = (method, params = {}) => new Promise((resolve, reject) => { const requestId = ++id; pending.set(requestId, { resolve, reject }); socket.send(JSON.stringify({ id: requestId, method, params })); });
     for (const kind of ['hospitals', 'doctors', 'blood-banks']) {
       const url = pathToFileURL(path.join(root, '.tmp/directory-admin-preview', `${kind}-verify.html`)).href;
-      await call('Page.navigate', { url }); let result;
-      for (let i = 0; i < 150; i++) {
-        await delay(100);
-        try {
-          const evaluated = await call('Runtime.evaluate', { expression: '({href:location.href,status:document.body?.dataset.verification,message:document.getElementById("message")?.textContent,error:document.getElementById("editor-error")?.textContent})', returnByValue: true });
-          result = evaluated.result?.value;
-          if (result?.href === url && result.status) break;
-        } catch { /* A page navigation can replace the execution context. */ }
+      async function verify(expected) {
+        let result;
+        for (let i = 0; i < 150; i++) {
+          await delay(100);
+          try {
+            const evaluated = await call('Runtime.evaluate', { expression: '({href:location.href,status:document.body?.dataset.verification,message:document.getElementById("message")?.textContent})', returnByValue: true });
+            result = evaluated.result?.value;
+            if (result?.href === url && result.status === expected) return;
+            if (result?.href === url && result.status === 'failed') break;
+          } catch { /* A page navigation can replace the execution context. */ }
+        }
+        throw new Error(`${kind}: expected ${expected}, saw ${JSON.stringify(result)}`);
       }
-      if (result?.status !== 'passed') throw new Error(`${kind}: ${JSON.stringify(result)}`);
-      console.log(JSON.stringify({ kind, selection: 'passed', approvalDialog: 'passed', versionedPayload: 'passed', inactiveProtection: 'passed', results: 'passed' }));
+      await call('Page.navigate', { url });
+      await verify('passed');
+      await call('Page.reload');
+      await verify('restored');
+      await call('Runtime.evaluate', { expression: "document.querySelector('.directory-bulk').scrollIntoView()" });
       const capture = await call('Page.captureScreenshot', { format: 'png' });
       fs.writeFileSync(path.join(root, '.tmp', `directory-${kind}-verified.png`), Buffer.from(capture.data, 'base64'));
+      console.log(JSON.stringify({ kind, selection: 'passed', directApproval: 'passed', versionedPayload: 'passed', inactiveProtection: 'passed', results: 'passed', reloadSession: 'passed' }));
     }
     await call('Browser.close').catch(() => {});
   } finally { socket?.close(); child.kill(); }

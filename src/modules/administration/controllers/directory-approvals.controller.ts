@@ -10,12 +10,15 @@ import { DoctorsService } from '../../doctors/services/doctors.service';
 import { HealthResourcesService } from '../../health-resources/services/health-resources.service';
 import { CareDirectoryService } from '../../care-directory/services/care-directory.service';
 
-const batchInput = z.object({
-  items: z.array(z.object({ id: z.uuid(), expectedVersion: z.number().int().positive().optional(), expectedUpdatedAt: z.iso.datetime().optional() }).strict()).min(1).max(100),
+const items = z.array(z.object({ id: z.uuid(), expectedVersion: z.number().int().positive().optional(), expectedUpdatedAt: z.iso.datetime().optional() }).strict()).min(1).max(100);
+const detailedBatchInput = z.object({
+  items,
   reviewerName: z.string().trim().min(3).max(160), reviewerQualification: z.string().trim().min(3).max(160),
   evidence: z.string().trim().min(20).max(4000), confirmedSource: z.literal(true),
   sourceUrl: z.url().max(2000).refine(value => { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password; }).optional(),
-}).strict().refine(value => new Set(value.items.map(item => item.id)).size === value.items.length, 'Select each record only once.');
+}).strict();
+const batchInput = z.union([z.object({ items }).strict(), detailedBatchInput])
+  .refine(value => new Set(value.items.map(item => item.id)).size === value.items.length, 'Select each record only once.');
 
 @Controller('admin/directory-approvals')
 @UseGuards(JwtAuthGuard, SuperAdministratorGuard)
@@ -32,7 +35,14 @@ export class DirectoryApprovalsController {
   async approve(@CurrentUser() actor: RequestUser, @Param('kind') rawKind: string, @Body() body: unknown) {
     const parsed = batchInput.safeParse(body), kind = z.enum(['hospitals', 'doctors', 'blood-banks']).safeParse(rawKind);
     if (!parsed.success || !kind.success) throw new BadRequestException(parsed.success ? 'Choose hospitals, doctors or blood banks.' : parsed.error.issues.map(issue => issue.message).join('; '));
-    const { items, sourceUrl, ...review } = parsed.data;
+    const { items, sourceUrl, ...review } = 'reviewerName' in parsed.data ? parsed.data : {
+      items: parsed.data.items,
+      sourceUrl: undefined,
+      reviewerName: 'Signed-in administrator',
+      reviewerQualification: 'Super administrator',
+      evidence: 'Approved using the directory record and its saved source.',
+      confirmedSource: true,
+    };
     if (items.some(item => kind.data === 'blood-banks' ? !item.expectedUpdatedAt || item.expectedVersion !== undefined : !item.expectedVersion || item.expectedUpdatedAt !== undefined)) throw new BadRequestException('Refresh the list and select records with their current version.');
     const results: { id: string; name: string; status: 'approved' | 'failed'; message: string }[] = [];
     for (const item of items) {
@@ -49,10 +59,10 @@ export class DirectoryApprovalsController {
         } else {
           const row = await this.banks.bank(item.id); name = row.name_en;
           if (!row.is_active) throw new ConflictException('Inactive blood bank. Activate this record before approving.');
-          if (!sourceUrl && !row.source_url) throw new BadRequestException('Add a shared HTTPS source URL or save a source URL on this blood bank before approval.');
+          if (!sourceUrl && !row.source_url) throw new BadRequestException('Save a source URL on this blood bank before approval.');
           await this.care.reviewBank(item.id, actor.userId, { ...review, expectedUpdatedAt: item.expectedUpdatedAt, publish: true, sourceUrl: sourceUrl ?? row.source_url }, true);
         }
-        results.push({ id: item.id, name, status: 'approved', message: 'Approved and source review recorded.' });
+        results.push({ id: item.id, name, status: 'approved', message: 'Approval recorded.' });
       } catch (error) {
         let message = 'Approval could not be completed. Refresh and try again.';
         if (error instanceof HttpException) {

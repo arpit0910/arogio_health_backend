@@ -29,7 +29,7 @@ describe('Directory status indexes and selected-record approvals', () => {
   afterAll(async () => { await app?.close(); await database?.close(); });
   afterEach(async () => { await database.exec('delete from administration_audit_logs; delete from blood_bank_directory_entries; delete from doctor_departments; delete from doctor_hospital_affiliations; delete from doctors; delete from hospitals; delete from care_directory_entries; delete from medical_departments;'); });
   const hospital = async (key: string, extra: Record<string, unknown> = {}) => (await request(app.getHttpServer()).post('/api/v1/admin/hospitals').set(auth()).send({ source_key: key, name_en: `Test ${key}`, city: 'Delhi', state: 'Delhi', address_line1: 'Synthetic address', phone_1: '+919000000000', source_url: 'https://example.test/source', ...extra }).expect(201)).body as { id: string; version: number };
-  const bank = async (name: string, active = true) => (await request(app.getHttpServer()).post('/api/v1/admin/content/blood-banks').set(auth()).send({ name_en: name, city: 'Delhi', state: 'Delhi', address_en: 'Synthetic address', phone: '9000000000', is_active: active }).expect(201)).body as { id: string; updated_at: string };
+  const bank = async (name: string, active = true) => (await request(app.getHttpServer()).post('/api/v1/admin/content/blood-banks').set(auth()).send({ name_en: name, city: 'Delhi', state: 'Delhi', address_en: 'Synthetic address', phone: '9000000000', source_url: active ? 'https://example.test/bank-directory' : null, is_active: active }).expect(201)).body as { id: string; updated_at: string };
 
   it('shows inactive and incomplete hospitals with accurate counts across pages and explicit missing fields', async () => {
     await hospital('complete'); await hospital('incomplete', { address_line1: '' });
@@ -48,10 +48,10 @@ describe('Directory status indexes and selected-record approvals', () => {
   it('approves only checked valid hospitals, reports individual failures and does not revive hidden rows', async () => {
     const valid = await hospital('valid'), invalid = await hospital('missing-address', { address_line1: '' }), hidden = await hospital('inactive');
     await request(app.getHttpServer()).post(`/api/v1/admin/hospitals/${hidden.id}/visibility`).set(auth()).send({ listed: false, expectedVersion: 1 }).expect(201);
-    const result = await request(app.getHttpServer()).post('/api/v1/admin/directory-approvals/hospitals').set(auth()).send({ ...review, items: [{ id: valid.id, expectedVersion: 1 }, { id: invalid.id, expectedVersion: 1 }, { id: hidden.id, expectedVersion: 2 }] }).expect(201);
+    const result = await request(app.getHttpServer()).post('/api/v1/admin/directory-approvals/hospitals').set(auth()).send({ items: [{ id: valid.id, expectedVersion: 1 }, { id: invalid.id, expectedVersion: 1 }, { id: hidden.id, expectedVersion: 2 }] }).expect(201);
     expect(result.body).toMatchObject({ approved: 1, failed: 2 });
     await request(app.getHttpServer()).get(`/api/v1/public/hospitals/${hidden.id}`).expect(404);
-    const stale = await request(app.getHttpServer()).post('/api/v1/admin/directory-approvals/hospitals').set(auth()).send({ ...review, items: [{ id: valid.id, expectedVersion: 1 }] }).expect(201);
+    const stale = await request(app.getHttpServer()).post('/api/v1/admin/directory-approvals/hospitals').set(auth()).send({ items: [{ id: valid.id, expectedVersion: 1 }] }).expect(201);
     expect(stale.body).toMatchObject({ approved: 0, failed: 1 });
     expect((await request(app.getHttpServer()).get('/api/v1/admin/hospitals?status=approved').set(auth())).body.total).toBe(1);
   });
@@ -67,8 +67,8 @@ describe('Directory status indexes and selected-record approvals', () => {
     const active = await bank('Test active bank'), inactive = await bank('Test inactive bank', false);
     const list = await request(app.getHttpServer()).get('/api/v1/admin/content/blood-banks?status=inactive').set(auth()).expect(200);
     expect(list.body.items).toHaveLength(1); expect(list.body.total).toBe(1);
-    expect(list.body.summary).toMatchObject({ all: 2, active: 1, inactive: 1, incomplete: 2 });
-    const result = await request(app.getHttpServer()).post('/api/v1/admin/directory-approvals/blood-banks').set(auth()).send({ ...review, sourceUrl: 'https://example.test/bank-directory', items: [active, inactive].map(row => ({ id: row.id, expectedUpdatedAt: row.updated_at })) }).expect(201);
+    expect(list.body.summary).toMatchObject({ all: 2, active: 1, inactive: 1, incomplete: 1 });
+    const result = await request(app.getHttpServer()).post('/api/v1/admin/directory-approvals/blood-banks').set(auth()).send({ items: [active, inactive].map(row => ({ id: row.id, expectedUpdatedAt: row.updated_at })) }).expect(201);
     expect(result.body).toMatchObject({ approved: 1, failed: 1 });
     const shown = await request(app.getHttpServer()).get('/api/v1/public/blood-banks').expect(200);
     expect(shown.body.items).toHaveLength(1); expect(shown.body.items[0].city).toBe('Delhi'); expect(shown.body.items[0].is_verified).toBe(true);
@@ -81,7 +81,7 @@ describe('Directory status indexes and selected-record approvals', () => {
     const list = await request(app.getHttpServer()).get('/api/v1/admin/doctors?status=incomplete').set(auth()).expect(200);
     expect(list.body.items).toHaveLength(1); expect(list.body.summary).toMatchObject({ all: 2, incomplete: 1, ready: 1 });
     expect(list.body.items[0].adminStatus.missingFields).toEqual(expect.arrayContaining(['Registration number', 'Active department']));
-    const payload = { ...review, items: [{ id: valid.body.id as string, expectedVersion: 1 }] };
+    const payload = { items: [{ id: valid.body.id as string, expectedVersion: 1 }] };
     expect((await request(app.getHttpServer()).post('/api/v1/admin/directory-approvals/doctors').set(auth()).send(payload).expect(201)).body.approved).toBe(1);
     expect((await request(app.getHttpServer()).post('/api/v1/admin/directory-approvals/doctors').set(auth()).send(payload).expect(201)).body.failed).toBe(1);
     const overview = await request(app.getHttpServer()).get('/api/v1/admin/directory-approvals/summary').set(auth()).expect(200);

@@ -257,7 +257,8 @@ let HealthResourcesService = class HealthResourcesService {
                 throw new common_1.NotFoundException();
             return rows[0];
         }
-        const value = { ...this.parse(health_resources_input_1.bankInput, body), is_verified: false, source_url: null, verified_at: null };
+        const draft = this.parse(health_resources_input_1.bankInput, body);
+        const value = { ...draft, is_verified: false, source_url: draft.source_url || null, verified_at: null };
         const rows = id
             ? await this.database.db
                 .update(schema_1.bloodBankDirectoryEntries)

@@ -27,7 +27,7 @@ Use the equivalent `npm` commands on the hosting platform. Local development use
 
 The seeder creates an active `super_admin` with Argon2id password hashing. Rerunning it for an existing super-admin email returns that account without resetting its password or changing status. It refuses to promote an email belonging to an ordinary user. The administrator is managed by the seeder; portal account actions cannot disable/delete administrator accounts, and the normal self-delete endpoint also protects them. Seeder credentials are not needed for normal server startup and can be removed from deployment configuration after a successful seed.
 
-After deployment, visit the backend origin followed by `/admin` and sign in with the seeded account. A normal user's sign-in does not grant portal access. Session tokens stay in browser memory, refresh through the existing rotating-token flow and are cleared/revoked on sign-out. Refresh races with sign-out and concurrent old-token responses have dedicated regression coverage. Reloading the page requires signing in again.
+After deployment, visit the backend origin followed by `/admin` and sign in with the seeded account. A normal user's sign-in does not grant portal access. The portal restores a valid session when the browser tab reloads. It stores tokens in this tab's session storage, rotates them when needed, and clears them on sign-out or when the session expires.
 
 ## Portal functions
 

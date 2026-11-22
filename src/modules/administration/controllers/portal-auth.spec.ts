@@ -44,8 +44,10 @@ describe('portal session lifecycle', () => {
         });
       return Promise.resolve({ status: 401, ok: false });
     });
-    const code = `let tokens={accessToken:'old-access',refreshToken:'old-refresh'},authEpoch=1,renewing=null,requestRevision=0,currentUser=null;const imageUrls=new Set();const content={replaceChildren(){}};const $=()=>({close(){},replaceChildren(){}});${actualFunctions(['api', 'signOut'])};globalThis.run=(path)=>api(path);`;
-    const context = vm.createContext({ fetch: fetchMock, FormData, URL, Error, Set });
+    const code = `let tokens={accessToken:'old-access',refreshToken:'old-refresh'},authEpoch=1,renewing=null,requestRevision=0,currentUser=null;const imageUrls=new Set();const content={replaceChildren(){}};const $=()=>({close(){},replaceChildren(){}});${actualFunctions(['api', 'signOut', 'savePortalSession', 'readPortalSession'])};globalThis.run=(path)=>api(path);`;
+    const stored = new Map<string, string>();
+    const sessionStorage = { setItem: (key: string, value: string) => stored.set(key, value), getItem: (key: string) => stored.get(key) };
+    const context = vm.createContext({ fetch: fetchMock, FormData, URL, Error, Set, sessionStorage });
     vm.runInContext(code, context);
     const methods = context as unknown as { run: (path: string) => Promise<unknown> };
     const delayed = methods.run('/admin/b');
@@ -53,6 +55,10 @@ describe('portal session lifecycle', () => {
     resolveDelayed({ status: 401, ok: false });
     await expect(delayed).resolves.toEqual({ ok: true });
     expect(rotations).toBe(1);
+    expect(vm.runInContext('tokens = null; readPortalSession()', context)).toEqual({
+      accessToken: 'new-access',
+      refreshToken: 'new-refresh',
+    });
   });
 
   it('does not resurrect tokens when sign-out races a rotating refresh', async () => {
@@ -74,8 +80,10 @@ describe('portal session lifecycle', () => {
       }
       return Promise.resolve({ status: 401, ok: false });
     });
-    const code = `let tokens={accessToken:'old-access',refreshToken:'old-refresh'},authEpoch=1,renewing=null,requestRevision=0,currentUser=null;const imageUrls=new Set();const content={replaceChildren(){}};const $=()=>({close(){},replaceChildren(){}});${actualFunctions(['api', 'signOut'])};globalThis.run=()=>api('/admin/analytics');globalThis.out=()=>signOut();globalThis.getTokens=()=>tokens;`;
-    const sandbox = { fetch: fetchMock, FormData, URL, Error, Set };
+    const code = `let tokens={accessToken:'old-access',refreshToken:'old-refresh'},authEpoch=1,renewing=null,requestRevision=0,currentUser=null;const imageUrls=new Set();const content={replaceChildren(){}};const $=()=>({close(){},replaceChildren(){}});${actualFunctions(['api', 'signOut', 'savePortalSession', 'readPortalSession'])};globalThis.run=()=>api('/admin/analytics');globalThis.out=()=>signOut();globalThis.getTokens=()=>tokens;`;
+    const stored = new Map([['arogio.admin.session', '{"accessToken":"old-access","refreshToken":"old-refresh"}']]);
+    const sessionStorage = { setItem: (key: string, value: string) => stored.set(key, value), removeItem: (key: string) => stored.delete(key) };
+    const sandbox = { fetch: fetchMock, FormData, URL, Error, Set, sessionStorage };
     const context = vm.createContext(sandbox);
     vm.runInContext(code, context);
     const methods = context as unknown as {
@@ -92,6 +100,7 @@ describe('portal session lifecycle', () => {
     });
     await expect(pending).rejects.toThrow('Session changed');
     expect(methods.getTokens()).toBeNull();
+    expect(stored.size).toBe(0);
     expect(revoked).toEqual(['old-refresh', 'new-refresh']);
   });
 });

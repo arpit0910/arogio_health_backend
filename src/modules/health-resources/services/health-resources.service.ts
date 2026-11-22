@@ -295,7 +295,8 @@ export class HealthResourcesService {
       if (!rows[0]) throw new NotFoundException();
       return rows[0];
     }
-    const value = { ...this.parse(bankInput, body), is_verified: false, source_url: null, verified_at: null };
+    const draft = this.parse(bankInput, body);
+    const value = { ...draft, is_verified: false, source_url: draft.source_url || null, verified_at: null };
     const rows = id
       ? await this.database.db
           .update(bloodBankDirectoryEntries)

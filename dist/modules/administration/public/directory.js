@@ -25,13 +25,13 @@ const bankFields = [
   'emergency_phone',
   'email',
   'website',
+  'source_url',
   'latitude',
   'longitude',
   'available_blood_groups',
 ];
 const bankFlags = [
   'is_active',
-  'is_verified',
   'is_24_7',
   'is_government',
   'component_facility',
@@ -170,7 +170,7 @@ async function directoryPage(kind, current = 1, term = '', status = 'all') {
     `/admin/content/${kind}?page=${current}&search=${encodeURIComponent(term)}${articles ? '' : `&status=${status}`}`,
   );
   if (rev !== requestRevision) return;
-  const bulk = articles ? null : directoryBulkApproval('blood-banks', data.items, () => directoryPage(kind, current, term, status));
+  const bulk = articles ? null : directoryBulkApproval('blood-banks', () => directoryPage(kind, current, term, status));
   if (bulk) section.append(directorySummary('blood-banks', data.summary, next => directoryPage(kind, 1, term, next)), bulk.section, bulk.results);
   if (!articles && data.missingCoordinates)
     section.append(el('p', `${data.missingCoordinates} matching listings need coordinates.`));
@@ -240,7 +240,7 @@ async function directoryEditor(kind, id) {
         ? 'textarea'
         : /latitude|longitude/.test(key)
           ? 'number'
-          : 'text',
+          : key === 'source_url' ? 'url' : 'text',
     ),
   );
   fields.push(...flags.map((key) => field(key, labelFor(key), row[key], 'checkbox')));
@@ -253,7 +253,7 @@ async function directoryEditor(kind, id) {
       if (!articles) {
         for (const key of ['latitude', 'longitude'])
           body[key] = body[key] === '' ? null : Number(body[key]);
-        for (const key of ['phone', 'emergency_phone', 'email', 'website', 'pincode', 'landmark', 'source_url', 'verified_at'])
+        for (const key of ['phone', 'emergency_phone', 'email', 'website', 'pincode', 'landmark', 'source_url'])
           body[key] ||= null;
         body.available_blood_groups = body.available_blood_groups
           .split(';')

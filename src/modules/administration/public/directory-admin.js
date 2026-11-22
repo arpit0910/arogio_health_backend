@@ -35,47 +35,55 @@ function directoryCompletenessCell(row) {
   return wrap;
 }
 const directoryApprovalResults = new Map();
-function directoryBulkApproval(kind, rows, reload) {
+function directoryBulkApproval(kind, reload) {
   const selected = new Map(), boxes = [], section = el('div', null, 'directory-bulk');
   const caption = el('span', '0 selected'), all = el('input'); all.type = 'checkbox';
-  all.setAttribute('aria-label', 'Select all active records on this page');
-  const label = el('label', null, 'check'); label.append(all, document.createTextNode('Select active records on this page'));
-  const approve = button('Approve selected', () => {
-    const chosen = [...selected.values()], epoch = authEpoch;
-    if (!chosen.length) return;
-    const fields = [field('reviewerName', 'Reviewer name', currentUser?.fullName ?? ''), field('reviewerQualification', 'Reviewer qualification or role'), field('evidence', 'Evidence checked for every selected record (20+ characters)', '', 'textarea')];
-    if (kind === 'blood-banks') fields.push(field('sourceUrl', 'Shared HTTPS source URL (required if selected records have no saved source)', '', 'url'));
-    fields.push(field('confirmedSource', 'I checked the source and contact details for every selected record', false, 'checkbox'));
-    openEditor(`Approve ${chosen.length} selected ${kind.replace('-', ' ')}?`, fields, async data => {
-      const payload = {
-        items: chosen.map(row => kind === 'blood-banks' ? { id: row.id, expectedUpdatedAt: row.updated_at } : { id: row.id, expectedVersion: row.version }),
-        reviewerName: String(data.get('reviewerName') ?? ''), reviewerQualification: String(data.get('reviewerQualification') ?? ''), evidence: String(data.get('evidence') ?? ''), confirmedSource: data.get('confirmedSource') === 'on',
-      };
-      if (kind === 'blood-banks' && String(data.get('sourceUrl') ?? '').trim()) payload.sourceUrl = String(data.get('sourceUrl')).trim();
-      const preventCancel = event => event.preventDefault();
-      $('cancel-editor').disabled = true; $('close-editor').disabled = true; $('editor').addEventListener('cancel', preventCancel);
-      try {
-        const result = await send(`/admin/directory-approvals/${kind}`, payload);
-        if (authEpoch !== epoch) return;
-        directoryApprovalResults.set(kind, { epoch, result });
-        await reload();
-      } finally { $('cancel-editor').disabled = false; $('close-editor').disabled = false; $('editor').removeEventListener('cancel', preventCancel); }
-    }, 'Only checked records on this page are included. Inactive, changed or still-incomplete records are left unchanged with a reason. A shared source URL can complete missing blood-bank source information. Approval records source review and does not change missing information.');
-    const names = el('ul', null, 'directory-selected-records');
-    for (const row of chosen) names.append(el('li', row.name_en));
-    $('editor-fields').prepend(names);
-    $('save-editor').textContent = `Approve ${chosen.length} records`;
-  }, 'primary');
-  approve.disabled = true;
-  function update() {
-    caption.textContent = `${selected.size} selected`; approve.disabled = selected.size === 0;
-    const enabled = boxes.filter(box => !box.disabled);
-    all.checked = enabled.length > 0 && enabled.every(box => box.checked);
-    all.indeterminate = selected.size > 0 && !all.checked; all.disabled = !enabled.length;
+  const label = el('label', null, 'check');
+  label.append(all, document.createTextNode('Select all eligible records on this page'));
+  let pending = false;
+  let eligibleCount = 0;
+
+  async function approveRecords(rows) {
+    if (!rows.length || pending) return;
+    const epoch = authEpoch, revision = requestRevision;
+    const items = rows.map(row => kind === 'blood-banks'
+      ? { id: row.id, expectedUpdatedAt: row.updated_at }
+      : { id: row.id, expectedVersion: row.version });
+    pending = true;
+    section.setAttribute('aria-busy', 'true');
+    update();
+    try {
+      const result = await send(`/admin/directory-approvals/${kind}`, { items });
+      if (authEpoch !== epoch) return;
+      directoryApprovalResults.set(kind, { epoch, result });
+      if (requestRevision === revision) await reload();
+    } finally {
+      pending = false;
+      section.setAttribute('aria-busy', 'false');
+      update();
+    }
   }
-  const clear = button('Clear selection', () => { selected.clear(); boxes.forEach(box => { box.checked = false; }); update(); });
-  all.addEventListener('change', () => { for (const box of boxes.filter(box => !box.disabled)) { box.checked = all.checked; if (box.checked) selected.set(box.directoryRow.id, box.directoryRow); else selected.delete(box.directoryRow.id); } update(); });
-  section.append(label, caption, approve, clear, el('p', 'Inactive records cannot be selected for bulk approval. Activate or restore them individually first. Selection is cleared when you change pages or filters.'));
+
+  const approve = button('Approve selected', () => approveRecords([...selected.values()]), 'primary');
+  function update() {
+    caption.textContent = pending ? 'Approving?' : `${selected.size} selected`;
+    approve.disabled = pending || selected.size === 0;
+    all.checked = eligibleCount > 0 && selected.size === eligibleCount;
+    all.indeterminate = selected.size > 0 && !all.checked;
+    all.disabled = pending || eligibleCount === 0;
+    for (const { input, eligible } of boxes) input.disabled = pending || !eligible;
+  }
+  all.addEventListener('change', () => {
+    selected.clear();
+    for (const { input, row, eligible } of boxes) {
+      if (!eligible) continue;
+      input.checked = all.checked;
+      if (input.checked) selected.set(row.id, row);
+    }
+    update();
+  });
+  update();
+  section.append(label, caption, approve);
   const prior = directoryApprovalResults.get(kind);
   const results = el('div', null, 'directory-approval-results');
   if (prior?.epoch === authEpoch) {
@@ -83,11 +91,18 @@ function directoryBulkApproval(kind, rows, reload) {
     results.append(el('h3', 'Last bulk approval'), summary, table(['Record', 'Result', 'Details'], prior.result.results.map(row => [row.name, row.status === 'approved' ? 'Approved' : 'Not approved', row.message])));
   }
   return { section, results, checkbox: row => {
-    const input = el('input'); input.type = 'checkbox'; input.directoryRow = row;
-    input.disabled = row.adminStatus?.active === false;
-    input.setAttribute('aria-label', `Select ${row.name_en}${input.disabled ? '. Inactive: activate or restore before bulk approval' : ''}`);
-    input.addEventListener('change', () => { if (input.checked) selected.set(row.id, row); else selected.delete(row.id); update(); });
-    boxes.push(input); queueMicrotask(update); return input;
+    const input = el('input'); input.type = 'checkbox';
+    const eligible = row.adminStatus?.active !== false;
+    if (eligible) eligibleCount++;
+    input.setAttribute('aria-label', `Select ${row.name_en}${eligible ? '' : ' (inactive)'}`);
+    input.addEventListener('change', () => {
+      if (input.checked) selected.set(row.id, row);
+      else selected.delete(row.id);
+      update();
+    });
+    boxes.push({ input, row, eligible });
+    update();
+    return input;
   } };
 }
 

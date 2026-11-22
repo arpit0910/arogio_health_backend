@@ -187,7 +187,7 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
   );
   if (rev !== requestRevision) return;
   section.append(directorySummary('doctors', data.summary, next => doctorsPage(1, term, city, next)));
-  const bulk = directoryBulkApproval('doctors', data.items, () => doctorsPage(current, term, city, status));
+  const bulk = directoryBulkApproval('doctors', () => doctorsPage(current, term, city, status));
   section.append(bulk.section, bulk.results);
   section.append(
     table(

@@ -21,6 +21,9 @@ globalThis.fetch=async(path, options={})=>{
   const body=JSON.parse(options.body);window.previewRequests.push({path,body});
   const results=body.items.map(item=>{const row=previewRows.find(row=>row.id===item.id);return {id:item.id,name:row.name_en,status:row.adminStatus.complete?'approved':'failed',message:row.adminStatus.complete?'Approved and source review recorded.':'Missing required contact and source fields.'}});
   data={approved:results.filter(row=>row.status==='approved').length,failed:results.filter(row=>row.status==='failed').length,results};
+ } else if(url.pathname.endsWith('/admin/me')) {
+  if(options.headers?.Authorization!=='Bearer synthetic-preview')return {ok:false,status:403,json:async()=>({message:'Missing preview session'})};
+  data={fullName:'Example reviewer'};
  } else if(url.pathname.endsWith('/summary')) data={hospitals:summary,doctors:summary,'blood-banks':summary};
  else {
   const status=url.searchParams.get('status')??'all';
@@ -37,25 +40,19 @@ async function verifyDirectoryControls(kind){
  const buttonNamed=label=>[...document.querySelectorAll('#content button')].find(button=>button.textContent===label);
  const rowBoxes=()=>[...document.querySelectorAll('#content tbody input[type=checkbox]')];
  assert(rowBoxes().length===3,'All index rows render');
+ assert(getComputedStyle(rowBoxes()[0]).width === '16px' && getComputedStyle(rowBoxes()[0]).height === '16px','Row checkboxes have compact dimensions');
  assert(rowBoxes()[2].disabled,'Inactive checkbox is disabled');
  assert(buttonNamed('Approve selected').disabled,'Approval starts disabled');
  rowBoxes()[0].click();
  assert(!buttonNamed('Approve selected').disabled,'Checked row enables approval');
  buttonNamed('Approve selected').click();
- assert($('editor').open,'Review dialog opens');
- assert(document.querySelector('.directory-selected-records').textContent.includes('Example district hospital'),'Selected record names are visible');
- const form=$('editor-form');
- form.elements.reviewerQualification.value='Synthetic test reviewer';
- form.elements.evidence.value='Synthetic review evidence for browser interaction verification.';
- form.elements.confirmedSource.checked=true;
- if(kind==='blood-banks')form.elements.sourceUrl.value='https://example.test/directory';
- form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
- assert($('cancel-editor').disabled&&$('close-editor').disabled,'Pending approval prevents cancel');
- await waitFor(()=>!$('editor').open);
+ assert(!$('editor').open,'Approval skips the review form');
+ assert(buttonNamed('Approve selected').disabled,'Approval is disabled while pending');
+ await waitFor(()=>document.querySelector('.directory-approval-results')?.textContent.includes('1 approved. 0 not approved.'));
  const sent=window.previewRequests[0];
  assert(sent.body.items.length===1,'Only checked rows are sent');
  assert(sent.body.items[0].id===previewRows[0].id,'Checked identity is preserved');
- assert(sent.body.confirmedSource===true,'Source confirmation is sent');
+ assert(Object.keys(sent.body).join() === 'items','Only selected record versions are submitted');
  assert(kind==='blood-banks'?sent.body.items[0].expectedUpdatedAt===previewRows[0].updated_at:sent.body.items[0].expectedVersion===1,'Current version is sent');
  assert(document.querySelector('.directory-approval-results').textContent.includes('1 approved. 0 not approved.'),'Per-record approval result is shown');
  assert(buttonNamed('Approve selected').disabled,'Reload clears old selection');
@@ -75,9 +72,26 @@ async function verifyDirectoryControls(kind){
 }
 `;
 for (const kind of ['hospitals', 'doctors', 'blood-banks']) {
-  const start = `tokens={accessToken:'synthetic-preview'};currentUser={fullName:'Example reviewer'};$('login').hidden=true;$('portal').hidden=false;page='${kind}';void(async()=>{await show();content.prepend(el('p','Synthetic preview only. No production data or database connection.','notice'));document.body.dataset.ready='true';})();`;
+  const start = `document.removeEventListener('DOMContentLoaded', restorePortal);tokens={accessToken:'synthetic-preview'};currentUser={fullName:'Example reviewer'};$('login').hidden=true;$('portal').hidden=false;page='${kind}';void(async()=>{await show();content.prepend(el('p','Synthetic preview only. No production data or database connection.','notice'));document.body.dataset.ready='true';})();`;
   fs.writeFileSync(path.join(out, `${kind}.html`), html.replace('</body>', `<script>${mock}\n${code}\n${start}</script></body>`));
-  const verifyStart = start.replace("document.body.dataset.ready='true';", `document.body.dataset.ready='true';try{await verifyDirectoryControls('${kind}')}catch(error){document.body.dataset.verification='failed';$('message').textContent=error.message}`);
+  const verifyStart = `
+    document.removeEventListener('DOMContentLoaded', restorePortal);
+    page='${kind}';
+    void(async()=>{
+      try{
+        const key='preview.started.${kind}';
+        const reloaded=sessionStorage.getItem(key)==='yes';
+        if(!reloaded){
+          savePortalSession({accessToken:'synthetic-preview',refreshToken:'synthetic-refresh'});
+          sessionStorage.setItem(key,'yes');
+        }
+        tokens=null;
+        await restorePortal();
+        if($('portal').hidden||!$('login').hidden)throw new Error('The saved session did not restore');
+        if(reloaded)document.body.dataset.verification='restored';
+        else await verifyDirectoryControls('${kind}');
+      }catch(error){document.body.dataset.verification='failed';$('message').textContent=error.message}
+    })();`;
   fs.writeFileSync(path.join(out, `${kind}-verify.html`), html.replace('</body>', `<script>${mock}\n${code}\n${checks}\n${verifyStart}</script></body>`));
 }
 console.log('Synthetic directory indexes generated at ' + out);
