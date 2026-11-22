@@ -238,7 +238,6 @@ export declare const doctorAdminQuery: z.ZodObject<{
         hi: "hi";
     }>>;
     page: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
-    limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     status: z.ZodDefault<z.ZodEnum<{
         active: "active";
         published: "published";
@@ -251,6 +250,7 @@ export declare const doctorAdminQuery: z.ZodObject<{
         withdrawn: "withdrawn";
         ready: "ready";
     }>>;
+    limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
 }, z.core.$strict>;
 export declare const doctorReview: z.ZodObject<{
     expectedVersion: z.ZodNumber;

@@ -1,6 +1,7 @@
 import { BadRequestException, Body, ConflictException, Controller, Get, HttpException, Logger, Param, Post, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { z } from 'zod';
+import { maxDirectoryApprovalSize } from '../../../common/directory/admin-status';
 import { JwtAuthGuard } from '../../../common/authentication/jwt-auth.guard';
 import { CurrentUser } from '../../../common/authentication/current-user.decorator';
 import type { RequestUser } from '../../../common/authentication/request-user';
@@ -10,7 +11,7 @@ import { DoctorsService } from '../../doctors/services/doctors.service';
 import { HealthResourcesService } from '../../health-resources/services/health-resources.service';
 import { CareDirectoryService } from '../../care-directory/services/care-directory.service';
 
-const items = z.array(z.object({ id: z.uuid(), expectedVersion: z.number().int().positive().optional(), expectedUpdatedAt: z.iso.datetime().optional() }).strict()).min(1).max(100);
+const items = z.array(z.object({ id: z.uuid(), expectedVersion: z.number().int().positive().optional(), expectedUpdatedAt: z.iso.datetime().optional() }).strict()).min(1).max(maxDirectoryApprovalSize);
 const detailedBatchInput = z.object({
   items,
   reviewerName: z.string().trim().min(3).max(160), reviewerQualification: z.string().trim().min(3).max(160),

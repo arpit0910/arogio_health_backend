@@ -13,6 +13,7 @@ const rows = [
 const mock = `
 const previewRows=${JSON.stringify(rows)};
 window.previewRequests=[];
+window.previewListQueries=[];
 globalThis.fetch=async(path, options={})=>{
  const url=new URL(path,'https://preview.invalid');
  const summary={all:3,active:2,inactive:1,draft:3,incomplete:1,approved:0,expired:0,ready:1,withdrawn:0};
@@ -26,6 +27,7 @@ globalThis.fetch=async(path, options={})=>{
   data={fullName:'Example reviewer'};
  } else if(url.pathname.endsWith('/summary')) data={hospitals:summary,doctors:summary,'blood-banks':summary};
  else {
+  window.previewListQueries.push(url.search);
   const status=url.searchParams.get('status')??'all';
   const items=previewRows.filter(row=>status==='all'||status==='active'&&row.adminStatus.active||status==='inactive'&&!row.adminStatus.active||status==='incomplete'&&!row.adminStatus.complete||status==='draft'||status==='ready'&&row.adminStatus.active&&row.adminStatus.complete);
   data={items,summary,total:items.length,hasNext:false,page:1,missingCoordinates:3};
@@ -61,6 +63,12 @@ async function verifyDirectoryControls(kind){
  await waitFor(()=>rowBoxes().length===1);
  assert(rowBoxes()[0].disabled,'Inactive index cannot approve inactive records');
  assert(buttonNamed('Approve selected').disabled,'Inactive index keeps approval disabled');
+ const size=document.querySelector('select[aria-label="Records per page"]');
+ size.value='500';size.dispatchEvent(new Event('change'));
+ await waitFor(()=>rowBoxes().length===1);
+ const query=new URLSearchParams(window.previewListQueries.at(-1));
+ assert(query.get('limit')==='500'&&query.get('page')==='1'&&query.get('status')==='inactive','Page size resets pagination and preserves the filter');
+ assert(document.querySelector('select[aria-label="Records per page"]').value==='500','Selected page size remains visible');
  page='overview';reset('Overview');await directoryOverviewStatus(requestRevision);
  const title=kind==='hospitals'?'Hospitals':kind==='doctors'?'Doctors':'Blood banks';
  const overviewRow=[...document.querySelectorAll('.directory-overview-row')].find(row=>row.querySelector('h3').textContent===title);

@@ -5,6 +5,23 @@ const directoryStatusOptions = (kind) => [
   ['incomplete', 'Incomplete'], ['approved', 'Approved'], ['expired', 'Review expired'],
   ['withdrawn', 'Review withdrawn'], ['ready', 'Ready to approve'],
 ];
+const directoryPageSizes = { hospitals: 20, doctors: 20, 'blood-banks': 25 };
+function directoryPageSizeSelector(kind, onChange) {
+  const select = el('select');
+  select.setAttribute('aria-label', 'Records per page');
+  const defaultSize = kind === 'blood-banks' ? 25 : 20;
+  for (const size of [defaultSize, 50, 100, 250, 500]) {
+    const option = el('option', `${size} per page`);
+    option.value = size;
+    select.append(option);
+  }
+  select.value = directoryPageSizes[kind];
+  select.addEventListener('change', () => {
+    directoryPageSizes[kind] = Number(select.value);
+    void safely(onChange);
+  });
+  return select;
+}
 function directoryStatusFilter(kind, value, onChange) {
   const select = el('select');
   select.setAttribute('aria-label', 'Filter directory status');
@@ -93,7 +110,11 @@ function directoryBulkApproval(kind, reload) {
   return { section, results, checkbox: row => {
     const input = el('input'); input.type = 'checkbox';
     const eligible = row.adminStatus?.active !== false;
-    if (eligible) eligibleCount++;
+    input.disabled = !eligible;
+    if (eligible) {
+      eligibleCount++;
+      all.disabled = false;
+    }
     input.setAttribute('aria-label', `Select ${row.name_en}${eligible ? '' : ' (inactive)'}`);
     input.addEventListener('change', () => {
       if (input.checked) selected.set(row.id, row);
@@ -101,7 +122,6 @@ function directoryBulkApproval(kind, reload) {
       update();
     });
     boxes.push({ input, row, eligible });
-    update();
     return input;
   } };
 }

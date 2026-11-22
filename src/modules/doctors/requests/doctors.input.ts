@@ -1,4 +1,4 @@
-import { directoryStatusInput } from '../../../common/directory/admin-status';
+import { adminDirectoryPageSize, directoryStatusInput } from '../../../common/directory/admin-status';
 import { z } from 'zod';
 
 const line = z.string().trim().max(200);
@@ -174,6 +174,7 @@ export const doctorQuery = z
   .strict();
 export const doctorAdminQuery = doctorQuery.extend({
   status: directoryStatusInput,
+  limit: adminDirectoryPageSize.default(20),
 });
 export const doctorReview = z
   .object({

@@ -13,6 +13,8 @@ export declare const directoryStatusInput: z.ZodDefault<z.ZodEnum<{
     withdrawn: "withdrawn";
     ready: "ready";
 }>>;
+export declare const maxDirectoryApprovalSize = 500;
+export declare const adminDirectoryPageSize: z.ZodCoercedNumber<unknown>;
 export type DirectoryKind = 'hospitals' | 'doctors' | 'blood-banks';
 export declare const activeDoctorDepartment: SQL<boolean>;
 export declare function directoryPredicates(kind: DirectoryKind): {

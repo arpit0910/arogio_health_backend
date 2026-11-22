@@ -98,6 +98,49 @@ export declare const listInput: z.ZodObject<{
         ready: "ready";
     }>>;
 }, z.core.$strict>;
+export declare const adminBankListInput: z.ZodObject<{
+    page: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+    search: z.ZodDefault<z.ZodString>;
+    category: z.ZodOptional<z.ZodString>;
+    sort: z.ZodDefault<z.ZodEnum<{
+        newest: "newest";
+        oldest: "oldest";
+        title_asc: "title_asc";
+        title_desc: "title_desc";
+        random: "random";
+    }>>;
+    language: z.ZodDefault<z.ZodEnum<{
+        en: "en";
+        hi: "hi";
+    }>>;
+    bloodGroup: z.ZodOptional<z.ZodEnum<{
+        "A+": "A+";
+        "A-": "A-";
+        "B+": "B+";
+        "B-": "B-";
+        "O+": "O+";
+        "O-": "O-";
+        "AB+": "AB+";
+        "AB-": "AB-";
+    }>>;
+    only24h: z.ZodOptional<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>>;
+    status: z.ZodDefault<z.ZodEnum<{
+        active: "active";
+        published: "published";
+        expired: "expired";
+        all: "all";
+        inactive: "inactive";
+        draft: "draft";
+        incomplete: "incomplete";
+        approved: "approved";
+        withdrawn: "withdrawn";
+        ready: "ready";
+    }>>;
+    limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+}, z.core.$strict>;
 export declare const nearbyInput: z.ZodObject<{
     latitude: z.ZodNumber;
     longitude: z.ZodNumber;

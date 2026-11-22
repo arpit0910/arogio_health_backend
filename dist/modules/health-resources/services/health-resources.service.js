@@ -158,7 +158,7 @@ let HealthResourcesService = class HealthResourcesService {
         return filters;
     }
     async listBanks(query, admin = false, sourced = false) {
-        const q = this.parse(health_resources_input_1.listInput, query), filters = this.bankFilters(q.bloodGroup, q.only24h === 'true', admin, sourced);
+        const q = this.parse(admin ? health_resources_input_1.adminBankListInput : health_resources_input_1.listInput, query), filters = this.bankFilters(q.bloodGroup, q.only24h === 'true', admin, sourced);
         if (q.search)
             filters.push((0, drizzle_orm_1.or)(...[
                 schema_1.bloodBankDirectoryEntries.name_en,

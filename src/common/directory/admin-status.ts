@@ -4,6 +4,8 @@ import { hospitals, doctors, doctorDepartments, medicalDepartments, bloodBankDir
 
 export const directoryStatuses = ['all', 'active', 'inactive', 'draft', 'incomplete', 'approved', 'expired', 'withdrawn', 'ready', 'published'] as const;
 export const directoryStatusInput = z.enum(directoryStatuses).default('all');
+export const maxDirectoryApprovalSize = 500;
+export const adminDirectoryPageSize = z.coerce.number().int().min(1).max(maxDirectoryApprovalSize);
 export type DirectoryKind = 'hospitals' | 'doctors' | 'blood-banks';
 export const activeDoctorDepartment = sql<boolean>`exists(select 1 from ${doctorDepartments} dd join ${medicalDepartments} dep on dep.id=dd.department_id where dd.doctor_id=${doctors.id} and dep.is_active=true)`.mapWith(Boolean);
 const blank = (column: unknown) => sql`nullif(btrim(${column}), '') is null`;

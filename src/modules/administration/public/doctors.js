@@ -79,6 +79,7 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
     search,
     location,
     filter,
+    directoryPageSizeSelector('doctors', () => doctorsPage(1, search.value.trim(), location.value.trim(), filter.value)),
     searchButton,
     button('Add doctor', () => doctorEditor()),
   );
@@ -183,7 +184,7 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
   );
   content.append(importer);
   const data = await api(
-    `/admin/doctors?page=${current}&search=${encodeURIComponent(term)}&city=${encodeURIComponent(city)}&status=${status}`,
+    `/admin/doctors?page=${current}&search=${encodeURIComponent(term)}&city=${encodeURIComponent(city)}&status=${status}&limit=${directoryPageSizes.doctors}`,
   );
   if (rev !== requestRevision) return;
   section.append(directorySummary('doctors', data.summary, next => doctorsPage(1, term, city, next)));

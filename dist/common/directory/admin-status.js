@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.activeDoctorDepartment = exports.directoryStatusInput = exports.directoryStatuses = void 0;
+exports.activeDoctorDepartment = exports.adminDirectoryPageSize = exports.maxDirectoryApprovalSize = exports.directoryStatusInput = exports.directoryStatuses = void 0;
 exports.directoryPredicates = directoryPredicates;
 exports.directoryCountFields = directoryCountFields;
 exports.directoryRowStatus = directoryRowStatus;
@@ -9,6 +9,8 @@ const zod_1 = require("zod");
 const schema_1 = require("../../database/schema");
 exports.directoryStatuses = ['all', 'active', 'inactive', 'draft', 'incomplete', 'approved', 'expired', 'withdrawn', 'ready', 'published'];
 exports.directoryStatusInput = zod_1.z.enum(exports.directoryStatuses).default('all');
+exports.maxDirectoryApprovalSize = 500;
+exports.adminDirectoryPageSize = zod_1.z.coerce.number().int().min(1).max(exports.maxDirectoryApprovalSize);
 exports.activeDoctorDepartment = (0, drizzle_orm_1.sql) `exists(select 1 from ${schema_1.doctorDepartments} dd join ${schema_1.medicalDepartments} dep on dep.id=dd.department_id where dd.doctor_id=${schema_1.doctors.id} and dep.is_active=true)`.mapWith(Boolean);
 const blank = (column) => (0, drizzle_orm_1.sql) `nullif(btrim(${column}), '') is null`;
 function directoryPredicates(kind) {

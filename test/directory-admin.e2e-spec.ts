@@ -31,6 +31,33 @@ describe('Directory status indexes and selected-record approvals', () => {
   const hospital = async (key: string, extra: Record<string, unknown> = {}) => (await request(app.getHttpServer()).post('/api/v1/admin/hospitals').set(auth()).send({ source_key: key, name_en: `Test ${key}`, city: 'Delhi', state: 'Delhi', address_line1: 'Synthetic address', phone_1: '+919000000000', source_url: 'https://example.test/source', ...extra }).expect(201)).body as { id: string; version: number };
   const bank = async (name: string, active = true) => (await request(app.getHttpServer()).post('/api/v1/admin/content/blood-banks').set(auth()).send({ name_en: name, city: 'Delhi', state: 'Delhi', address_en: 'Synthetic address', phone: '9000000000', source_url: active ? 'https://example.test/bank-directory' : null, is_active: active }).expect(201)).body as { id: string; updated_at: string };
 
+  it('lists and approves 500 records in one request', async () => {
+    await database.exec(`
+      insert into blood_bank_directory_entries (source_id, name_en, city, state, address_en, phone, source_url)
+      select 'batch-' || n, 'Test bank ' || n, 'Delhi', 'Delhi', 'Synthetic address', '9000000000', 'https://example.test/bank-directory'
+      from generate_series(1, 501) as n
+    `);
+    for (const kind of ['hospitals', 'doctors', 'content/blood-banks']) {
+      await request(app.getHttpServer()).get(`/api/v1/admin/${kind}?limit=500`).set(auth()).expect(200);
+      await request(app.getHttpServer()).get(`/api/v1/admin/${kind}?limit=501`).set(auth()).expect(400);
+    }
+    const listPath = '/api/v1/admin/content/blood-banks?limit=500';
+    const first = await request(app.getHttpServer()).get(listPath).set(auth()).expect(200);
+    const second = await request(app.getHttpServer()).get(`${listPath}&page=2`).set(auth()).expect(200);
+    expect(first.body.items).toHaveLength(500);
+    expect(first.body.hasNext).toBe(true);
+    expect(second.body.items).toHaveLength(1);
+    expect(second.body.hasNext).toBe(false);
+    type BankVersion = { id: string; updated_at: string };
+    const item = (row: BankVersion) => ({ id: row.id, expectedUpdatedAt: row.updated_at });
+    const items = (first.body.items as BankVersion[]).map(item);
+    const [remaining] = second.body.items as BankVersion[];
+    const approvalPath = '/api/v1/admin/directory-approvals/blood-banks';
+    await request(app.getHttpServer()).post(approvalPath).set(auth()).send({ items: [...items, item(remaining!)] }).expect(400);
+    const result = await request(app.getHttpServer()).post(approvalPath).set(auth()).send({ items }).expect(201);
+    expect(result.body).toMatchObject({ approved: 500, failed: 0 });
+  });
+
   it('shows inactive and incomplete hospitals with accurate counts across pages and explicit missing fields', async () => {
     await hospital('complete'); await hospital('incomplete', { address_line1: '' });
     const hidden = await hospital('hidden');

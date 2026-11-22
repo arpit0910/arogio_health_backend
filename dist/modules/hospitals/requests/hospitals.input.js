@@ -149,6 +149,7 @@ exports.hospitalQuery = zod_1.z
     .strict();
 exports.hospitalAdminQuery = exports.hospitalQuery.extend({
     status: admin_status_1.directoryStatusInput,
+    limit: admin_status_1.adminDirectoryPageSize.default(20),
 });
 exports.hospitalReview = zod_1.z
     .object({

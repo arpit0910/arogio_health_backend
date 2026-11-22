@@ -166,6 +166,7 @@ exports.doctorQuery = zod_1.z
     .strict();
 exports.doctorAdminQuery = exports.doctorQuery.extend({
     status: admin_status_1.directoryStatusInput,
+    limit: admin_status_1.adminDirectoryPageSize.default(20),
 });
 exports.doctorReview = zod_1.z
     .object({

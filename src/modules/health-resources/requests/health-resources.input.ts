@@ -1,4 +1,4 @@
-import { directoryStatusInput } from '../../../common/directory/admin-status';
+import { adminDirectoryPageSize, directoryStatusInput } from '../../../common/directory/admin-status';
 import { z } from 'zod';
 export const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] as const;
 const line = z.string().trim().max(300),
@@ -99,6 +99,7 @@ export const listInput = z
     status: directoryStatusInput,
   })
   .strict();
+export const adminBankListInput = listInput.extend({ limit: adminDirectoryPageSize.default(25) });
 export const nearbyInput = z
   .object({
     latitude: z.number().finite().min(-90).max(90),

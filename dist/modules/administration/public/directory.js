@@ -62,7 +62,10 @@ async function directoryPage(kind, current = 1, term = '', status = 'all') {
   submit.type = 'submit';
   tools.append(
     input,
-    ...(filter ? [filter] : []),
+    ...(filter ? [
+      filter,
+      directoryPageSizeSelector('blood-banks', () => directoryPage(kind, 1, input.value.trim(), filter.value)),
+    ] : []),
     submit,
     button(articles ? 'Create article' : 'Add blood bank', () => directoryEditor(kind)),
   );
@@ -167,7 +170,7 @@ async function directoryPage(kind, current = 1, term = '', status = 'all') {
   );
   content.append(uploader);
   const data = await api(
-    `/admin/content/${kind}?page=${current}&search=${encodeURIComponent(term)}${articles ? '' : `&status=${status}`}`,
+    `/admin/content/${kind}?page=${current}&search=${encodeURIComponent(term)}${articles ? '' : `&status=${status}&limit=${directoryPageSizes[kind]}`}`,
   );
   if (rev !== requestRevision) return;
   const bulk = articles ? null : directoryBulkApproval('blood-banks', () => directoryPage(kind, current, term, status));

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.nearbyInput = exports.listInput = exports.bankInput = exports.articleInput = exports.categoryInput = exports.thumbnailInput = exports.bloodGroups = void 0;
+exports.nearbyInput = exports.adminBankListInput = exports.listInput = exports.bankInput = exports.articleInput = exports.categoryInput = exports.thumbnailInput = exports.bloodGroups = void 0;
 const admin_status_1 = require("../../../common/directory/admin-status");
 const zod_1 = require("zod");
 exports.bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
@@ -97,6 +97,7 @@ exports.listInput = zod_1.z
     status: admin_status_1.directoryStatusInput,
 })
     .strict();
+exports.adminBankListInput = exports.listInput.extend({ limit: admin_status_1.adminDirectoryPageSize.default(25) });
 exports.nearbyInput = zod_1.z
     .object({
     latitude: zod_1.z.number().finite().min(-90).max(90),

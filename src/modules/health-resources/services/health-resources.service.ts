@@ -24,6 +24,7 @@ import {
   articleInput,
   categoryInput,
   bankInput,
+  adminBankListInput,
   listInput,
   nearbyInput,
   type DirectoryKind,
@@ -187,7 +188,7 @@ export class HealthResourcesService {
     return filters;
   }
   async listBanks(query: unknown, admin = false, sourced = false) {
-    const q = this.parse(listInput, query),
+    const q = this.parse(admin ? adminBankListInput : listInput, query),
       filters = this.bankFilters(q.bloodGroup, q.only24h === 'true', admin, sourced);
     if (q.search)
       filters.push(

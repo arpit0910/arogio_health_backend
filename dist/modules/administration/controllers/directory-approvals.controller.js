@@ -17,6 +17,7 @@ exports.DirectoryApprovalsController = void 0;
 const common_1 = require("@nestjs/common");
 const throttler_1 = require("@nestjs/throttler");
 const zod_1 = require("zod");
+const admin_status_1 = require("../../../common/directory/admin-status");
 const jwt_auth_guard_1 = require("../../../common/authentication/jwt-auth.guard");
 const current_user_decorator_1 = require("../../../common/authentication/current-user.decorator");
 const administration_guard_1 = require("../guards/administration.guard");
@@ -24,7 +25,7 @@ const hospitals_service_1 = require("../../hospitals/services/hospitals.service"
 const doctors_service_1 = require("../../doctors/services/doctors.service");
 const health_resources_service_1 = require("../../health-resources/services/health-resources.service");
 const care_directory_service_1 = require("../../care-directory/services/care-directory.service");
-const items = zod_1.z.array(zod_1.z.object({ id: zod_1.z.uuid(), expectedVersion: zod_1.z.number().int().positive().optional(), expectedUpdatedAt: zod_1.z.iso.datetime().optional() }).strict()).min(1).max(100);
+const items = zod_1.z.array(zod_1.z.object({ id: zod_1.z.uuid(), expectedVersion: zod_1.z.number().int().positive().optional(), expectedUpdatedAt: zod_1.z.iso.datetime().optional() }).strict()).min(1).max(admin_status_1.maxDirectoryApprovalSize);
 const detailedBatchInput = zod_1.z.object({
     items,
     reviewerName: zod_1.z.string().trim().min(3).max(160), reviewerQualification: zod_1.z.string().trim().min(3).max(160),

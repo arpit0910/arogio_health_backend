@@ -83,6 +83,7 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
     search,
     location,
     filter,
+    directoryPageSizeSelector('hospitals', () => hospitalsPage(1, search.value.trim(), location.value.trim(), filter.value)),
     searchButton,
     button('Add hospital', () => hospitalEditor()),
   );
@@ -187,7 +188,7 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
   );
   content.append(importer);
   const data = await api(
-    `/admin/hospitals?page=${current}&search=${encodeURIComponent(term)}&city=${encodeURIComponent(city)}&status=${status}`,
+    `/admin/hospitals?page=${current}&search=${encodeURIComponent(term)}&city=${encodeURIComponent(city)}&status=${status}&limit=${directoryPageSizes.hospitals}`,
   );
   if (rev !== requestRevision) return;
   section.append(directorySummary('hospitals', data.summary, next => hospitalsPage(1, term, city, next)));
