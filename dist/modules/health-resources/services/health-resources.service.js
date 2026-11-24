@@ -28,7 +28,6 @@ const adminArticleListInput = health_resources_input_1.adminBankListInput.extend
 const articleVisibilityInput = zod_1.z.object({ visible: zod_1.z.boolean(), expectedUpdatedAt: zod_1.z.iso.datetime() }).strict();
 const articleSummary = {
     id: schema_1.healthArticles.id,
-    source_id: schema_1.healthArticles.source_id,
     title_en: schema_1.healthArticles.title_en,
     title_hi: schema_1.healthArticles.title_hi,
     excerpt_en: schema_1.healthArticles.excerpt_en,
@@ -145,7 +144,7 @@ let HealthResourcesService = class HealthResourcesService {
     async article(id, admin = false) {
         this.parse(zod_1.z.uuid(), id);
         const [row] = await this.database.db
-            .select()
+            .select({ ...articleSummary, content_en: schema_1.healthArticles.content_en, content_hi: schema_1.healthArticles.content_hi })
             .from(schema_1.healthArticles)
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.healthArticles.id, id), admin ? undefined : (0, drizzle_orm_1.eq)(schema_1.healthArticles.is_published, true)))
             .limit(1);

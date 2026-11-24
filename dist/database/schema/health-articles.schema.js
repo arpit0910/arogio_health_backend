@@ -4,7 +4,8 @@ exports.healthArticles = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 exports.healthArticles = (0, pg_core_1.pgTable)('health_articles', {
     id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
-    source_id: (0, pg_core_1.text)('source_id').notNull().unique(),
+    // Keep the legacy import property mapped to the column renamed by migration 0032.
+    source_id: (0, pg_core_1.text)('record_key').notNull().unique(),
     title_en: (0, pg_core_1.text)('title_en').notNull(),
     title_hi: (0, pg_core_1.text)('title_hi').notNull().default(''),
     excerpt_en: (0, pg_core_1.text)('excerpt_en').notNull().default(''),
