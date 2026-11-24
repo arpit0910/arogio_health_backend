@@ -378,7 +378,7 @@ async function show() {
   syncPortalUrl();
   $('create-user').hidden = page !== 'overview' && page !== 'people';
   const { current, term, city, status, size } = readDirectoryView(page);
-  if (['hospitals', 'doctors', 'blood-banks'].includes(page) && [20, 25, 50, 100, 250, 500].includes(size)) {
+  if (['hospitals', 'doctors', 'blood-banks', 'articles'].includes(page) && [20, 25, 50, 100, 250, 500].includes(size)) {
     directoryPageSizes[page] = size;
   }
   if (page === 'database-reset') return databaseResetPage();

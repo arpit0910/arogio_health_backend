@@ -99,6 +99,10 @@ export const listInput = z
   })
   .strict();
 export const adminBankListInput = listInput.extend({ limit: adminDirectoryPageSize.default(25) });
+export const adminArticleListInput = adminBankListInput.extend({
+  status: z.enum(['all', 'draft', 'published']).default('all'),
+});
+export const visibilityInput = z.object({ visible: z.boolean(), expectedUpdatedAt: z.iso.datetime() }).strict();
 export const nearbyInput = z
   .object({
     latitude: z.number().finite().min(-90).max(90),

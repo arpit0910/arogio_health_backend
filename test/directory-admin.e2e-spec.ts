@@ -31,6 +31,36 @@ describe('Directory status indexes and selected-record approvals', () => {
   const hospital = async (key: string, extra: Record<string, unknown> = {}) => (await request(app.getHttpServer()).post('/api/v1/admin/hospitals').set(auth()).send({ record_key: key, name_en: `Test ${key}`, city: 'Delhi', state: 'Delhi', address_line1: 'Synthetic address', phone_1: '+919000000000', ...extra }).expect(201)).body as { id: string; version: number };
   const bank = async (name: string, active = true) => (await request(app.getHttpServer()).post('/api/v1/admin/content/blood-banks').set(auth()).send({ name_en: name, city: 'Delhi', state: 'Delhi', address_en: 'Synthetic address', phone: '9000000000', is_active: active }).expect(201)).body as { id: string; updated_at: string };
 
+  it('publishes selected article drafts and toggles public visibility from the index', async () => {
+    const server = request(app.getHttpServer());
+    const index = '/api/v1/admin/content/articles';
+    const title = 'Index publication test';
+    const payload = { title_en: title, content_en: 'Example article content.', category: 'Care' };
+    const drafts = await Promise.all(['one', 'two'].map((suffix) =>
+      server.post(index).set(auth()).send({ ...payload, title_en: `${title} ${suffix}` }).expect(201),
+    ));
+    const ids = drafts.map(({ body }) => ({ id: body.id as string, expectedUpdatedAt: body.updated_at as string }));
+    const [first, second] = ids;
+    const bulk = '/api/v1/admin/directory-approvals/articles';
+    await server.post(bulk).set('Authorization', `Bearer ${ordinary}`).send({ items: ids }).expect(403);
+    const draftList = await server.get(index).set(auth()).query({ search: title, status: 'draft', limit: 500 }).expect(200);
+    expect(draftList.body.total).toBe(2);
+    const published = await server.post(bulk).set(auth()).send({
+      items: [first, { ...second, expectedUpdatedAt: '2020-01-01T00:00:00.000Z' }],
+    }).expect(201);
+    expect(published.body).toMatchObject({ approved: 1, failed: 1 });
+    await server.get(`/api/v1/public/articles/${second!.id}`).expect(404);
+    const list = await server.get(index).set(auth()).query({ search: title, status: 'published' }).expect(200);
+    expect(list.body.total).toBe(1);
+    const visibility = `${index}/${first!.id}/visibility`;
+    await server.patch(visibility).set(auth()).send({ visible: false, expectedUpdatedAt: first!.expectedUpdatedAt }).expect(409);
+    const hidden = await server.patch(visibility).set(auth()).send({ visible: false, expectedUpdatedAt: list.body.items[0].updated_at }).expect(200);
+    await server.get(`/api/v1/public/articles/${first!.id}`).expect(404);
+    await server.patch(visibility).set(auth()).send({ visible: true, expectedUpdatedAt: hidden.body.updatedAt }).expect(200);
+    const detail = await server.get(`/api/v1/public/articles/${first!.id}`).expect(200);
+    expect(detail.body.content_en).toBe(payload.content_en);
+  });
+
   it('lists and approves 500 records in one request', async () => {
     await database.exec(`
       insert into blood_bank_directory_entries (record_key, name_en, city, state, address_en, phone)
@@ -121,6 +151,14 @@ describe('Directory status indexes and selected-record approvals', () => {
       .expect(201);
     expect(approved.body).toMatchObject({ is_verified: true });
     expect(approved.body).not.toHaveProperty('source_url');
+    const server = request(app.getHttpServer());
+    const visibility = `/api/v1/admin/content/blood-banks/${active.id}/visibility`;
+    const hidden = await server.patch(visibility).set(auth()).send({ visible: false, expectedUpdatedAt: approved.body.updated_at }).expect(200);
+    const list = await server.get('/api/v1/public/blood-banks').expect(200);
+    expect(list.body.items).toHaveLength(0);
+    await server.patch(visibility).set(auth()).send({ visible: true, expectedUpdatedAt: hidden.body.updatedAt }).expect(200);
+    const shown = await server.get('/api/v1/public/blood-banks').expect(200);
+    expect(shown.body.items[0]).toMatchObject({ id: active.id, is_verified: true });
   });
   it('reports incomplete doctors, approves selected complete doctors and prevents stale replay', async () => {
     const department = await request(app.getHttpServer()).post('/api/v1/admin/departments').set(auth()).send({ record_key: 'test-department', name_en: 'Test department', is_active: true }).expect(201);

@@ -5,11 +5,11 @@ const directoryStatusOptions = (kind) => [
   ['incomplete', 'Incomplete'], ['approved', 'Approved'], ['expired', 'Review expired'],
   ['withdrawn', 'Review withdrawn'], ['ready', 'Ready to approve'],
 ];
-const directoryPageSizes = { hospitals: 20, doctors: 20, 'blood-banks': 25 };
+const directoryPageSizes = { hospitals: 20, doctors: 20, 'blood-banks': 25, articles: 25 };
 function directoryPageSizeSelector(kind, onChange) {
   const select = el('select');
   select.setAttribute('aria-label', 'Records per page');
-  const defaultSize = kind === 'blood-banks' ? 25 : 20;
+  const defaultSize = kind === 'blood-banks' || kind === 'articles' ? 25 : 20;
   for (const size of [defaultSize, 50, 100, 250, 500]) {
     const option = el('option', `${size} per page`);
     option.value = size;
@@ -25,7 +25,10 @@ function directoryPageSizeSelector(kind, onChange) {
 function directoryStatusFilter(kind, value, onChange) {
   const select = el('select');
   select.setAttribute('aria-label', 'Filter directory status');
-  for (const [key, label] of directoryStatusOptions(kind)) { const option = el('option', label); option.value = key; select.append(option); }
+  const options = kind === 'articles'
+    ? [['all', 'All articles'], ['draft', 'Draft'], ['published', 'Published']]
+    : directoryStatusOptions(kind);
+  for (const [key, label] of options) { const option = el('option', label); option.value = key; select.append(option); }
   select.value = value; select.addEventListener('change', () => void safely(() => onChange(select.value)));
   return select;
 }
@@ -63,7 +66,7 @@ function approvalActivity(job) {
   $('approval-count').textContent = `${number(job.processed)} of ${number(job.total)} processed`;
   $('approval-progress').max = job.total;
   $('approval-progress').value = job.processed;
-  $('approval-outcome').textContent = job.message || `${number(job.approved)} approved · ${number(job.failed)} not approved`;
+  $('approval-outcome').textContent = job.message || `${number(job.approved)} ${job.verb} · ${number(job.failed)} not ${job.verb}`;
   if (job.finished || job.processed === 0) {
     $('approval-announcement').textContent = job.finished
       ? `${job.title}. ${$('approval-count').textContent}. ${$('approval-outcome').textContent}`
@@ -107,20 +110,21 @@ async function streamApproval(kind, items, onProgress) {
 }
 
 function directoryBulkApproval(kind, reload) {
+  const articles = kind === 'articles', verb = articles ? 'published' : 'approved';
   const selected = new Map(), boxes = [], section = el('div', null, 'directory-bulk');
   const caption = el('span', '0 selected'), all = el('input'); all.type = 'checkbox';
   const label = el('label', null, 'check');
-  label.append(all, document.createTextNode('Select all eligible records on this page'));
+  label.append(all, document.createTextNode(articles ? 'Select all drafts on this page' : 'Select all eligible records on this page'));
   let eligibleCount = 0;
 
   async function approveRecords(rows) {
     if (!rows.length || activeApproval?.epoch === authEpoch) return;
     const epoch = authEpoch, revision = requestRevision;
-    const items = rows.map(row => kind === 'blood-banks'
+    const items = rows.map(row => articles || kind === 'blood-banks'
       ? { id: row.id, expectedUpdatedAt: row.updated_at }
       : { id: row.id, expectedVersion: row.version });
-    const title = { hospitals: 'Hospital approval', doctors: 'Doctor approval', 'blood-banks': 'Blood bank approval' }[kind];
-    const job = { epoch, title, total: items.length, processed: 0, approved: 0, failed: 0, finished: false };
+    const title = { hospitals: 'Hospital approval', doctors: 'Doctor approval', 'blood-banks': 'Blood bank approval', articles: 'Article publishing' }[kind];
+    const job = { epoch, title, verb, total: items.length, processed: 0, approved: 0, failed: 0, finished: false };
     activeApproval = job;
     update();
     approvalActivity(job);
@@ -138,7 +142,7 @@ function directoryBulkApproval(kind, reload) {
       if (authEpoch !== epoch) return;
       job.message = job.receivedResult
         ? `Could not refresh the list. ${error.message}`
-        : `${error.message} Refresh the list to check which records were approved before retrying.`;
+        : `${error.message} Refresh the list to check which records were ${verb} before retrying.`;
     } finally {
       job.finished = true;
       if (activeApproval === job) activeApproval = null;
@@ -147,7 +151,7 @@ function directoryBulkApproval(kind, reload) {
     }
   }
 
-  const approve = button('Approve selected', () => approveRecords([...selected.values()]), 'primary');
+  const approve = button(articles ? 'Publish selected' : 'Approve selected', () => approveRecords([...selected.values()]), 'primary');
   function update() {
     const pending = activeApproval?.epoch === authEpoch;
     section.setAttribute('aria-busy', String(pending));
@@ -175,20 +179,20 @@ function directoryBulkApproval(kind, reload) {
   if (prior?.epoch === authEpoch) {
     const details = el('details');
     details.append(
-      el('summary', `Last approval · ${number(prior.result.approved)} approved. ${number(prior.result.failed)} not approved.`),
-      table(['Record', 'Result', 'Details'], prior.result.results.map(row => [row.name, row.status === 'approved' ? 'Approved' : 'Not approved', row.message])),
+      el('summary', `${articles ? 'Last publish' : 'Last approval'} · ${number(prior.result.approved)} ${verb}. ${number(prior.result.failed)} not ${verb}.`),
+      table(['Record', 'Result', 'Details'], prior.result.results.map(row => [row.name, row.status === 'approved' ? (articles ? 'Published' : 'Approved') : `Not ${verb}`, row.message])),
     );
     results.append(details);
   }
   return { section, results, checkbox: row => {
     const input = el('input'); input.type = 'checkbox';
-    const eligible = row.adminStatus?.active !== false;
+    const eligible = articles ? !row.is_published : row.adminStatus?.active !== false;
     input.disabled = !eligible || activeApproval?.epoch === authEpoch;
     if (eligible) {
       eligibleCount++;
       all.disabled = activeApproval?.epoch === authEpoch;
     }
-    input.setAttribute('aria-label', `Select ${row.name_en}${eligible ? '' : ' (inactive)'}`);
+    input.setAttribute('aria-label', `Select ${articles ? row.title_en : row.name_en}${eligible ? '' : articles ? ' (published)' : ' (inactive)'}`);
     input.addEventListener('change', () => {
       if (input.checked) selected.set(row.id, row);
       else selected.delete(row.id);

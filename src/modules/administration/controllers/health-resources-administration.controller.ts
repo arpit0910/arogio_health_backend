@@ -73,6 +73,14 @@ export class HealthResourcesAdministrationController {
   @Get('articles/:id/thumbnail') async thumbnail(@Param('id') id: string, @Res() response: Response) {
     sendProviderImage(response, await this.directory.articleThumbnail(id, true));
   }
+  @Patch('articles/:id/visibility')
+  articleVisibility(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body() body: unknown) {
+    return this.directory.setArticleVisibility(id, body, user.userId);
+  }
+  @Patch('blood-banks/:id/visibility')
+  bloodBankVisibility(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body() body: unknown) {
+    return this.directory.setBloodBankVisibility(id, body, user.userId);
+  }
   @Put('articles/:id/thumbnail')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 4 * 1024 * 1024, files: 1, fields: 0 } }))
   uploadThumbnail(@CurrentUser() user: RequestUser, @Param('id') id: string, @UploadedFile() file?: Express.Multer.File) {

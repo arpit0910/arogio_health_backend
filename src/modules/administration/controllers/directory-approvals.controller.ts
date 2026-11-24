@@ -40,8 +40,8 @@ export class DirectoryApprovalsController {
     @Headers('accept') accept: string | undefined,
     @Res() response: Response,
   ) {
-    const parsed = batchInput.safeParse(body), kind = z.enum(['hospitals', 'doctors', 'blood-banks']).safeParse(rawKind);
-    if (!parsed.success || !kind.success) throw new BadRequestException(parsed.success ? 'Choose hospitals, doctors or blood banks.' : parsed.error.issues.map(issue => issue.message).join('; '));
+    const parsed = batchInput.safeParse(body), kind = z.enum(['hospitals', 'doctors', 'blood-banks', 'articles']).safeParse(rawKind);
+    if (!parsed.success || !kind.success) throw new BadRequestException(parsed.success ? 'Choose articles, hospitals, doctors or blood banks.' : parsed.error.issues.map(issue => issue.message).join('; '));
     const { items, ...review } = 'reviewerName' in parsed.data ? parsed.data : {
       items: parsed.data.items,
       reviewerName: 'Signed-in administrator',
@@ -49,7 +49,8 @@ export class DirectoryApprovalsController {
       evidence: 'Listing details approved by the signed-in administrator.',
       confirmedDetails: true,
     };
-    if (items.some(item => kind.data === 'blood-banks' ? !item.expectedUpdatedAt || item.expectedVersion !== undefined : !item.expectedVersion || item.expectedUpdatedAt !== undefined)) throw new BadRequestException('Refresh the list and select records with their current version.');
+    const timestamped = kind.data === 'blood-banks' || kind.data === 'articles';
+    if (items.some(item => timestamped ? !item.expectedUpdatedAt || item.expectedVersion !== undefined : !item.expectedVersion || item.expectedUpdatedAt !== undefined)) throw new BadRequestException('Refresh the list and select records with their current version.');
     const stream = accept?.split(',').some((type) => type.trim() === 'application/x-ndjson');
     if (stream) {
       response.status(201).set({
@@ -77,12 +78,15 @@ export class DirectoryApprovalsController {
           const row = await this.doctors.detail(item.id, true); name = row.name_en;
           if (!row.published && row.reviewedAt) throw new ConflictException('Withdrawn doctor. Review and restore this record individually.');
           await this.doctors.review(actor.userId, item.id, { ...review, expectedVersion: item.expectedVersion, publish: true });
-        } else {
+        } else if (kind.data === 'blood-banks') {
           const row = await this.banks.bank(item.id); name = row.name_en;
           if (!row.is_active) throw new ConflictException('Inactive blood bank. Activate this record before approving.');
           await this.care.reviewBank(item.id, actor.userId, { ...review, expectedUpdatedAt: item.expectedUpdatedAt, publish: true }, true);
+        } else {
+          const row = await this.banks.setArticleVisibility(item.id, { visible: true, expectedUpdatedAt: item.expectedUpdatedAt }, actor.userId);
+          name = row.title;
         }
-        results.push({ id: item.id, name, status: 'approved', message: 'Approval recorded.' });
+        results.push({ id: item.id, name, status: 'approved', message: kind.data === 'articles' ? 'Article is published.' : 'Approval recorded.' });
         approved++;
       } catch (error) {
         let message = 'Approval could not be completed. Refresh and try again.';

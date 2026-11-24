@@ -1,6 +1,6 @@
 import { decodeProviderImage } from '../../../common/media/provider-image';
 import { directoryCountFields, directoryPredicates, directoryRowStatus } from '../../../common/directory/admin-status';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
   and,
@@ -20,14 +20,16 @@ import {
 } from 'drizzle-orm';
 import { z } from 'zod';
 import { DatabaseService } from '../../../database/database.service';
-import { healthArticles, healthArticleCategories, healthArticleThumbnails, bloodBankDirectoryEntries } from '../../../database/schema';
+import { administrationAuditLogs, healthArticles, healthArticleCategories, healthArticleThumbnails, bloodBankDirectoryEntries } from '../../../database/schema';
 import {
   articleInput,
   categoryInput,
   bankInput,
   adminBankListInput,
+  adminArticleListInput,
   listInput,
   nearbyInput,
+  visibilityInput,
   type DirectoryKind,
 } from '../requests/health-resources.input';
 import { prepareImport } from '../imports/import';
@@ -51,6 +53,13 @@ const articleSummary = {
   created_at: healthArticles.created_at,
   updated_at: healthArticles.updated_at,
 };
+
+function nextVisibilityTimestamp(current: Date, expectedUpdatedAt: string) {
+  if (current.toISOString() !== expectedUpdatedAt) {
+    throw new ConflictException('This record changed. Refresh the list before changing visibility.');
+  }
+  return new Date(Math.max(Date.now(), current.getTime() + 1));
+}
 @Injectable()
 export class HealthResourcesService {
   constructor(private readonly database: DatabaseService) {}
@@ -66,8 +75,9 @@ export class HealthResourcesService {
     return this.parse(z.enum(['articles', 'blood-banks']), value);
   }
   async listArticles(query: unknown, admin = false) {
-    const q = this.parse(listInput, query),
+    const q = this.parse(admin ? adminArticleListInput : listInput, query),
       conditions: SQL[] = admin ? [] : [eq(healthArticles.is_published, true)];
+    if (admin && q.status !== 'all') conditions.push(eq(healthArticles.is_published, q.status === 'published'));
     if (q.search)
       conditions.push(
         or(
@@ -339,6 +349,34 @@ export class HealthResourcesService {
           .returning();
     if (!rows[0]) throw new NotFoundException();
     return rows[0];
+  }
+  async setArticleVisibility(id: string, body: unknown, actorId: string) {
+    this.parse(z.uuid(), id);
+    const { visible, expectedUpdatedAt } = this.parse(visibilityInput, body);
+    return this.database.db.transaction(async (tx) => {
+      const [row] = await tx.select({ title: healthArticles.title_en, visible: healthArticles.is_published, updatedAt: healthArticles.updated_at })
+        .from(healthArticles).where(eq(healthArticles.id, id)).for('update');
+      if (!row) throw new NotFoundException('Article not found.');
+      const updatedAt = nextVisibilityTimestamp(row.updatedAt, expectedUpdatedAt);
+      if (row.visible === visible) return row;
+      await tx.update(healthArticles).set({ is_published: visible, updated_at: updatedAt }).where(eq(healthArticles.id, id));
+      await tx.insert(administrationAuditLogs).values({ actorId, targetId: id, action: visible ? 'articles.publish' : 'articles.unpublish', outcome: 'succeeded' });
+      return { title: row.title, visible, updatedAt };
+    });
+  }
+  async setBloodBankVisibility(id: string, body: unknown, actorId: string) {
+    this.parse(z.uuid(), id);
+    const { visible, expectedUpdatedAt } = this.parse(visibilityInput, body);
+    return this.database.db.transaction(async (tx) => {
+      const [row] = await tx.select({ visible: bloodBankDirectoryEntries.is_active, updatedAt: bloodBankDirectoryEntries.updated_at })
+        .from(bloodBankDirectoryEntries).where(eq(bloodBankDirectoryEntries.id, id)).for('update');
+      if (!row) throw new NotFoundException('Blood bank not found.');
+      const updatedAt = nextVisibilityTimestamp(row.updatedAt, expectedUpdatedAt);
+      if (row.visible === visible) return row;
+      await tx.update(bloodBankDirectoryEntries).set({ is_active: visible, updated_at: updatedAt }).where(eq(bloodBankDirectoryEntries.id, id));
+      await tx.insert(administrationAuditLogs).values({ actorId, targetId: id, action: visible ? 'blood-banks.show' : 'blood-banks.hide', outcome: 'succeeded' });
+      return { visible, updatedAt };
+    });
   }
   async remove(kind: DirectoryKind, id: string) {
     this.parse(z.uuid(), id);
