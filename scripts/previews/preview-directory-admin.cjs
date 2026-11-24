@@ -7,7 +7,7 @@ html = html.replace('</head>', `<style>${css}</style></head>`);
 const code = ['admin.js', 'directory-admin.js', 'hospitals.js', 'doctors.js', 'directory.js', 'bank-review.js'].map(name => fs.readFileSync(path.join(dir, name), 'utf8')).join('\n');
 const rows = [
   { id: '00000000-0000-4000-8000-000000000001', name_en: 'Example district hospital', city: 'Delhi', state: 'Delhi', hospital_type: 'Government', version: 1, updated_at: '2026-11-17T00:00:00Z', published: false, listed: true, is_active: true, reviewedAt: null, registration_number: 'TEST-001', adminStatus: { active: true, approved: false, visibility: 'Active', reviewStatus: 'Draft', complete: true, missingFields: [] } },
-  { id: '00000000-0000-4000-8000-000000000002', name_en: 'Example incomplete provider', city: 'Jaipur', state: 'Rajasthan', version: 1, updated_at: '2026-11-17T00:00:00Z', published: false, listed: true, is_active: true, reviewedAt: null, adminStatus: { active: true, approved: false, visibility: 'Active', reviewStatus: 'Draft', complete: false, missingFields: ['Address', 'Phone', 'Source URL'] } },
+  { id: '00000000-0000-4000-8000-000000000002', name_en: 'Example incomplete provider', city: 'Jaipur', state: 'Rajasthan', version: 1, updated_at: '2026-11-17T00:00:00Z', published: false, listed: true, is_active: true, reviewedAt: null, adminStatus: { active: true, approved: false, visibility: 'Active', reviewStatus: 'Draft', complete: false, missingFields: ['Address', 'Phone'] } },
   { id: '00000000-0000-4000-8000-000000000003', name_en: 'Example inactive provider', city: 'Pune', state: 'Maharashtra', version: 1, updated_at: '2026-11-17T00:00:00Z', published: false, listed: false, is_active: false, reviewedAt: null, adminStatus: { active: false, approved: false, visibility: 'Inactive', reviewStatus: 'Draft', complete: true, missingFields: [] } },
 ];
 const mock = `
@@ -20,8 +20,22 @@ globalThis.fetch=async(path, options={})=>{
  let data;
  if(options.method==='POST'){
   const body=JSON.parse(options.body);window.previewRequests.push({path,body});
-  const results=body.items.map(item=>{const row=previewRows.find(row=>row.id===item.id);return {id:item.id,name:row.name_en,status:row.adminStatus.complete?'approved':'failed',message:row.adminStatus.complete?'Approved and source review recorded.':'Missing required contact and source fields.'}});
+  const results=body.items.map(item=>{const row=previewRows.find(row=>row.id===item.id);return {id:item.id,name:row.name_en,status:row.adminStatus.complete?'approved':'failed',message:row.adminStatus.complete?'Approval recorded.':'Missing required contact fields.'}});
   data={approved:results.filter(row=>row.status==='approved').length,failed:results.filter(row=>row.status==='failed').length,results};
+  if(options.headers?.Accept==='application/x-ndjson'){
+   const encoder=new TextEncoder();
+   const stream=new ReadableStream({async start(controller){
+    let approved=0;
+    const write=event=>controller.enqueue(encoder.encode(JSON.stringify(event)+'\\n'));
+    for(const [index,row] of results.entries()){
+     await new Promise(resolve=>setTimeout(resolve,120));
+     if(row.status==='approved')approved++;
+     write({type:'progress',processed:index+1,approved,failed:index+1-approved});
+    }
+    write({type:'complete',...data});controller.close();
+   }});
+   return new Response(stream,{status:201,headers:{'Content-Type':'application/x-ndjson'}});
+  }
  } else if(url.pathname.endsWith('/admin/me')) {
   if(options.headers?.Authorization!=='Bearer synthetic-preview')return {ok:false,status:403,json:async()=>({message:'Missing preview session'})};
   data={fullName:'Example reviewer'};
@@ -46,17 +60,20 @@ async function verifyDirectoryControls(kind){
  assert(rowBoxes()[2].disabled,'Inactive checkbox is disabled');
  assert(buttonNamed('Approve selected').disabled,'Approval starts disabled');
  rowBoxes()[0].click();
+ rowBoxes()[1].click();
  assert(!buttonNamed('Approve selected').disabled,'Checked row enables approval');
  buttonNamed('Approve selected').click();
  assert(!$('editor').open,'Approval skips the review form');
  assert(buttonNamed('Approve selected').disabled,'Approval is disabled while pending');
- await waitFor(()=>document.querySelector('.directory-approval-results')?.textContent.includes('1 approved. 0 not approved.'));
+ await waitFor(()=>$('approval-progress').value===1);
+ assert($('approval-progress').max===2,'Progress updates before the batch finishes');
+ await waitFor(()=>document.querySelector('.directory-approval-results')?.textContent.includes('1 approved. 1 not approved.'));
  const sent=window.previewRequests[0];
- assert(sent.body.items.length===1,'Only checked rows are sent');
+ assert(sent.body.items.length===2,'Only checked rows are sent');
  assert(sent.body.items[0].id===previewRows[0].id,'Checked identity is preserved');
  assert(Object.keys(sent.body).join() === 'items','Only selected record versions are submitted');
  assert(kind==='blood-banks'?sent.body.items[0].expectedUpdatedAt===previewRows[0].updated_at:sent.body.items[0].expectedVersion===1,'Current version is sent');
- assert(document.querySelector('.directory-approval-results').textContent.includes('1 approved. 0 not approved.'),'Per-record approval result is shown');
+ assert(document.querySelector('.directory-approval-results').textContent.includes('1 approved. 1 not approved.'),'Per-record approval result is shown');
  assert(buttonNamed('Approve selected').disabled,'Reload clears old selection');
  const filter=document.querySelector('select[aria-label="Filter directory status"]');
  filter.value='inactive';filter.dispatchEvent(new Event('change'));
@@ -76,6 +93,7 @@ async function verifyDirectoryControls(kind){
  [...overviewRow.querySelectorAll('button')].find(button=>button.querySelector('span').textContent===inactiveLabel).click();
  await waitFor(()=>page===kind&&document.querySelector('select[aria-label="Filter directory status"]')?.value==='inactive');
  assert(document.querySelector('nav button.active').dataset.page===kind,'Overview updates the active navigation item');
+ assert(location.hash==='#'+kind,'Navigation keeps the current module in the URL');
  document.body.dataset.verification='passed';
 }
 `;
@@ -84,20 +102,26 @@ for (const kind of ['hospitals', 'doctors', 'blood-banks']) {
   fs.writeFileSync(path.join(out, `${kind}.html`), html.replace('</body>', `<script>${mock}\n${code}\n${start}</script></body>`));
   const verifyStart = `
     document.removeEventListener('DOMContentLoaded', restorePortal);
-    page='${kind}';
     void(async()=>{
       try{
         const key='preview.started.${kind}';
         const reloaded=sessionStorage.getItem(key)==='yes';
         if(!reloaded){
+          history.replaceState(null,'','#${kind}');
           savePortalSession({accessToken:'synthetic-preview',refreshToken:'synthetic-refresh'});
           sessionStorage.setItem(key,'yes');
         }
         tokens=null;
         await restorePortal();
         if($('portal').hidden||!$('login').hidden)throw new Error('The saved session did not restore');
-        if(reloaded)document.body.dataset.verification='restored';
-        else await verifyDirectoryControls('${kind}');
+        if(reloaded){
+          if(page!=='${kind}'||document.querySelector('select[aria-label="Filter directory status"]')?.value!=='inactive'||document.querySelector('select[aria-label="Records per page"]')?.value!=='500')throw new Error('The directory view did not restore');
+          document.body.dataset.verification='restored';
+        }
+        else {
+          await verifyDirectoryControls('${kind}');
+          if(new URLSearchParams(location.search).has('reload')) location.reload();
+        }
       }catch(error){document.body.dataset.verification='failed';$('message').textContent=error.message}
     })();`;
   fs.writeFileSync(path.join(out, `${kind}-verify.html`), html.replace('</body>', `<script>${mock}\n${code}\n${checks}\n${verifyStart}</script></body>`));

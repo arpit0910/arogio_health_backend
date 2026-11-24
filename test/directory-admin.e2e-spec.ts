@@ -54,8 +54,20 @@ describe('Directory status indexes and selected-record approvals', () => {
     const [remaining] = second.body.items as BankVersion[];
     const approvalPath = '/api/v1/admin/directory-approvals/blood-banks';
     await request(app.getHttpServer()).post(approvalPath).set(auth()).send({ items: [...items, item(remaining!)] }).expect(400);
-    const result = await request(app.getHttpServer()).post(approvalPath).set(auth()).send({ items }).expect(201);
-    expect(result.body).toMatchObject({ approved: 500, failed: 0 });
+    const result = await request(app.getHttpServer()).post(approvalPath).set(auth())
+      .set('Accept', 'application/x-ndjson').send({ items }).buffer(true)
+      .parse((response, done) => {
+        let text = '';
+        response.setEncoding('utf8');
+        response.on('data', (chunk: string) => { text += chunk; });
+        response.on('end', () => done(null, text.trim().split('\n').map((line) => JSON.parse(line))));
+        response.on('error', done);
+      })
+      .expect(201).expect('Content-Type', /application\/x-ndjson/);
+    expect(result.body).toHaveLength(501);
+    expect(result.body[0]).toMatchObject({ type: 'progress', processed: 1, approved: 1, failed: 0 });
+    expect(result.body[499]).toMatchObject({ type: 'progress', processed: 500, approved: 500, failed: 0 });
+    expect(result.body[500]).toMatchObject({ type: 'complete', approved: 500, failed: 0 });
   });
 
   it('shows inactive and incomplete hospitals with accurate counts across pages and explicit missing fields', async () => {

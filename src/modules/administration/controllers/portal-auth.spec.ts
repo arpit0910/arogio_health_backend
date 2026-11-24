@@ -21,6 +21,21 @@ function actualFunctions(names: string[]) {
     .join('\n');
 }
 describe('portal session lifecycle', () => {
+  it('keeps the selected section on the canonical root URL', () => {
+    const location = new URL('https://backend.arogio.com/admin/#doctors');
+    const replaceState = jest.fn(), pushState = jest.fn();
+    const context = vm.createContext({ URL, window: { location, history: { replaceState, pushState } } });
+    vm.runInContext(`
+      const portalPages = new Set(['doctors', 'hospitals']);
+      ${actualFunctions(['portalPageFromUrl', 'syncPortalUrl'])}
+      let page = portalPageFromUrl();
+      syncPortalUrl();
+    `, context);
+    expect(replaceState).toHaveBeenCalledTimes(1);
+    expect(String(replaceState.mock.calls[0]?.[2])).toBe('https://backend.arogio.com/#doctors');
+    expect(pushState).not.toHaveBeenCalled();
+  });
+
   it('retries a delayed old-token 401 with current tokens instead of rotating twice', async () => {
     let resolveDelayed: (value: unknown) => void = () => {};
     let rotations = 0;

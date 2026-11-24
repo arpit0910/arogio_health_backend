@@ -53,6 +53,7 @@ const doctorLabel = (key) =>
   })[key] || key.replace(/_/g, ' ').replace(/^./, (letter) => letter.toUpperCase());
 
 async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
+  rememberDirectoryView('doctors', { current, term, city, status, size: directoryPageSizes.doctors });
   reset('Doctors');
   const rev = requestRevision,
     section = panel(),
@@ -61,11 +62,11 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
   const search = el('input');
   search.type = 'search';
   search.value = term;
-  search.placeholder = 'Search English or Hindi name, area or city';
-  search.setAttribute('aria-label', search.placeholder);
+  search.placeholder = 'Name or area';
+  search.setAttribute('aria-label', 'Search English or Hindi doctor names, areas or cities');
   const location = el('input');
   location.value = city;
-  location.placeholder = 'City (all locations if empty)';
+  location.placeholder = 'Any city';
   location.setAttribute('aria-label', 'Filter doctor city');
   const filter = directoryStatusFilter('doctors', status, next => doctorsPage(1, search.value.trim(), location.value.trim(), next));
   const searchButton = el('button', 'Search');

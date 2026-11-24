@@ -41,6 +41,7 @@ const labelFor = (key) =>
     .replace(/_/g, ' ')
     .replace(/\b(en|hi)\b/g, (value) => (value === 'en' ? '(English)' : '(Hindi)'));
 async function directoryPage(kind, current = 1, term = '', status = 'all') {
+  rememberDirectoryView(kind, { current, term, status, size: directoryPageSizes[kind] });
   const articles = kind === 'articles',
     title = articles ? 'Articles' : 'Blood banks';
   reset(title);

@@ -1,5 +1,6 @@
-import { BadRequestException, Body, ConflictException, Controller, Get, HttpException, Logger, Param, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, Get, Headers, HttpException, Logger, Param, Post, Res, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import type { Response } from 'express';
 import { z } from 'zod';
 import { maxDirectoryApprovalSize } from '../../../common/directory/admin-status';
 import { JwtAuthGuard } from '../../../common/authentication/jwt-auth.guard';
@@ -32,7 +33,13 @@ export class DirectoryApprovalsController {
   }
   @Post(':kind')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  async approve(@CurrentUser() actor: RequestUser, @Param('kind') rawKind: string, @Body() body: unknown) {
+  async approve(
+    @CurrentUser() actor: RequestUser,
+    @Param('kind') rawKind: string,
+    @Body() body: unknown,
+    @Headers('accept') accept: string | undefined,
+    @Res() response: Response,
+  ) {
     const parsed = batchInput.safeParse(body), kind = z.enum(['hospitals', 'doctors', 'blood-banks']).safeParse(rawKind);
     if (!parsed.success || !kind.success) throw new BadRequestException(parsed.success ? 'Choose hospitals, doctors or blood banks.' : parsed.error.issues.map(issue => issue.message).join('; '));
     const { items, ...review } = 'reviewerName' in parsed.data ? parsed.data : {
@@ -43,7 +50,22 @@ export class DirectoryApprovalsController {
       confirmedDetails: true,
     };
     if (items.some(item => kind.data === 'blood-banks' ? !item.expectedUpdatedAt || item.expectedVersion !== undefined : !item.expectedVersion || item.expectedUpdatedAt !== undefined)) throw new BadRequestException('Refresh the list and select records with their current version.');
+    const stream = accept?.split(',').some((type) => type.trim() === 'application/x-ndjson');
+    if (stream) {
+      response.status(201).set({
+        'Content-Type': 'application/x-ndjson; charset=utf-8',
+        'Cache-Control': 'no-store, no-transform',
+        'X-Accel-Buffering': 'no',
+      });
+      response.flushHeaders();
+    }
+    const writeProgress = (event: object) => {
+      if (stream && !response.destroyed && !response.writableEnded) {
+        response.write(`${JSON.stringify(event)}\n`);
+      }
+    };
     const results: { id: string; name: string; status: 'approved' | 'failed'; message: string }[] = [];
+    let approved = 0;
     for (const item of items) {
       let name = item.id;
       try {
@@ -61,6 +83,7 @@ export class DirectoryApprovalsController {
           await this.care.reviewBank(item.id, actor.userId, { ...review, expectedUpdatedAt: item.expectedUpdatedAt, publish: true }, true);
         }
         results.push({ id: item.id, name, status: 'approved', message: 'Approval recorded.' });
+        approved++;
       } catch (error) {
         let message = 'Approval could not be completed. Refresh and try again.';
         if (error instanceof HttpException) {
@@ -69,7 +92,14 @@ export class DirectoryApprovalsController {
         } else this.logger.error('Unexpected failure while approving a directory record.');
         results.push({ id: item.id, name, status: 'failed', message });
       }
+      writeProgress({ type: 'progress', processed: results.length, approved, failed: results.length - approved });
     }
-    return { approved: results.filter(item => item.status === 'approved').length, failed: results.filter(item => item.status === 'failed').length, results };
+    const result = { approved, failed: results.length - approved, results };
+    if (stream) {
+      writeProgress({ type: 'complete', ...result });
+      if (!response.destroyed) response.end();
+    } else {
+      response.status(201).json(result);
+    }
   }
 }
