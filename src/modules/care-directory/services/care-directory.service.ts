@@ -338,10 +338,7 @@ export class CareDirectoryService {
   }
   async reviewBank(id: string, actor: string, body: unknown, requireActive = false) {
     this.parse(z.uuid(), id);
-    const review = this.parse(
-      reviewInput,
-      body,
-    );
+    const review = this.parse(reviewInput, body);
     return this.database.db.transaction(async (tx) => {
       const [bank] = await tx
         .select()
@@ -354,7 +351,7 @@ export class CareDirectoryService {
         throw new ConflictException('Bank changed. Reload before reviewing.');
       if (
         review.publish &&
-        (!bank.address_en ||
+        (!bank.address_en.trim() ||
           !/^\+?\d{6,15}$/.test((bank.phone ?? '').replace(/[ ()-]/g, '')))
       )
         throw new BadRequestException(

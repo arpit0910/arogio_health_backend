@@ -112,6 +112,16 @@ describe('Directory status indexes and selected-record approvals', () => {
     const shown = await request(app.getHttpServer()).get('/api/v1/public/blood-banks').expect(200);
     expect(shown.body.items).toHaveLength(1); expect(shown.body.items[0].city).toBe('Delhi'); expect(shown.body.items[0].is_verified).toBe(true);
   });
+
+  it('approves an individual blood bank using its address and phone without a source URL', async () => {
+    const active = await bank('Test bank with contact details');
+    const approved = await request(app.getHttpServer())
+      .post(`/api/v1/admin/care/blood-banks/${active.id}/review`).set(auth())
+      .send({ confirmedDetails: true, expectedUpdatedAt: active.updated_at, publish: true })
+      .expect(201);
+    expect(approved.body).toMatchObject({ is_verified: true });
+    expect(approved.body).not.toHaveProperty('source_url');
+  });
   it('reports incomplete doctors, approves selected complete doctors and prevents stale replay', async () => {
     const department = await request(app.getHttpServer()).post('/api/v1/admin/departments').set(auth()).send({ record_key: 'test-department', name_en: 'Test department', is_active: true }).expect(201);
     const input = { record_key: 'complete-doctor', name_en: 'Test doctor', city: 'Delhi', state: 'Delhi', address_line1: 'Synthetic address', phone_1: '+919000000000', registration_number: 'TEST-123', medical_council: 'Test council', qualifications: ['MBBS'], department_ids: [department.body.id as string] };
