@@ -66,16 +66,16 @@ let MeditationLibraryService = class MeditationLibraryService {
             }
             : publicRow;
     }
-    async get(id) {
+    async get(id, admin = true) {
         const uuid = this.parse(zod_1.z.uuid(), id);
         const [row] = await this.database.db
             .select()
             .from(schema_1.meditationLibraryItems)
-            .where((0, drizzle_orm_1.eq)(schema_1.meditationLibraryItems.id, uuid))
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.meditationLibraryItems.id, uuid), admin ? undefined : (0, drizzle_orm_1.eq)(schema_1.meditationLibraryItems.published, true)))
             .limit(1);
         if (!row)
             throw new common_1.NotFoundException('Meditation content not found');
-        return this.present(row, true);
+        return this.present(row, admin);
     }
     async save(id, actor, body) {
         const data = this.parse(meditation_library_input_1.meditationInput, body);
@@ -88,26 +88,41 @@ let MeditationLibraryService = class MeditationLibraryService {
                 : data.durationSeconds,
             updatedAt: new Date(),
         };
-        if (!id) {
-            const [row] = await this.database.db
-                .insert(schema_1.meditationLibraryItems)
-                .values({ ...record, createdBy: actor })
-                .returning();
-            return this.present(row, true);
-        }
-        const uuid = this.parse(zod_1.z.uuid(), id);
-        if (!expectedUpdatedAt)
+        const uuid = id ? this.parse(zod_1.z.uuid(), id) : null;
+        if (uuid && !expectedUpdatedAt)
             throw new common_1.BadRequestException('Reload the content before saving changes.');
-        const [row] = await this.database.db
-            .update(schema_1.meditationLibraryItems)
-            .set(record)
-            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.meditationLibraryItems.id, uuid), (0, drizzle_orm_1.eq)(schema_1.meditationLibraryItems.updatedAt, new Date(expectedUpdatedAt))))
-            .returning();
-        if (!row) {
-            await this.get(uuid);
-            throw new common_1.ConflictException('This content changed. Reload it before saving.');
-        }
-        return this.present(row, true);
+        return this.database.db.transaction(async (tx) => {
+            const [row] = uuid && expectedUpdatedAt
+                ? await tx.update(schema_1.meditationLibraryItems).set({
+                    ...record,
+                    publishedVersion: data.published ? (0, drizzle_orm_1.sql) `${schema_1.meditationLibraryItems.publishedVersion} + 1` : undefined,
+                    updatedAt: (0, drizzle_orm_1.sql) `greatest(date_trunc('milliseconds', clock_timestamp()), ${schema_1.meditationLibraryItems.updatedAt} + interval '1 millisecond')`,
+                }).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.meditationLibraryItems.id, uuid), (0, drizzle_orm_1.eq)(schema_1.meditationLibraryItems.updatedAt, new Date(expectedUpdatedAt)))).returning()
+                : await tx.insert(schema_1.meditationLibraryItems).values({
+                    ...record, createdBy: actor, publishedVersion: data.published ? 1 : 0,
+                }).returning();
+            if (!row) {
+                const [existing] = await tx.select({ id: schema_1.meditationLibraryItems.id }).from(schema_1.meditationLibraryItems).where((0, drizzle_orm_1.eq)(schema_1.meditationLibraryItems.id, uuid));
+                if (!existing)
+                    throw new common_1.NotFoundException('Meditation content not found');
+                throw new common_1.ConflictException('This content changed. Reload it before saving.');
+            }
+            if (row.published) {
+                await tx.insert(schema_1.wellnessPublicationVersions).values({
+                    itemId: row.id,
+                    version: row.publishedVersion,
+                    manifest: this.present(row, false),
+                    publishedBy: actor,
+                    publishedAt: row.updatedAt,
+                });
+            }
+            return this.present(row, true);
+        });
+    }
+    async publicationHistory(id) {
+        const uuid = this.parse(zod_1.z.uuid(), id);
+        return this.database.db.select().from(schema_1.wellnessPublicationVersions).where((0, drizzle_orm_1.eq)(schema_1.wellnessPublicationVersions.itemId, uuid))
+            .orderBy((0, drizzle_orm_1.desc)(schema_1.wellnessPublicationVersions.version));
     }
     async remove(id) {
         const uuid = this.parse(zod_1.z.uuid(), id);

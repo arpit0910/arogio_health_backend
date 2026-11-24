@@ -16,13 +16,14 @@ export declare class MeditationLibraryService {
             sortOrder: number;
             description_en: string;
             description_hi: string;
-            section: "affirmations" | "meditation" | "breathing" | "grounding";
+            section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
             preparation_en: string;
             preparation_hi: string;
             author: string;
             videoId: string | null;
             durationSeconds: number | null;
             steps: import("../../../database/schema").MeditationStep[];
+            publishedVersion: number;
         } | {
             createdBy: string | null;
             youtubeUrl: string;
@@ -37,20 +38,21 @@ export declare class MeditationLibraryService {
             sortOrder: number;
             description_en: string;
             description_hi: string;
-            section: "affirmations" | "meditation" | "breathing" | "grounding";
+            section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
             preparation_en: string;
             preparation_hi: string;
             author: string;
             videoId: string | null;
             durationSeconds: number | null;
             steps: import("../../../database/schema").MeditationStep[];
+            publishedVersion: number;
         })[];
         page: number;
         hasNext: boolean;
         total: number;
     }>;
     private present;
-    get(id: string): Promise<{
+    get(id: string, admin?: boolean): Promise<{
         id: string;
         repeat: number;
         createdAt: Date;
@@ -62,13 +64,14 @@ export declare class MeditationLibraryService {
         sortOrder: number;
         description_en: string;
         description_hi: string;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
+        section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;
         steps: import("../../../database/schema").MeditationStep[];
+        publishedVersion: number;
     } | {
         createdBy: string | null;
         youtubeUrl: string;
@@ -83,13 +86,14 @@ export declare class MeditationLibraryService {
         sortOrder: number;
         description_en: string;
         description_hi: string;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
+        section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;
         steps: import("../../../database/schema").MeditationStep[];
+        publishedVersion: number;
     }>;
     save(id: string | null, actor: string, body: unknown): Promise<{
         id: string;
@@ -103,13 +107,14 @@ export declare class MeditationLibraryService {
         sortOrder: number;
         description_en: string;
         description_hi: string;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
+        section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;
         steps: import("../../../database/schema").MeditationStep[];
+        publishedVersion: number;
     } | {
         createdBy: string | null;
         youtubeUrl: string;
@@ -124,14 +129,22 @@ export declare class MeditationLibraryService {
         sortOrder: number;
         description_en: string;
         description_hi: string;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
+        section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;
         steps: import("../../../database/schema").MeditationStep[];
+        publishedVersion: number;
     }>;
+    publicationHistory(id: string): Promise<{
+        itemId: string;
+        version: number;
+        manifest: Record<string, unknown>;
+        publishedBy: string | null;
+        publishedAt: Date;
+    }[]>;
     remove(id: string): Promise<{
         deleted: boolean;
     }>;

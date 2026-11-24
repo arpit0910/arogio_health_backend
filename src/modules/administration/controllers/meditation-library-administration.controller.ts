@@ -26,6 +26,10 @@ export class MeditationLibraryAdministrationController {
   @Get() list(@Query() query: unknown) {
     return this.meditation.list(query, true);
   }
+  @Get(':id/versions')
+  publicationHistory(@Param('id') id: string) {
+    return this.meditation.publicationHistory(id);
+  }
   @Get(':id') get(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.meditation.get(id);
   }

@@ -1,7 +1,10 @@
+import type { RequestUser } from '../../../common/authentication/request-user';
+import { PracticeHistoryService } from '../services/practice-history.service';
 import { MeditationLibraryService } from '../services/meditation-library.service';
 export declare class MeditationLibraryController {
     private readonly meditation;
-    constructor(meditation: MeditationLibraryService);
+    private readonly progress;
+    constructor(meditation: MeditationLibraryService, progress: PracticeHistoryService);
     list(query: unknown): Promise<{
         items: ({
             id: string;
@@ -15,13 +18,14 @@ export declare class MeditationLibraryController {
             sortOrder: number;
             description_en: string;
             description_hi: string;
-            section: "affirmations" | "meditation" | "breathing" | "grounding";
+            section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
             preparation_en: string;
             preparation_hi: string;
             author: string;
             videoId: string | null;
             durationSeconds: number | null;
             steps: import("../../../database/schema").MeditationStep[];
+            publishedVersion: number;
         } | {
             createdBy: string | null;
             youtubeUrl: string;
@@ -36,17 +40,34 @@ export declare class MeditationLibraryController {
             sortOrder: number;
             description_en: string;
             description_hi: string;
-            section: "affirmations" | "meditation" | "breathing" | "grounding";
+            section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
             preparation_en: string;
             preparation_hi: string;
             author: string;
             videoId: string | null;
             durationSeconds: number | null;
             steps: import("../../../database/schema").MeditationStep[];
+            publishedVersion: number;
         })[];
         page: number;
         hasNext: boolean;
         total: number;
+    }>;
+    history(user: RequestUser): Promise<{
+        totalSessions: number;
+        totalSeconds: number;
+        items: {
+            title_en: unknown;
+            title_hi: unknown;
+            id: string;
+            version: number;
+            elapsedSeconds: number;
+            completedAt: Date;
+        }[];
+    }>;
+    complete(user: RequestUser, body: unknown): Promise<{
+        attemptId: string;
+        completedAt: Date;
     }>;
 }
 export declare class PublicMeditationLibraryController {
@@ -65,13 +86,14 @@ export declare class PublicMeditationLibraryController {
             sortOrder: number;
             description_en: string;
             description_hi: string;
-            section: "affirmations" | "meditation" | "breathing" | "grounding";
+            section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
             preparation_en: string;
             preparation_hi: string;
             author: string;
             videoId: string | null;
             durationSeconds: number | null;
             steps: import("../../../database/schema").MeditationStep[];
+            publishedVersion: number;
         } | {
             createdBy: string | null;
             youtubeUrl: string;
@@ -86,16 +108,60 @@ export declare class PublicMeditationLibraryController {
             sortOrder: number;
             description_en: string;
             description_hi: string;
-            section: "affirmations" | "meditation" | "breathing" | "grounding";
+            section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
             preparation_en: string;
             preparation_hi: string;
             author: string;
             videoId: string | null;
             durationSeconds: number | null;
             steps: import("../../../database/schema").MeditationStep[];
+            publishedVersion: number;
         })[];
         page: number;
         hasNext: boolean;
         total: number;
+    }>;
+    detail(id: string): Promise<{
+        id: string;
+        repeat: number;
+        createdAt: Date;
+        updatedAt: Date;
+        kind: "video" | "practice";
+        published: boolean;
+        title_en: string;
+        title_hi: string;
+        sortOrder: number;
+        description_en: string;
+        description_hi: string;
+        section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
+        preparation_en: string;
+        preparation_hi: string;
+        author: string;
+        videoId: string | null;
+        durationSeconds: number | null;
+        steps: import("../../../database/schema").MeditationStep[];
+        publishedVersion: number;
+    } | {
+        createdBy: string | null;
+        youtubeUrl: string;
+        id: string;
+        repeat: number;
+        createdAt: Date;
+        updatedAt: Date;
+        kind: "video" | "practice";
+        published: boolean;
+        title_en: string;
+        title_hi: string;
+        sortOrder: number;
+        description_en: string;
+        description_hi: string;
+        section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
+        preparation_en: string;
+        preparation_hi: string;
+        author: string;
+        videoId: string | null;
+        durationSeconds: number | null;
+        steps: import("../../../database/schema").MeditationStep[];
+        publishedVersion: number;
     }>;
 }

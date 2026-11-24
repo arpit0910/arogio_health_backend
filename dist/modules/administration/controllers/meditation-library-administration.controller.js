@@ -29,6 +29,9 @@ let MeditationLibraryAdministrationController = class MeditationLibraryAdministr
     list(query) {
         return this.meditation.list(query, true);
     }
+    publicationHistory(id) {
+        return this.meditation.publicationHistory(id);
+    }
     get(id) {
         return this.meditation.get(id);
     }
@@ -50,6 +53,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], MeditationLibraryAdministrationController.prototype, "list", null);
+__decorate([
+    (0, common_1.Get)(':id/versions'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], MeditationLibraryAdministrationController.prototype, "publicationHistory", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),

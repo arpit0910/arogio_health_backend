@@ -10,6 +10,9 @@ export declare const meditationInput: z.ZodObject<{
         meditation: "meditation";
         breathing: "breathing";
         grounding: "grounding";
+        yoga: "yoga";
+        focus: "focus";
+        rest: "rest";
     }>;
     title_en: z.ZodString;
     title_hi: z.ZodDefault<z.ZodString>;
@@ -41,6 +44,9 @@ export declare const meditationListInput: z.ZodObject<{
         meditation: "meditation";
         breathing: "breathing";
         grounding: "grounding";
+        yoga: "yoga";
+        focus: "focus";
+        rest: "rest";
     }>>;
     kind: z.ZodOptional<z.ZodEnum<{
         video: "video";

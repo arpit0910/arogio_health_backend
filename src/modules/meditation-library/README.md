@@ -1,6 +1,16 @@
 # Meditation library
 
-Published meditation videos and guided practices.
+Published yoga and meditation practices and videos.
+
+In the admin portal, open **Meditation** to add or edit an item. Set its section,
+English and Hindi copy, steps or video URL, publication status, and display
+order. Lower display-order values appear first. The app groups practices by
+section and shows the published items in that order.
+
+The public list and item endpoints only return published content. The mobile
+app refreshes the catalog when users revisit a library or pull to refresh.
+Migration 0026 imports the previously bundled practices without replacing
+existing practices with matching titles.
 
 Entry point: [meditation-library.module.ts](meditation-library.module.ts).
 

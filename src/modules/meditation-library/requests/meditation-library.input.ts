@@ -24,7 +24,7 @@ export function youtubeVideoId(value: string): string | null {
 export const meditationInput = z
   .object({
     kind: z.enum(['video', 'practice']),
-    section: z.enum(['affirmations', 'meditation', 'breathing', 'grounding']),
+    section: z.enum(['affirmations', 'meditation', 'breathing', 'grounding', 'yoga', 'focus', 'rest']),
     title_en: z.string().trim().min(1).max(160),
     title_hi: z.string().trim().max(160).default(''),
     description_en: z.string().trim().max(1000).default(''),
@@ -88,6 +88,6 @@ export const meditationListInput = z.object({
   page: z.coerce.number().int().min(1).max(10000).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(24),
   search: z.string().trim().max(150).default(''),
-  section: z.enum(['affirmations', 'meditation', 'breathing', 'grounding']).optional(),
+  section: z.enum(['affirmations', 'meditation', 'breathing', 'grounding', 'yoga', 'focus', 'rest']).optional(),
   kind: z.enum(['video', 'practice']).optional(),
 });

@@ -4,10 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, count, eq, ilike, or, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { DatabaseService } from '../../../database/database.service';
-import { meditationLibraryItems as content } from '../../../database/schema';
+import { meditationLibraryItems as content, wellnessPublicationVersions as versions } from '../../../database/schema';
 import { meditationInput, meditationListInput, youtubeVideoId } from '../requests/meditation-library.input';
 
 @Injectable()
@@ -60,15 +60,15 @@ export class MeditationLibraryService {
         }
       : publicRow;
   }
-  async get(id: string) {
+  async get(id: string, admin = true) {
     const uuid = this.parse(z.uuid(), id);
     const [row] = await this.database.db
       .select()
       .from(content)
-      .where(eq(content.id, uuid))
+      .where(and(eq(content.id, uuid), admin ? undefined : eq(content.published, true)))
       .limit(1);
     if (!row) throw new NotFoundException('Meditation content not found');
-    return this.present(row, true);
+    return this.present(row, admin);
   }
   async save(id: string | null, actor: string, body: unknown) {
     const data = this.parse(meditationInput, body);
@@ -82,26 +82,41 @@ export class MeditationLibraryService {
           : data.durationSeconds,
       updatedAt: new Date(),
     };
-    if (!id) {
-      const [row] = await this.database.db
-        .insert(content)
-        .values({ ...record, createdBy: actor })
-        .returning();
-      return this.present(row!, true);
-    }
-    const uuid = this.parse(z.uuid(), id);
-    if (!expectedUpdatedAt)
+    const uuid = id ? this.parse(z.uuid(), id) : null;
+    if (uuid && !expectedUpdatedAt)
       throw new BadRequestException('Reload the content before saving changes.');
-    const [row] = await this.database.db
-      .update(content)
-      .set(record)
-      .where(and(eq(content.id, uuid), eq(content.updatedAt, new Date(expectedUpdatedAt))))
-      .returning();
-    if (!row) {
-      await this.get(uuid);
-      throw new ConflictException('This content changed. Reload it before saving.');
-    }
-    return this.present(row, true);
+
+    return this.database.db.transaction(async (tx) => {
+      const [row] = uuid && expectedUpdatedAt
+        ? await tx.update(content).set({
+            ...record,
+            publishedVersion: data.published ? sql`${content.publishedVersion} + 1` : undefined,
+            updatedAt: sql`greatest(date_trunc('milliseconds', clock_timestamp()), ${content.updatedAt} + interval '1 millisecond')`,
+          }).where(and(eq(content.id, uuid), eq(content.updatedAt, new Date(expectedUpdatedAt)))).returning()
+        : await tx.insert(content).values({
+            ...record, createdBy: actor, publishedVersion: data.published ? 1 : 0,
+          }).returning();
+      if (!row) {
+        const [existing] = await tx.select({ id: content.id }).from(content).where(eq(content.id, uuid!));
+        if (!existing) throw new NotFoundException('Meditation content not found');
+        throw new ConflictException('This content changed. Reload it before saving.');
+      }
+      if (row.published) {
+        await tx.insert(versions).values({
+          itemId: row.id,
+          version: row.publishedVersion,
+          manifest: this.present(row, false),
+          publishedBy: actor,
+          publishedAt: row.updatedAt,
+        });
+      }
+      return this.present(row, true);
+    });
+  }
+  async publicationHistory(id: string) {
+    const uuid = this.parse(z.uuid(), id);
+    return this.database.db.select().from(versions).where(eq(versions.itemId, uuid))
+      .orderBy(desc(versions.version));
   }
   async remove(id: string) {
     const uuid = this.parse(z.uuid(), id);

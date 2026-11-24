@@ -28,7 +28,7 @@ function youtubeVideoId(value) {
 exports.meditationInput = zod_1.z
     .object({
     kind: zod_1.z.enum(['video', 'practice']),
-    section: zod_1.z.enum(['affirmations', 'meditation', 'breathing', 'grounding']),
+    section: zod_1.z.enum(['affirmations', 'meditation', 'breathing', 'grounding', 'yoga', 'focus', 'rest']),
     title_en: zod_1.z.string().trim().min(1).max(160),
     title_hi: zod_1.z.string().trim().max(160).default(''),
     description_en: zod_1.z.string().trim().max(1000).default(''),
@@ -91,7 +91,7 @@ exports.meditationListInput = zod_1.z.object({
     page: zod_1.z.coerce.number().int().min(1).max(10000).default(1),
     limit: zod_1.z.coerce.number().int().min(1).max(100).default(24),
     search: zod_1.z.string().trim().max(150).default(''),
-    section: zod_1.z.enum(['affirmations', 'meditation', 'breathing', 'grounding']).optional(),
+    section: zod_1.z.enum(['affirmations', 'meditation', 'breathing', 'grounding', 'yoga', 'focus', 'rest']).optional(),
     kind: zod_1.z.enum(['video', 'practice']).optional(),
 });
 //# sourceMappingURL=meditation-library.input.js.map

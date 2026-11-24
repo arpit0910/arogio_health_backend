@@ -61,12 +61,12 @@ describe('Admin-managed meditation library', () => {
       .get('/api/v1/meditation/content')
       .set(read())
       .expect(200);
-    expect(seeded.body.items).toHaveLength(6);
+    expect(seeded.body.items).toHaveLength(13);
     expect(
       (seeded.body.items as { kind: string }[]).filter(
         (row: { kind: string }) => row.kind === 'practice',
       ),
-    ).toHaveLength(4);
+    ).toHaveLength(11);
     expect(
       (seeded.body.items as Record<string, unknown>[]).every(
         (row: Record<string, unknown>) => !('createdBy' in row),
@@ -85,6 +85,7 @@ describe('Admin-managed meditation library', () => {
       .expect(201);
     expect(draft.body).toMatchObject({ videoId: 's2NISyShKXM', published: false });
     const id = draft.body.id as string;
+    await request(app.getHttpServer()).get(`/api/v1/public/meditation/content/${id}`).expect(404);
     expect(
       (
         await request(app.getHttpServer())
@@ -116,6 +117,21 @@ describe('Admin-managed meditation library', () => {
       .set(auth())
       .send(payload)
       .expect(200);
+    const publicDetail = await request(app.getHttpServer()).get(`/api/v1/public/meditation/content/${id}`).expect(200);
+    expect(publicDetail.body).toMatchObject({ title_en: 'New video', sortOrder: 100 });
+    expect(publicDetail.body).not.toHaveProperty('createdBy');
+    const revised = await request(app.getHttpServer())
+      .patch(`/api/v1/admin/meditation/${id}`).set(auth())
+      .send({ ...payload, sortOrder: 101, expectedUpdatedAt: published.body.updatedAt })
+      .expect(200);
+    expect(revised.body.publishedVersion).toBe(2);
+    await request(app.getHttpServer()).get(`/api/v1/admin/meditation/${id}/versions`).set(read()).expect(403);
+    const history = await request(app.getHttpServer())
+      .get(`/api/v1/admin/meditation/${id}/versions`).set(auth()).expect(200);
+    expect(history.body).toMatchObject([
+      { version: 2, manifest: { sortOrder: 101 } },
+      { version: 1, manifest: { sortOrder: 100 } },
+    ]);
     expect(
       (
         await request(app.getHttpServer())
@@ -131,8 +147,9 @@ describe('Admin-managed meditation library', () => {
     await request(app.getHttpServer())
       .patch(`/api/v1/admin/meditation/${id}`)
       .set(auth())
-      .send({ ...payload, expectedUpdatedAt: published.body.updatedAt, published: false })
+      .send({ ...payload, expectedUpdatedAt: revised.body.updatedAt, published: false })
       .expect(200);
+    await request(app.getHttpServer()).get(`/api/v1/public/meditation/content/${id}`).expect(404);
     expect(
       (
         await request(app.getHttpServer())
@@ -148,6 +165,9 @@ describe('Admin-managed meditation library', () => {
       .get(`/api/v1/admin/meditation/${id}`)
       .set(auth())
       .expect(404);
+    await request(app.getHttpServer())
+      .get(`/api/v1/admin/meditation/${id}/versions`).set(auth()).expect(200)
+      .expect(response => expect(response.body).toHaveLength(2));
     const audit = await request(app.getHttpServer())
       .get('/api/v1/admin/audit')
       .set(auth())
@@ -261,4 +281,27 @@ describe('Admin-managed meditation library', () => {
       .send({ ...fields, youtubeUrl: '', expectedUpdatedAt: row.updatedAt })
       .expect(200);
   });
+  it('records a versioned completion once and keeps history private to its owner', async () => {
+    const itemId = '8e0bc1a0-6ce8-4000-8000-000000000001';
+    const attemptId = '85a825cd-0a8c-42db-9b22-40af79bc966e';
+    const endpoint = '/api/v1/meditation/progress';
+    const input = { attemptId, itemId, version: 1, elapsedSeconds: 120 };
+    const server = app.getHttpServer();
+    await request(server).get(endpoint).expect(401);
+    await request(server).post(endpoint).set(read()).send({ ...input, elapsedSeconds: 119 }).expect(400);
+    await request(server).post(endpoint).set(read()).send({ ...input, version: 999 }).expect(404);
+    const first = await request(server).post(endpoint).set(read()).send(input).expect(201);
+    const retry = await request(server).post(endpoint).set(read()).send(input).expect(201);
+    expect(retry.body).toEqual(first.body);
+    const own = await request(server).get(endpoint).set(read()).expect(200);
+    expect(own.body).toMatchObject({ totalSessions: 1, totalSeconds: 120,
+      items: [{ id: attemptId, title_en: 'Gentle breathing', elapsedSeconds: 120, version: 1 }],
+    });
+    const other = await request(server).get(endpoint).set(auth()).expect(200);
+    expect(other.body).toEqual({ totalSessions: 0, totalSeconds: 0, items: [] });
+    await request(server).post(endpoint).set(read()).send({
+      ...input, itemId: '8e0bc1a0-6ce8-4000-8000-000000000004',
+    }).expect(409);
+  });
+
 });

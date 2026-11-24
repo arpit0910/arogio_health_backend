@@ -4,6 +4,9 @@ const meditationSections = [
   ['meditation', 'Meditation'],
   ['breathing', 'Breathing'],
   ['grounding', 'Grounding'],
+  ['yoga', 'Yoga'],
+  ['focus', 'Focus & awareness'],
+  ['rest', 'Rest & reflection'],
 ];
 const meditationCopyFields = [
   'title_en',

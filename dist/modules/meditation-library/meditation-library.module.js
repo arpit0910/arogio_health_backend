@@ -10,6 +10,7 @@ exports.MeditationLibraryModule = void 0;
 const common_1 = require("@nestjs/common");
 const authentication_module_1 = require("../authentication/authentication.module");
 const meditation_library_controller_1 = require("./controllers/meditation-library.controller");
+const practice_history_service_1 = require("./services/practice-history.service");
 const meditation_library_service_1 = require("./services/meditation-library.service");
 let MeditationLibraryModule = class MeditationLibraryModule {
 };
@@ -18,7 +19,7 @@ exports.MeditationLibraryModule = MeditationLibraryModule = __decorate([
     (0, common_1.Module)({
         imports: [authentication_module_1.AuthenticationModule],
         controllers: [meditation_library_controller_1.MeditationLibraryController, meditation_library_controller_1.PublicMeditationLibraryController],
-        providers: [meditation_library_service_1.MeditationLibraryService],
+        providers: [meditation_library_service_1.MeditationLibraryService, practice_history_service_1.PracticeHistoryService],
         exports: [meditation_library_service_1.MeditationLibraryService],
     })
 ], MeditationLibraryModule);

@@ -18,13 +18,14 @@ export declare class MeditationLibraryAdministrationController {
             sortOrder: number;
             description_en: string;
             description_hi: string;
-            section: "affirmations" | "meditation" | "breathing" | "grounding";
+            section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
             preparation_en: string;
             preparation_hi: string;
             author: string;
             videoId: string | null;
             durationSeconds: number | null;
             steps: import("../../../database/schema").MeditationStep[];
+            publishedVersion: number;
         } | {
             createdBy: string | null;
             youtubeUrl: string;
@@ -39,18 +40,26 @@ export declare class MeditationLibraryAdministrationController {
             sortOrder: number;
             description_en: string;
             description_hi: string;
-            section: "affirmations" | "meditation" | "breathing" | "grounding";
+            section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
             preparation_en: string;
             preparation_hi: string;
             author: string;
             videoId: string | null;
             durationSeconds: number | null;
             steps: import("../../../database/schema").MeditationStep[];
+            publishedVersion: number;
         })[];
         page: number;
         hasNext: boolean;
         total: number;
     }>;
+    publicationHistory(id: string): Promise<{
+        itemId: string;
+        version: number;
+        manifest: Record<string, unknown>;
+        publishedBy: string | null;
+        publishedAt: Date;
+    }[]>;
     get(id: string): Promise<{
         id: string;
         repeat: number;
@@ -63,13 +72,14 @@ export declare class MeditationLibraryAdministrationController {
         sortOrder: number;
         description_en: string;
         description_hi: string;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
+        section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;
         steps: import("../../../database/schema").MeditationStep[];
+        publishedVersion: number;
     } | {
         createdBy: string | null;
         youtubeUrl: string;
@@ -84,13 +94,14 @@ export declare class MeditationLibraryAdministrationController {
         sortOrder: number;
         description_en: string;
         description_hi: string;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
+        section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;
         steps: import("../../../database/schema").MeditationStep[];
+        publishedVersion: number;
     }>;
     create(user: RequestUser, body: unknown): Promise<{
         id: string;
@@ -104,13 +115,14 @@ export declare class MeditationLibraryAdministrationController {
         sortOrder: number;
         description_en: string;
         description_hi: string;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
+        section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;
         steps: import("../../../database/schema").MeditationStep[];
+        publishedVersion: number;
     } | {
         createdBy: string | null;
         youtubeUrl: string;
@@ -125,13 +137,14 @@ export declare class MeditationLibraryAdministrationController {
         sortOrder: number;
         description_en: string;
         description_hi: string;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
+        section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;
         steps: import("../../../database/schema").MeditationStep[];
+        publishedVersion: number;
     }>;
     update(user: RequestUser, id: string, body: unknown): Promise<{
         id: string;
@@ -145,13 +158,14 @@ export declare class MeditationLibraryAdministrationController {
         sortOrder: number;
         description_en: string;
         description_hi: string;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
+        section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;
         steps: import("../../../database/schema").MeditationStep[];
+        publishedVersion: number;
     } | {
         createdBy: string | null;
         youtubeUrl: string;
@@ -166,13 +180,14 @@ export declare class MeditationLibraryAdministrationController {
         sortOrder: number;
         description_en: string;
         description_hi: string;
-        section: "affirmations" | "meditation" | "breathing" | "grounding";
+        section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;
         steps: import("../../../database/schema").MeditationStep[];
+        publishedVersion: number;
     }>;
     remove(user: RequestUser, id: string): Promise<{
         deleted: boolean;
