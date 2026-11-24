@@ -19,7 +19,7 @@ export const doctors = pgTable(
     id: uuid('id')
       .primaryKey()
       .references(() => careDirectoryEntries.id, { onDelete: 'cascade' }),
-    source_key: text('source_key').notNull().unique(),
+    record_key: text('record_key').notNull().unique(),
     name_en: text('name_en').notNull(),
     name_hi: text('name_hi').notNull().default(''),
     address_line1: text('address_line1').notNull().default(''),
@@ -35,7 +35,6 @@ export const doctors = pgTable(
     phone_2: text('phone_2'),
     email: text('email'),
     website: text('website'),
-    source_url: text('source_url'),
     latitude: doublePrecision('latitude'),
     longitude: doublePrecision('longitude'),
     registration_number: text('registration_number').notNull().default(''),

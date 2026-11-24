@@ -14,7 +14,7 @@ export const bloodBankDirectoryEntries = pgTable(
   'blood_bank_directory_entries',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    source_id: text('source_id').notNull().unique(),
+    record_key: text('record_key').notNull().unique(),
     name_en: text('name_en').notNull(),
     name_hi: text('name_hi').notNull().default(''),
     city: text('city').notNull(),
@@ -30,7 +30,6 @@ export const bloodBankDirectoryEntries = pgTable(
     email: text('email'),
     website: text('website'),
     is_verified: boolean('is_verified').notNull().default(false),
-    source_url: text('source_url'),
     verified_at: timestamp('verified_at', { withTimezone: true }),
     is_24_7: boolean('is_24_7').notNull().default(false),
     is_government: boolean('is_government').notNull().default(false),

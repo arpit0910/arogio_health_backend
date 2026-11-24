@@ -1,6 +1,6 @@
 # Hospitals
 
-Approved independently on 15 November 2026. This module adds structured hospital records, protected administration, public discovery, source review and CSV/XLSX import. It does not add a Doctors module or import existing records.
+Approved independently on 15 November 2026. This module adds structured hospital records, protected administration, public discovery, listing review and CSV/XLSX import. It does not add a Doctors module or import existing records.
 
 ## Source map
 
@@ -17,7 +17,7 @@ Approved independently on 15 November 2026. This module adds structured hospital
 
 `hospitals.id` references the same UUID in `care_directory_entries`. The structured hospital record is authoritative; the care row is its transactional search/compatibility projection. New records are written to both tables in one transaction. They are not two independent catalogs.
 
-Existing `/care?kind=hospital`, `/care/:id`, corrections, affiliation IDs and Home discovery keep that identity. Hospital discovery accepts supplied cities and has no implicit city restriction when a hospital list is requested without a city. Existing doctor coverage behavior is unchanged. Old care entries without a structured profile continue to work; they are not automatically copied or adopted. A colliding source key requires explicit identity resolution rather than a duplicate hospital.
+Existing `/care?kind=hospital`, `/care/:id`, corrections, affiliation IDs and Home discovery keep that identity. Hospital discovery accepts supplied cities and has no implicit city restriction when a hospital list is requested without a city. Existing doctor coverage behavior is unchanged. Old care entries without a structured profile continue to work; they are not automatically copied or adopted. A colliding record key requires explicit identity resolution rather than a duplicate hospital.
 
 Use the new **Hospitals** portal tab to edit a structured hospital. Legacy care editing cannot overwrite its projection. Legacy review still validates hospital source requirements and advances the hospital version. Existing affiliation/correction references can prevent deletion; withdraw publication instead. No doctor records or new affiliation tables are created by hospital imports.
 
@@ -33,7 +33,7 @@ Paths below are under `/api/v1`. Admin routes require an active super-administra
 | GET | `/admin/hospitals/:id` | Full record for administration |
 | POST | `/admin/hospitals` | Create a draft hospital and care projection |
 | PATCH | `/admin/hospitals/:id` | Partial edit with `expectedVersion`; returns the hospital to draft |
-| POST | `/admin/hospitals/:id/review` | Version-checked source review/publication or withdrawal |
+| POST | `/admin/hospitals/:id/review` | Version-checked listing review/publication or withdrawal |
 | DELETE | `/admin/hospitals/:id?expected_version=1` | Version-checked deletion of the hospital and its care projection |
 | GET | `/admin/hospitals/template?format=xlsx` | XLSX template; `format=csv` returns CSV |
 | POST | `/admin/hospitals/import/preview` | File validation and create/update/error preview, without writes |
@@ -43,17 +43,17 @@ List queries: `search`, `city`, `state`, `type`, `benefit`, `language=en/hi`, `p
 
 ## Fields and publication
 
-Required identity/location: `source_key`, `name_en`, `city`, `state`. Optional bilingual name/address/summary, structured address lines/landmark/pincode, two country-code/phone pairs, email, HTTPS website/source URL, paired coordinates, type, specialties and cashless scheme labels are supported.
+Required identity/location: `record_key`, `name_en`, `city`, `state`. Optional bilingual name/address/summary, structured address lines/landmark/pincode, two country-code/phone pairs, email, HTTPS website/listing link, paired coordinates, type, specialties and cashless scheme labels are supported.
 
 Scheme/facility flags are nullable: `accepts_ayushman`, `accepts_janaadhaar`, `accepts_cghs`, `accepts_esic`, `rgahs_approved`, `is_cashless`, `nabh_accredited`, `is_24_7`. Null means unknown; it is not converted to false or true. These are sourced catalog fields, not a live scheme verification integration.
 
-An international phone starts with `+`; otherwise its country code is required. Public publication requires an address, primary contact, HTTPS source URL, reviewer identity/role, evidence, explicit source confirmation and the current version. Review is current for 180 days, matching the existing care policy. No live beds, appointment slots or guaranteed availability are inferred. Every metadata edit or import update withdraws publication and clears review, even when the source key is unchanged.
+An international phone starts with `+`; otherwise its country code is required. Public publication requires an address, primary contact, HTTPS listing link, reviewer identity/role, evidence, explicit source confirmation and the current version. Review is current for 180 days, matching the existing care policy. No live beds, appointment slots or guaranteed availability are inferred. Every metadata edit or import update withdraws publication and clears review, even when the record key is unchanged.
 
 ## File imports
 
-Download the current template for the complete canonical columns. English/Hindi strings are preserved. Array columns `specialties` and `cashless_schemes` use semicolons. Boolean columns accept `1/0`, `true/false` or blank (unknown). Empty coordinates, phones, website, email and source URL stay missing. A draft can omit contact/source data but cannot be published until reviewed.
+Download the current template for the complete canonical columns. English/Hindi strings are preserved. Array columns `specialties` and `cashless_schemes` use semicolons. Boolean columns accept `1/0`, `true/false` or blank (unknown). Empty coordinates, phones, website, email and listing link stay missing. A draft can omit contact/source data but cannot be published until reviewed.
 
-The SwasthyaSearch hospital export is supported: legacy numeric `id` becomes `swasthya:hospital:<id>`; `type` maps to `hospital_type`; original address and phone columns are retained; `cashless_schemes_list` maps to the canonical list. Supported historical phone/eligibility aliases are normalized. Conflicting alias values, duplicate file identities, unknown columns and invalid rows are reported. `is_verified` is explicitly ignored for publication and counted in the preview. Supply `source_key` or legacy `id`, never both.
+The SwasthyaSearch hospital export is supported: legacy numeric `id` becomes `swasthya:hospital:<id>`; `type` maps to `hospital_type`; original address and phone columns are retained; `cashless_schemes_list` maps to the canonical list. Supported historical phone/eligibility aliases are normalized. Conflicting alias values, duplicate file identities, unknown columns and invalid rows are reported. `is_verified` is explicitly ignored for publication and counted in the preview. Supply `record_key` or legacy `id`, never both.
 
 Imports are limited to 8 MB/5,000 rows. XLSX uses the existing bounded, single-visible-sheet parser and rejects formulas, macros, encrypted archives and merged cells. Any row error prevents apply. Source keys update the same UUID; names alone never merge facilities. A signed preview expires after 10 minutes and binds uploaded bytes, actor and current hospital state. Replays, stale records, changed files and expired previews require another preview. Audit writes and both hospital/projection changes share the transaction.
 

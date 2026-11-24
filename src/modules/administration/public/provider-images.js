@@ -45,7 +45,7 @@ async function providerImageEditor(kind, id) {
       await api(`/admin/${kind}/${id}/image`, { method: 'PUT', body });
       await reload();
     },
-    'Upload a portrait or facility photo up to 4 MB. Replacing or removing the image returns the record to draft for source review.',
+    'Upload a portrait or facility photo up to 4 MB. Replacing or removing the image returns the record to draft for listing review.',
   );
   $('save-editor').textContent = 'Upload image';
 }

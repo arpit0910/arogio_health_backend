@@ -1,10 +1,11 @@
+import { binaryColumn } from '../types/binary-column';
 import { boolean, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const healthArticles = pgTable(
   'health_articles',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    source_id: text('source_id').notNull().unique(),
+    record_key: text('record_key').notNull().unique(),
     title_en: text('title_en').notNull(),
     title_hi: text('title_hi').notNull().default(''),
     excerpt_en: text('excerpt_en').notNull().default(''),
@@ -23,3 +24,10 @@ export const healthArticles = pgTable(
     index('health_articles_category_published').on(table.category, table.is_published),
   ],
 );
+
+
+export const healthArticleThumbnails = pgTable('health_article_thumbnails', {
+  articleId: uuid('article_id').primaryKey().references(() => healthArticles.id, { onDelete: 'cascade' }),
+  imageData: binaryColumn('image_data').notNull(),
+  revision: uuid('revision').notNull().defaultRandom(),
+});

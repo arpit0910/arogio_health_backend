@@ -1,14 +1,7 @@
+import { directoryReviewFields, hasReviewConfirmation } from '../../../common/directory/review-input';
 import { z } from 'zod';
 export const careKind = z.enum(['hospital', 'doctor', 'medicine', 'lab', 'pharmacy']);
 const line = z.string().trim().max(300);
-const https = z
-  .url()
-  .max(2000)
-  .refine((value) => {
-    if (!URL.canParse(value)) return false;
-    const url = new URL(value);
-    return url.protocol === 'https:' && !url.username && !url.password;
-  }, 'Use an HTTPS source without credentials.');
 export const careQuery = z
   .object({
     search: z.string().trim().max(150).default(''),
@@ -21,7 +14,7 @@ export const careQuery = z
   .strict();
 export const careInput = z
   .object({
-    sourceKey: line.min(1),
+    recordKey: line.min(1).optional(),
     kind: careKind,
     name: line.min(1),
     nameHi: line.default(''),
@@ -37,7 +30,6 @@ export const careInput = z
       )
       .nullable()
       .default(null),
-    sourceUrl: https,
     details: z
       .object({
         specialties: z.array(line.min(1)).max(30).default([]),
@@ -61,11 +53,9 @@ export const careInput = z
 export const reviewInput = z
   .object({
     expectedUpdatedAt: z.iso.datetime(),
-    evidence: z.string().trim().min(20).max(4000),
-    reviewerName: line.min(3),
-    reviewerQualification: line.min(3),
     publish: z.boolean(),
-    confirmedSource: z.literal(true),
+    ...directoryReviewFields,
   })
-  .strict();
+  .strict()
+  .refine(hasReviewConfirmation, 'Confirm the listing details before continuing.');
 export const correctionInput = z.object({ message: z.string().trim().min(10).max(1000) }).strict();

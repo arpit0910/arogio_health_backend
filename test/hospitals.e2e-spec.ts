@@ -26,7 +26,7 @@ const csv = (rows: Record<string, string | number>[]) =>
     ].join('\r\n'),
   );
 const draft = (key = 'test:hospital') => ({
-  source_key: key,
+  record_key: key,
   name_en: 'Synthetic test hospital',
   name_hi: 'परीक्षण अस्पताल',
   hospital_type: 'Government',
@@ -35,15 +35,15 @@ const draft = (key = 'test:hospital') => ({
   address_line1: 'Synthetic address for isolated tests',
   country_code_1: '+91',
   phone_1: '9000000000',
-  source_url: 'https://example.test/hospital',
+
   accepts_ayushman: true,
 });
 const review = (version: number) => ({
   expectedVersion: version,
   publish: true,
-  confirmedSource: true,
+  confirmedDetails: true,
   reviewerName: 'Test reviewer',
-  reviewerQualification: 'Test source review role',
+  reviewerQualification: 'Test listing reviewer',
   evidence: 'Synthetic verification evidence for automated tests only.',
 });
 describe('Structured hospital directory', () => {
@@ -170,7 +170,7 @@ describe('Structured hospital directory', () => {
     expect(legacy.body).toMatchObject({
       id,
       kind: 'hospital',
-      sourceUrl: 'https://example.test/hospital',
+
       affiliations: [],
     });
     await request(app.getHttpServer())
@@ -230,11 +230,11 @@ describe('Structured hospital directory', () => {
       .put(`/api/v1/admin/care/${id}`)
       .set(auth())
       .send({
-        sourceKey: 'test:hospital',
+        recordKey: 'test:hospital',
         kind: 'hospital',
         name: 'Wrong edit path',
         city: 'Jaipur',
-        sourceUrl: 'https://example.test/hospital',
+
         details: {},
         expectedUpdatedAt: generic.body.updatedAt as string,
       })
@@ -247,38 +247,24 @@ describe('Structured hospital directory', () => {
       (await database.query('select count(*)::int as count from care_directory_entries')).rows,
     ).toEqual([{ count: 0 }]);
   });
-  it('requires sourced contact data and keeps expired review separate from directory visibility', async () => {
+  it('approves complete listings without a source URL and keeps expired review separate from visibility', async () => {
     const created = await request(app.getHttpServer())
         .post('/api/v1/admin/hospitals')
         .set(auth())
-        .send({ ...draft(), source_url: null })
+        .send({ ...draft() })
         .expect(201),
       id = created.body.id as string;
     await request(app.getHttpServer())
       .post(`/api/v1/admin/hospitals/${id}/review`)
       .set(auth())
-      .send(review(1))
+      .send({ expectedVersion: 1, publish: true })
       .expect(400);
-    const legacy = await request(app.getHttpServer()).get(`/api/v1/admin/care/${id}`).set(auth());
-    await request(app.getHttpServer())
-      .post(`/api/v1/admin/care/${id}/review`)
-      .set(auth())
-      .send({
-        ...review(1),
-        expectedVersion: undefined,
-        expectedUpdatedAt: legacy.body.updatedAt as string,
-      })
-      .expect(400);
-    await request(app.getHttpServer())
-      .patch(`/api/v1/admin/hospitals/${id}`)
-      .set(auth())
-      .send({ source_url: 'https://example.test/source', expectedVersion: 1 })
-      .expect(200);
     await request(app.getHttpServer())
       .post(`/api/v1/admin/hospitals/${id}/review`)
       .set(auth())
-      .send(review(2))
-      .expect(201);
+      .send({ expectedVersion: 1, publish: true, confirmedDetails: true })
+      .expect(201)
+      .expect(({ body }) => expect(body).not.toHaveProperty('source_url'));
     await database.query('update care_directory_entries set reviewed_at=$1 where id=$2', [
       new Date('2000-01-01'),
       id,
@@ -324,7 +310,7 @@ describe('Structured hospital directory', () => {
     expect(list.body.items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          source_key: 'swasthya:hospital:5',
+          record_key: 'swasthya:hospital:5',
           city: 'Lucknow',
           published: false,
           accepts_ayushman: true,
@@ -351,7 +337,7 @@ describe('Structured hospital directory', () => {
   });
   it('reuses identities on update and requires a fresh preview after file or record changes', async () => {
     const file = csv([
-      { source_key: 'csv:1', name_en: 'Import hospital', city: 'Pune', state: 'Maharashtra' },
+      { record_key: 'csv:1', name_en: 'Import hospital', city: 'Pune', state: 'Maharashtra' },
     ]);
     const initial = await upload('preview', file).expect(201);
     await upload('apply', file, initial.body.previewToken as string).expect(201);
@@ -362,7 +348,7 @@ describe('Structured hospital directory', () => {
     await upload('apply', file, (preview.body.previewToken as string) + 'x').expect(400);
     await upload(
       'apply',
-      csv([{ source_key: 'csv:2', name_en: 'Changed file', city: 'Pune', state: 'Maharashtra' }]),
+      csv([{ record_key: 'csv:2', name_en: 'Changed file', city: 'Pune', state: 'Maharashtra' }]),
       preview.body.previewToken as string,
     ).expect(409);
     await request(app.getHttpServer())
@@ -376,20 +362,20 @@ describe('Structured hospital directory', () => {
     expect(
       (await request(app.getHttpServer()).get('/api/v1/admin/hospitals').set(auth())).body.items,
     ).toEqual(
-      expect.arrayContaining([expect.objectContaining({ id, source_key: 'csv:1', version: 3 })]),
+      expect.arrayContaining([expect.objectContaining({ id, record_key: 'csv:1', version: 3 })]),
     );
   });
   it('validates the whole CSV/XLSX import and rejects conflicting legacy identities and formulas', async () => {
     const bad = await upload(
       'preview',
       csv([
-        { source_key: 'a', name_en: 'A', city: 'B', state: 'C' },
-        { source_key: 'a', name_en: 'Duplicate', city: 'B', state: 'C' },
+        { record_key: 'a', name_en: 'A', city: 'B', state: 'C' },
+        { record_key: 'a', name_en: 'Duplicate', city: 'B', state: 'C' },
       ]),
     ).expect(201);
     expect(bad.body.previewToken).toBeNull();
     expect(bad.body.errorCount).toBe(1);
-    await upload('apply', csv([{ source_key: 'a', name_en: 'A', city: 'B', state: 'C' }])).expect(
+    await upload('apply', csv([{ record_key: 'a', name_en: 'A', city: 'B', state: 'C' }])).expect(
       400,
     );
     await upload('preview', Buffer.from('junk'), undefined, 'hospitals.xls').expect(400);
@@ -397,17 +383,17 @@ describe('Structured hospital directory', () => {
       .post('/api/v1/admin/care')
       .set(auth())
       .send({
-        sourceKey: 'collision',
+        recordKey: 'collision',
         kind: 'hospital',
         name: 'Existing legacy',
         city: 'Jaipur',
-        sourceUrl: 'https://example.test/source',
+
         details: {},
       })
       .expect(201);
     const collision = await upload(
       'preview',
-      csv([{ source_key: 'collision', name_en: 'Would duplicate', city: 'Delhi', state: 'Delhi' }]),
+      csv([{ record_key: 'collision', name_en: 'Would duplicate', city: 'Delhi', state: 'Delhi' }]),
     ).expect(201);
     expect(collision.body.errorCount).toBe(1);
     const workbook = new Workbook(),
@@ -418,7 +404,7 @@ describe('Structured hospital directory', () => {
         (key) =>
           (
             ({
-              source_key: 'xlsx:1',
+              record_key: 'xlsx:1',
               name_en: 'Workbook hospital',
               city: 'Bhopal',
               state: 'Madhya Pradesh',

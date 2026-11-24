@@ -57,6 +57,8 @@ describe('Shared-hosting private-file boundary', () => {
       'api/v1/profile/export',
       'admin',
       'admin/',
+      'status',
+      'status/',
       'admin-assets/admin.js',
       'admin-assets/care.js',
       'admin-assets/bank-review.js',

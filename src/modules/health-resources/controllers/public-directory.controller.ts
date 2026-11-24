@@ -1,4 +1,6 @@
-import { Body, Controller, Get, Header, HttpCode, Param, Post, Query } from '@nestjs/common';
+import type { Response } from 'express';
+import { sendProviderImage } from '../../../common/media/provider-image';
+import { Body, Controller, Get, Header, HttpCode, Param, Post, Query, Res } from '@nestjs/common';
 import { HealthResourcesService } from '../services/health-resources.service';
 @Controller('public')
 export class PublicHealthResourcesController {
@@ -8,6 +10,9 @@ export class PublicHealthResourcesController {
   }
   @Get('article-categories') categories() {
     return this.directory.categories();
+  }
+  @Get('articles/:id/thumbnail') async thumbnail(@Param('id') id: string, @Res() response: Response) {
+    sendProviderImage(response, await this.directory.articleThumbnail(id));
   }
   @Get('articles/:id') article(@Param('id') id: string) {
     return this.directory.article(id);

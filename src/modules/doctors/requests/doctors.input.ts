@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { directoryReviewFields, hasReviewConfirmation } from '../../../common/directory/review-input';
 import { adminDirectoryPageSize, directoryStatusInput } from '../../../common/directory/admin-status';
 import { z } from 'zod';
 
@@ -69,7 +71,6 @@ export const doctorFields = z
     phone_2: z.string().trim().max(30).nullable().optional(),
     email: z.email().max(254).nullable().optional(),
     website: https.nullable().optional(),
-    source_url: https.nullable().optional(),
     latitude: z.number().min(-90).max(90).nullable().optional(),
     longitude: z.number().min(-180).max(180).nullable().optional(),
     registration_number: line.optional(),
@@ -99,12 +100,12 @@ export const doctorFields = z
 import { hospitalPhone } from '../../hospitals/requests/hospitals.input';
 export const doctorInput = doctorFields
   .extend({
-    source_key: z
+    record_key: z
       .string()
       .trim()
       .min(1)
       .max(100)
-      .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/),
+      .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/).default(randomUUID),
   })
   .transform((value) => ({
     name_hi: '',
@@ -119,7 +120,6 @@ export const doctorInput = doctorFields
     phone_2: null,
     email: null,
     website: null,
-    source_url: null,
     latitude: null,
     longitude: null,
     registration_number: '',
@@ -180,12 +180,9 @@ export const doctorReview = z
   .object({
     expectedVersion: z.number().int().positive(),
     publish: z.boolean(),
-    confirmedSource: z.literal(true),
-    reviewerName: line.min(3),
-    reviewerQualification: line.min(3),
-    evidence: paragraph.min(20),
+    ...directoryReviewFields,
   })
-  .strict();
+  .strict().refine(hasReviewConfirmation, 'Confirm the listing details before continuing.');
 export const doctorDelete = z
   .object({ expected_version: z.coerce.number().int().positive() })
   .strict();

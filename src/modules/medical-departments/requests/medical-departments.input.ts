@@ -1,13 +1,14 @@
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 export const departmentInput = z
   .object({
-    source_key: z
+    record_key: z
       .string()
       .trim()
       .min(1)
       .max(100)
-      .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/),
+      .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/).default(randomUUID),
     name_en: z.string().trim().min(1).max(160),
     name_hi: z.string().trim().max(160).default(''),
     description_en: z.string().trim().max(4000).default(''),

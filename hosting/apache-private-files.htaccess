@@ -8,4 +8,4 @@ RewriteRule ^(?:dist|src|database|drizzle|node_modules|scripts|test|docs|hosting
 RewriteRule ^(?:\.git|\.aws|\.codex|\.agents)(?:/|$) - [F,L,NC]
 RewriteRule ^(?:\.env(?:\.[^/]*)?|app\.js|package(?:-lock)?\.json|tsconfig(?:\.[^/]*)?\.json|nest-cli\.json|drizzle\.config\.[^/]+|eslint\.config\.[^/]+|.*\.tsbuildinfo)$ - [F,L,NC]
 
-# /api/v1, /admin, /admin-assets and /status-assets intentionally remain routable.
+# /, /admin, /status, /api/v1 and both asset prefixes intentionally remain routable.

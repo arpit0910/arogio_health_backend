@@ -1,3 +1,4 @@
+import { auditReviewSummary } from '../../../common/directory/review-input';
 import { directoryCountFields, directoryPredicates, directoryStatusInput, directoryRowStatus, activeDoctorDepartment } from '../../../common/directory/admin-status';
 import {
   decodeProviderImage,
@@ -170,7 +171,7 @@ export class DoctorsService {
       .innerJoin(care, eq(care.id, doctors.id))
       .where(and(eq(doctors.id, id), admin ? undefined : this.visible()))
       .limit(1);
-    if (!row) throw new NotFoundException('Doctor not found or awaiting source review.');
+    if (!row) throw new NotFoundException('Doctor not found or awaiting listing review.');
     return { ...this.present(row, admin), ...(await this.relations(this.database.db, id, admin)) };
   }
   private async write<T>(operation: (tx: Transaction) => Promise<T>) {
@@ -183,7 +184,7 @@ export class DoctorsService {
       });
     } catch (error) {
       if (isUniqueViolation(error))
-        throw new ConflictException('This source key already exists. Use its existing record.');
+        throw new ConflictException('This record key already exists. Use its existing record.');
       if (getDatabaseErrorCode(error) === '23503')
         throw new ConflictException('Doctor has linked records. Withdraw it instead of deleting.');
       throw error;
@@ -202,7 +203,7 @@ export class DoctorsService {
   }
   private projection(value: DoctorInput) {
     return {
-      sourceKey: value.source_key,
+      recordKey: value.record_key,
       kind: 'doctor',
       name: value.name_en,
       nameHi: value.name_hi,
@@ -219,7 +220,6 @@ export class DoctorsService {
         .join(', '),
       addressHi: value.address_hi,
       phone: hospitalPhone(value.country_code_1, value.phone_1),
-      sourceUrl: value.source_url ?? '',
       details: {
         specialties: [],
         qualifications: value.qualifications.join(', '),
@@ -242,7 +242,7 @@ export class DoctorsService {
     const ds = await tx
       .select({
         id: departments.id,
-        source_key: departments.source_key,
+        record_key: departments.record_key,
         name_en: departments.name_en,
         name_hi: departments.name_hi,
         is_active: departments.is_active,
@@ -418,8 +418,7 @@ export class DoctorsService {
         .where(and(eq(doctorDepartments.doctor_id, id), eq(departments.is_active, true)));
       if (
         value.publish &&
-        (!row.source_url ||
-          !row.address_line1 ||
+        (!row.address_line1 ||
           !row.phone_1 ||
           !row.registration_number ||
           !row.medical_council ||
@@ -427,7 +426,7 @@ export class DoctorsService {
           !active.length)
       )
         throw new BadRequestException(
-          'A source URL, address, phone, registration, medical council, qualifications and active department are required before publication.',
+          'An address, phone, registration, medical council, qualifications and active department are required before approval.',
         );
       await tx
         .update(care)
@@ -435,7 +434,7 @@ export class DoctorsService {
           published: value.publish,
           reviewedAt: new Date(),
           reviewedBy: actor,
-          reviewEvidence: `${value.reviewerName} (${value.reviewerQualification}): ${value.evidence}`,
+          reviewEvidence: auditReviewSummary(value),
           updatedAt: new Date(),
         })
         .where(eq(care.id, id));
@@ -473,7 +472,7 @@ export class DoctorsService {
       hospitals: await tx
         .select({
           id: hospitals.id,
-          source_key: hospitals.source_key,
+          record_key: hospitals.record_key,
           name_en: hospitals.name_en,
           city: hospitals.city,
           version: hospitals.version,
@@ -525,31 +524,31 @@ export class DoctorsService {
     existing: Awaited<ReturnType<DoctorsService['current']>>,
     tx: Transaction | DatabaseService['db'],
   ) {
-    const keys = new Map(existing.profiles.map((row) => [row.source_key, row])),
+    const keys = new Map(existing.profiles.map((row) => [row.record_key, row])),
       errors = [...prepared.errors];
-    const sourceKeys = prepared.rows.map((row) => row.value.source_key),
-      collisions = sourceKeys.length
+    const recordKeys = prepared.rows.map((row) => row.value.record_key),
+      collisions = recordKeys.length
         ? await tx
-            .select({ key: care.sourceKey })
+            .select({ key: care.recordKey })
             .from(care)
-            .where(inArray(care.sourceKey, sourceKeys))
+            .where(inArray(care.recordKey, recordKeys))
         : [];
     const unavailable = new Set(
       collisions.filter((row) => !keys.has(row.key)).map((row) => row.key),
     );
     for (const row of prepared.rows)
-      if (unavailable.has(row.value.source_key))
+      if (unavailable.has(row.value.record_key))
         errors.push({
           row: row.row,
           message:
-            'Source key belongs to a legacy or other care record. Resolve its identity before import.',
+            'Record key belongs to a legacy or other care record. Resolve its identity before import.',
         });
-    const updates = prepared.rows.filter((row) => keys.has(row.value.source_key)).length;
+    const updates = prepared.rows.filter((row) => keys.has(row.value.record_key)).length;
     return {
       totalRows: prepared.totalRows,
       creates: prepared.rows.length - updates,
       updates,
-      returnsToDraft: prepared.rows.filter((row) => keys.get(row.value.source_key)?.published)
+      returnsToDraft: prepared.rows.filter((row) => keys.get(row.value.record_key)?.published)
         .length,
       errorCount: errors.length,
       errors,
@@ -557,7 +556,7 @@ export class DoctorsService {
       ignoredMetadataFields: prepared.ignoredMetadataFields,
       doctors: prepared.rows.length,
       sample: prepared.rows.slice(0, 10).map((row) => ({
-        source_key: row.value.source_key,
+        record_key: row.value.record_key,
         name_en: row.value.name_en,
         city: row.value.city,
         state: row.value.state,
@@ -620,9 +619,9 @@ export class DoctorsService {
           message: 'Fix all import errors before applying.',
           errors: plan.errors,
         });
-      const keys = new Map(existing.profiles.map((row) => [row.source_key, row]));
+      const keys = new Map(existing.profiles.map((row) => [row.record_key, row]));
       for (const { value } of prepared.rows) {
-        const row = keys.get(value.source_key);
+        const row = keys.get(value.record_key);
         if (row) await this.change(tx, row, value);
         else await this.insert(tx, value);
       }

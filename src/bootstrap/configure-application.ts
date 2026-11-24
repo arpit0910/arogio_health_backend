@@ -27,7 +27,7 @@ export function configureApplication(app: NestExpressApplication): void {
     maxAge: 0,
   });
   app.use((request: Request, response: Response, next: NextFunction) => {
-    if (request.method === 'GET' && (request.path === '/admin' || request.path === '/admin/')) {
+    if (request.method === 'GET' && ['/', '/admin', '/admin/'].includes(request.path)) {
       response.setHeader('Cache-Control', 'no-store');
       response.sendFile(join(__dirname, '..', 'modules', 'administration', 'public', 'index.html'));
     } else next();
@@ -40,7 +40,7 @@ export function configureApplication(app: NestExpressApplication): void {
   // Serve the public status document without changing Nest's API prefix or
   // middleware route matching (including request-correlated Pino logging).
   app.use((request: Request, response: Response, next: NextFunction) => {
-    if (request.method !== 'GET' || request.path !== '/') {
+    if (request.method !== 'GET' || !['/status', '/status/'].includes(request.path)) {
       next();
       return;
     }

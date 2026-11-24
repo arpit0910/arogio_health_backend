@@ -32,3 +32,25 @@ Practice titles come from the saved version, even after a catalog edit.
 Signed-in users can save a completed practice from the player and review
 recent entries and all-time totals. Partial checkpoints, offline delivery,
 streaks, favorites and reminders are pending.
+
+
+## Import and approve directory listings
+
+Use the Hospitals, Doctors or Blood Banks tab and upload a CSV or XLSX file
+from the source you choose. Use the supplied template for unusual headings.
+Common headings such as Hospital Name, Doctor Name, Blood Bank ID, Address
+and Postal Code are recognized. Source URL and unsupported metadata columns
+are ignored by directory imports. Website is a separate contact field.
+
+Keep the same stable import ID on future files for the same listing. The new
+templates label this field `record_key` for hospitals, doctors, departments,
+and diseases, and `id` for blood banks and articles. Older directory templates
+with `source_key` still match the same records. Admin-created records receive
+an identifier automatically. The import preview reports validation errors and
+which records will be created, updated, or returned for review.
+
+From an edited record, check **Review this listing after saving** to continue
+straight to approval. To review imported files, use **Review / approve** on a
+row or select ready records for bulk approval. The signed-in account and
+review time are recorded. Approve using the listing's core information.
+Medicine Library publication also requires a clinical reviewer and review notes.

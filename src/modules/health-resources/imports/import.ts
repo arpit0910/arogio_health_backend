@@ -1,3 +1,4 @@
+import { generalDirectoryAliases, selectDirectoryColumns } from './directory-columns';
 import {
   articleInput,
   bankInput,
@@ -61,13 +62,20 @@ function timestamp(value: string) {
   if (!Number.isFinite(date.getTime())) throw new Error('Invalid article date.');
   return date;
 }
-type ImportedArticle = ArticleInput & { source_id: string; created_at: Date; updated_at: Date };
-type ImportedBank = BankInput & { source_id: string };
+type ImportedArticle = ArticleInput & { record_key: string; created_at: Date; updated_at: Date };
+type ImportedBank = BankInput & { record_key: string };
 export function prepareImport(kind: DirectoryKind, buffer: Buffer) {
-  const rows = parseCsv(buffer),
-    expected = kind === 'articles' ? articleHeaders : bankHeaders;
+  const rawRows = parseCsv(buffer);
+  const rows = kind === 'articles'
+    ? rawRows.map((row) => Object.fromEntries(Object.entries(row).filter(([key]) => !['source', 'source_url'].includes(key))))
+    : selectDirectoryColumns(rawRows, bankHeaders, {
+    ...generalDirectoryAliases, import_key: 'id', record_key: 'id', source_key: 'id', source_id: 'id', blood_bank_id: 'id',
+    blood_bank_name: 'name_en', address: 'address_en', full_address: 'address_en', phone_number: 'phone',
+  });
+  const expected = kind === 'articles' ? articleHeaders : bankHeaders;
   const headers = Object.keys(rows[0]!);
-  const missing = expected.filter((key) => key !== 'image_url' && !headers.includes(key)),
+  const required = kind === 'articles' ? expected.filter(key => key !== 'image_url') : ['id', 'name_en', 'city', 'state', 'address_en'];
+  const missing = required.filter(key => !headers.includes(key)),
     unknown = headers.filter((key) => !expected.includes(key));
   if (missing.length || unknown.length)
     throw new Error(
@@ -79,10 +87,11 @@ export function prepareImport(kind: DirectoryKind, buffer: Buffer) {
     seen = new Set<string>();
   rows.forEach((row, index) => {
     try {
-      const source_id = (row.id ?? '').trim();
-      if (!/^\d{1,20}$/.test(source_id)) throw new Error('id must be a numeric export ID.');
-      if (seen.has(source_id)) throw new Error('Duplicate id in this file.');
-      seen.add(source_id);
+      const record_key = (row.id ?? '').trim();
+      if (!(kind === 'articles' ? /^\d{1,20}$/ : /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,99}$/).test(record_key))
+        throw new Error('Supply a stable record ID.');
+      if (seen.has(record_key)) throw new Error('Duplicate id in this file.');
+      seen.add(record_key);
       const { id: _id, created_at, updated_at, ...fields } = row;
       void _id;
       if (kind === 'articles') {
@@ -94,7 +103,7 @@ export function prepareImport(kind: DirectoryKind, buffer: Buffer) {
         });
         articles.push({
           ...value,
-          source_id,
+          record_key,
           created_at: timestamp(created_at ?? ''),
           updated_at: timestamp(updated_at ?? ''),
         });
@@ -107,7 +116,7 @@ export function prepareImport(kind: DirectoryKind, buffer: Buffer) {
           'component_facility',
           'apheresis_facility',
         ])
-          input[key] = flag(fields[key] ?? '');
+          input[key] = key === 'is_verified' ? false : fields[key] ? flag(fields[key]) : false;
         for (const key of ['phone', 'emergency_phone', 'email', 'website', 'pincode', 'landmark'])
           input[key] = nullable(fields[key]);
         if (typeof input.website === 'string' && !/^[a-z][a-z\d+.-]*:/i.test(input.website))
@@ -122,7 +131,7 @@ export function prepareImport(kind: DirectoryKind, buffer: Buffer) {
               .filter(Boolean),
           ),
         );
-        banks.push({ ...bankInput.parse(input), source_id });
+        banks.push({ ...bankInput.parse(input), record_key });
       }
     } catch (error) {
       errors.push({

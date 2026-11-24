@@ -1,9 +1,10 @@
+import { directoryImportKey, generalDirectoryAliases, selectDirectoryColumns } from '../../health-resources/imports/directory-columns';
 import { parseCsv } from '../../health-resources/imports/csv';
 import { workbookToCsv } from '../../health-resources/imports/workbook';
 import { hospitalInput, type HospitalInput } from '../requests/hospitals.input';
 
 export const hospitalHeaders = [
-  'source_key',
+  'record_key',
   'name_en',
   'name_hi',
   'hospital_type',
@@ -20,7 +21,6 @@ export const hospitalHeaders = [
   'phone_2',
   'email',
   'website',
-  'source_url',
   'latitude',
   'longitude',
   'accepts_ayushman',
@@ -71,21 +71,11 @@ export async function prepareHospitals(file?: Express.Multer.File) {
     throw new Error('Choose a CSV or XLSX file up to 8 MB.');
   const extension = file.originalname.toLowerCase().split('.').pop();
   if (!['csv', 'xlsx'].includes(extension ?? '')) throw new Error('Use a .csv or .xlsx file.');
-  const rows = parseCsv(extension === 'xlsx' ? await workbookToCsv(file.buffer) : file.buffer),
-    headers = Object.keys(rows[0]!);
-  if (
-    !headers.includes('name_en') ||
-    !headers.includes('city') ||
-    !headers.includes('state') ||
-    (!headers.includes('source_key') && !headers.includes('id')) ||
-    headers.some(
-      (header) =>
-        ![...hospitalHeaders, ...Object.keys(aliases), 'id', 'is_verified'].includes(header),
-    )
-  )
-    throw new Error(
-      'Use the hospital template or supported SwasthyaSearch export headers. Name, city, state and source_key or legacy id are required.',
-    );
+  const rawRows = parseCsv(extension === 'xlsx' ? await workbookToCsv(file.buffer) : file.buffer);
+  const rows = selectDirectoryColumns(rawRows, [...hospitalHeaders, ...Object.keys(aliases), 'id', 'is_verified'], { ...generalDirectoryAliases, hospital_id: 'id', hospital_name: 'name_en', full_address: 'address_line1', address: 'address_line1', phone: 'phone_1', telephone: 'phone_1' });
+  const headers = Object.keys(rows[0]!);
+  if (!['name_en', 'city', 'state'].every(key => headers.includes(key)) || !['record_key', 'id'].some(key => headers.includes(key)))
+    throw new Error('Supply a name, city, state and stable record ID or import key.');
   const valid: { row: number; value: HospitalInput }[] = [],
     errors: { row: number; message: string }[] = [],
     keys = new Set<string>();
@@ -101,11 +91,11 @@ export async function prepareHospitals(file?: Express.Multer.File) {
           throw new Error(`Conflicting columns for ${key}.`);
         if (!(key in input) || text) input[key] = text;
       }
-      if (row.source_key?.trim() && row.id?.trim())
-        throw new Error('Supply source_key or legacy id, not both.');
-      input.source_key =
-        row.source_key?.trim() ||
-        (/^\d{1,20}$/.test(row.id?.trim() ?? '') ? `swasthya:hospital:${row.id!.trim()}` : '');
+      if (row.record_key?.trim() && row.id?.trim())
+        throw new Error('Supply record_key or legacy id, not both.');
+      input.record_key =
+        row.record_key?.trim() ||
+        directoryImportKey(row.id?.trim() ?? '', 'hospital');
       const textValue = (key: string) => {
         const value = input[key];
         return typeof value === 'string' ? value : '';
@@ -113,7 +103,7 @@ export async function prepareHospitals(file?: Express.Multer.File) {
       for (const key of flags) input[key] = boolean(textValue(key));
       for (const key of ['latitude', 'longitude'])
         input[key] = textValue(key).trim() ? Number(textValue(key)) : null;
-      for (const key of ['phone_1', 'phone_2', 'email', 'website', 'source_url'])
+      for (const key of ['phone_1', 'phone_2', 'email', 'website'])
         if (!input[key]) input[key] = null;
       if (typeof input.website === 'string' && !/^[a-z][a-z0-9+.-]*:/i.test(input.website))
         input.website = 'https://' + input.website;
@@ -127,8 +117,8 @@ export async function prepareHospitals(file?: Express.Multer.File) {
         ignoredVerificationFlags++;
       }
       const value = hospitalInput.parse(input);
-      if (keys.has(value.source_key)) throw new Error('Duplicate source_key in this file.');
-      keys.add(value.source_key);
+      if (keys.has(value.record_key)) throw new Error('Duplicate record_key in this file.');
+      keys.add(value.record_key);
       valid.push({ row: index + 2, value });
     } catch (error) {
       errors.push({

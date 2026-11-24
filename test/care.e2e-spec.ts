@@ -52,12 +52,12 @@ describe('Public care and audited publication', () => {
   const auth = () => ({ Authorization: `Bearer ${token}` });
   const draft = (kind: 'hospital' | 'doctor') => ({
     kind,
-    sourceKey: `isolated-test-${kind}`,
+    recordKey: `isolated-test-${kind}`,
     name: `Isolated test ${kind}`,
     city: 'Jaipur',
     address: 'Synthetic address for automated tests only',
     phone: '+910000000000',
-    sourceUrl: 'https://example.test/source',
+
     details: {
       specialties: ['Test specialty'],
       registration: kind === 'doctor' ? 'TEST-REG' : '',
@@ -69,8 +69,25 @@ describe('Public care and audited publication', () => {
     evidence: 'Synthetic test evidence; not a real medical listing.',
     reviewerName: 'Test reviewer',
     reviewerQualification: 'Isolated test role',
-    confirmedSource: true,
+    confirmedDetails: true,
     publish: true,
+  });
+  it('creates and publishes a medicine with no source or manually assigned record key', async () => {
+    const server = request(app.getHttpServer());
+    const medicine = {
+      kind: 'medicine',
+      name: 'Synthetic medicine entry',
+      details: { summary: 'Example educational content.', precautions: 'Example precautions.' },
+    };
+    const { body: created } = await server.post('/api/v1/admin/care').set(auth()).send(medicine).expect(201);
+    expect(created).not.toHaveProperty('sourceUrl');
+    expect(created.recordKey).toEqual(expect.any(String));
+    await server.post(`/api/v1/admin/care/${created.id}/review`).set(auth()).send(review(created)).expect(201);
+    const { body: published } = await server.get(`/api/v1/care/${created.id}`).expect(200);
+    expect(published).not.toHaveProperty('sourceUrl');
+    expect(published).not.toHaveProperty('recordKey');
+    await server.put(`/api/v1/admin/care/${created.id}`).set(auth())
+      .send({ ...medicine, expectedUpdatedAt: published.updatedAt }).expect(200);
   });
   it('allows guest public content but keeps old private contracts and administration protected', async () => {
     const discovery = await request(app.getHttpServer())
@@ -119,7 +136,7 @@ describe('Public care and audited publication', () => {
     await request(app.getHttpServer())
       .post(`/api/v1/admin/care/${hospital.id}/review`)
       .set(auth())
-      .send({ ...review(hospital), confirmedSource: false })
+      .send({ ...review(hospital), confirmedDetails: false })
       .expect(400);
     const published = await request(app.getHttpServer())
       .post(`/api/v1/admin/care/${hospital.id}/review`)
@@ -178,7 +195,7 @@ describe('Public care and audited publication', () => {
     await request(app.getHttpServer())
       .put(`/api/v1/admin/care/${doctor.id}`)
       .set(auth())
-      .send({ ...draft('doctor'), sourceKey: 'changed-key', expectedUpdatedAt: doctor.updatedAt })
+      .send({ ...draft('doctor'), recordKey: 'changed-key', expectedUpdatedAt: doctor.updatedAt })
       .expect(400);
     const edit = await request(app.getHttpServer())
       .put(`/api/v1/admin/care/${doctor.id}`)
@@ -228,17 +245,17 @@ describe('Public care and audited publication', () => {
     expect(search.body.providers.items).toHaveLength(1);
     expect(search.body.articles.items).toEqual([]);
   });
-  it('handles sourced blood-bank corrections and account-scoped private exports', async () => {
+  it('handles reviewed blood-bank corrections and account-scoped private exports', async () => {
     const [bank] = await drizzle(database, { schema })
       .insert(schema.bloodBankDirectoryEntries)
       .values({
-        source_id: 'isolated-test-bank',
+        record_key: 'isolated-test-bank',
         name_en: 'Isolated bank fixture',
         city: 'Jaipur',
         state: 'Rajasthan',
         address_en: 'Synthetic address only',
         is_verified: true,
-        source_url: 'https://example.test/bank',
+
         verified_at: new Date(),
       })
       .returning();
@@ -276,12 +293,12 @@ describe('Public care and audited publication', () => {
         address_en: 'Changed synthetic address',
         phone: '0000000000',
         is_verified: true,
-        source_url: 'https://example.test/old-source',
+
         verified_at: new Date().toISOString(),
       })
       .expect(200);
     expect(edited.body.is_verified).toBe(false);
-    expect(edited.body.source_url).toBe('https://example.test/old-source');
+    expect(edited.body).not.toHaveProperty('source_url');
     expect(edited.body.verified_at).toBeNull();
     await request(app.getHttpServer())
       .get('/api/v1/public/blood-banks')
@@ -292,7 +309,7 @@ describe('Public care and audited publication', () => {
       .set(auth())
       .send({
         ...review({ updatedAt: edited.body.updated_at }),
-        sourceUrl: 'https://example.test/reviewed-source',
+
       })
       .expect(201);
     await request(app.getHttpServer())

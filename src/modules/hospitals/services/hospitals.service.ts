@@ -1,3 +1,4 @@
+import { auditReviewSummary } from '../../../common/directory/review-input';
 import { directoryCountFields, directoryPredicates, directoryStatusInput, directoryRowStatus } from '../../../common/directory/admin-status';
 import {
   decodeProviderImage,
@@ -167,7 +168,7 @@ export class HospitalsService {
       });
     } catch (error) {
       if (isUniqueViolation(error))
-        throw new ConflictException('This source key already exists. Use its existing record.');
+        throw new ConflictException('This record key already exists. Use its existing record.');
       if (getDatabaseErrorCode(error) === '23503')
         throw new ConflictException(
           'Hospital has linked records. Withdraw it instead of deleting.',
@@ -188,7 +189,7 @@ export class HospitalsService {
   }
   private projection(value: HospitalInput) {
     return {
-      sourceKey: value.source_key,
+      recordKey: value.record_key,
       kind: 'hospital',
       name: value.name_en,
       nameHi: value.name_hi,
@@ -205,7 +206,6 @@ export class HospitalsService {
         .join(', '),
       addressHi: value.address_hi,
       phone: hospitalPhone(value.country_code_1, value.phone_1),
-      sourceUrl: value.source_url ?? '',
       details: {
         specialties: value.specialties,
         qualifications: '',
@@ -274,9 +274,9 @@ export class HospitalsService {
       const [row] = await tx.select().from(hospitals).where(eq(hospitals.id, id));
       if (!row || row.version !== value.expectedVersion)
         throw new ConflictException('Hospital changed. Reload before reviewing.');
-      if (value.publish && (!row.source_url || !row.address_line1 || !row.phone_1))
+      if (value.publish && (!row.address_line1 || !row.phone_1))
         throw new BadRequestException(
-          'A sourced address, primary contact and HTTPS evidence URL are required before publication.',
+          'An address and primary contact are required before approval.',
         );
       await tx
         .update(care)
@@ -284,7 +284,7 @@ export class HospitalsService {
           published: value.publish,
           reviewedAt: new Date(),
           reviewedBy: actor,
-          reviewEvidence: `${value.reviewerName} (${value.reviewerQualification}): ${value.evidence}`,
+          reviewEvidence: auditReviewSummary(value),
           updatedAt: new Date(),
         })
         .where(eq(care.id, id));
@@ -341,37 +341,37 @@ export class HospitalsService {
     existing: Awaited<ReturnType<HospitalsService['current']>>,
     tx: Transaction | DatabaseService['db'],
   ) {
-    const keys = new Map(existing.map((row) => [row.source_key, row])),
+    const keys = new Map(existing.map((row) => [row.record_key, row])),
       errors = [...prepared.errors];
-    const sourceKeys = prepared.rows.map((row) => row.value.source_key),
-      collisions = sourceKeys.length
+    const recordKeys = prepared.rows.map((row) => row.value.record_key),
+      collisions = recordKeys.length
         ? await tx
-            .select({ key: care.sourceKey })
+            .select({ key: care.recordKey })
             .from(care)
-            .where(inArray(care.sourceKey, sourceKeys))
+            .where(inArray(care.recordKey, recordKeys))
         : [];
     const unavailable = new Set(
       collisions.filter((row) => !keys.has(row.key)).map((row) => row.key),
     );
     for (const row of prepared.rows)
-      if (unavailable.has(row.value.source_key))
+      if (unavailable.has(row.value.record_key))
         errors.push({
           row: row.row,
           message:
-            'Source key belongs to a legacy or other care record. Resolve its identity before import.',
+            'Record key belongs to a legacy or other care record. Resolve its identity before import.',
         });
-    const updates = prepared.rows.filter((row) => keys.has(row.value.source_key)).length;
+    const updates = prepared.rows.filter((row) => keys.has(row.value.record_key)).length;
     return {
       totalRows: prepared.totalRows,
       creates: prepared.rows.length - updates,
       updates,
-      returnsToDraft: prepared.rows.filter((row) => keys.get(row.value.source_key)?.published)
+      returnsToDraft: prepared.rows.filter((row) => keys.get(row.value.record_key)?.published)
         .length,
       errorCount: errors.length,
       errors,
       ignoredVerificationFlags: prepared.ignoredVerificationFlags,
       sample: prepared.rows.slice(0, 10).map((row) => ({
-        source_key: row.value.source_key,
+        record_key: row.value.record_key,
         name_en: row.value.name_en,
         city: row.value.city,
         state: row.value.state,
@@ -433,9 +433,9 @@ export class HospitalsService {
           message: 'Fix all import errors before applying.',
           errors: plan.errors,
         });
-      const keys = new Map(existing.map((row) => [row.source_key, row]));
+      const keys = new Map(existing.map((row) => [row.record_key, row]));
       for (const { value } of prepared.rows) {
-        const row = keys.get(value.source_key);
+        const row = keys.get(value.record_key);
         if (row) await this.change(tx, row, value);
         else await this.insert(tx, value);
       }

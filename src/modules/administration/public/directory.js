@@ -25,7 +25,6 @@ const bankFields = [
   'emergency_phone',
   'email',
   'website',
-  'source_url',
   'latitude',
   'longitude',
   'available_blood_groups',
@@ -131,7 +130,7 @@ async function directoryPage(kind, current = 1, term = '', status = 'all') {
           review.append(
             table(
               ['Export ID', 'Preview'],
-              data.sample.map((row) => [row.source_id, row.title]),
+              data.sample.map((row) => [row.record_key, row.title]),
             ),
           );
         if (!data.errorCount) {
@@ -198,10 +197,11 @@ async function directoryPage(kind, current = 1, term = '', status = 'all') {
             ),
           ),
         );
-        if (!articles) actions.append(button('Source review', () => reviewBloodBank(row)));
+        if (articles) actions.append(button('Thumbnail', () => articleThumbnailEditor(row, current, term)));
+        else actions.append(button('Review / approve', () => reviewBloodBank(row)));
         return articles
           ? [
-              articleThumbnail(row.thumbnail_url, row.title_en),
+              articleThumbnail(!row.is_published && row.thumbnailRevision ? row.image_url : row.thumbnail_url, row.title_en),
               row.title_en,
               row.category,
               row.is_published ? 'Published' : 'Draft',
@@ -243,10 +243,11 @@ async function directoryEditor(kind, id) {
         ? 'textarea'
         : /latitude|longitude/.test(key)
           ? 'number'
-          : key === 'source_url' ? 'url' : 'text',
+          : 'text',
     ),
   );
   fields.push(...flags.map((key) => field(key, labelFor(key), row[key], 'checkbox')));
+  if (!articles) fields.push(field('reviewAfterSave', 'Review this listing after saving', false, 'checkbox'));
   openEditor(
     id ? 'Edit record' : articles ? 'Create article' : 'Add blood bank',
     fields,
@@ -256,14 +257,18 @@ async function directoryEditor(kind, id) {
       if (!articles) {
         for (const key of ['latitude', 'longitude'])
           body[key] = body[key] === '' ? null : Number(body[key]);
-        for (const key of ['phone', 'emergency_phone', 'email', 'website', 'pincode', 'landmark', 'source_url'])
+        for (const key of ['phone', 'emergency_phone', 'email', 'website', 'pincode', 'landmark'])
           body[key] ||= null;
         body.available_blood_groups = body.available_blood_groups
           .split(';')
           .map((value) => value.trim())
           .filter(Boolean);
       }
-      await send(`/admin/content/${kind}${id ? '/' + id : ''}`, body, id ? 'PATCH' : 'POST');
+      const saved = await send(`/admin/content/${kind}${id ? '/' + id : ''}`, body, id ? 'PATCH' : 'POST');
+      if (!articles && form.has('reviewAfterSave')) return async () => {
+        await directoryPage(kind);
+        reviewBloodBank(saved);
+      };
       await directoryPage(kind);
     },
     articles
@@ -271,9 +276,47 @@ async function directoryEditor(kind, id) {
       : 'Enter both coordinates or leave both empty. Listed blood groups are not live stock. Separate groups with semicolons, for example A+;O-.',
   );
 }
+async function articleThumbnailEditor(row, page, term) {
+  const revision = requestRevision;
+  const path = `/admin/content/articles/${row.id}/thumbnail`;
+  const file = field('file', 'Choose a JPG, PNG, or WebP', '', 'file');
+  const input = file.querySelector('input');
+  input.accept = 'image/jpeg,image/png,image/webp';
+  const controls = [];
+  if (row.thumbnailRevision) {
+    const blob = await api(path, { blob: true });
+    if (requestRevision !== revision) return;
+    const image = el('img');
+    image.src = URL.createObjectURL(blob);
+    imageUrls.add(image.src);
+    image.alt = row.title_en;
+    image.className = 'provider-image-preview';
+    controls.push(image, button('Remove uploaded thumbnail', async () => {
+      await api(path, { method: 'DELETE' });
+      $('editor').close();
+      await directoryPage('articles', page, term);
+    }));
+  }
+  controls.push(file);
+  openEditor(
+    'Article thumbnail',
+    controls,
+    async () => {
+      const selected = input.files[0];
+      if (!selected || selected.size > 4 * 1024 * 1024) throw new Error('Choose a JPG, PNG, or WebP up to 4 MB.');
+      const body = new FormData();
+      body.append('file', selected);
+      await api(path, { method: 'PUT', body });
+      await directoryPage('articles', page, term);
+    },
+    'An uploaded image takes priority over the image URL and the category cover.',
+  );
+  $('save-editor').textContent = 'Upload thumbnail';
+}
+
 function articleThumbnail(url, title) {
   const image = el('img');
-  image.src = url;
+  image.src = url || '/admin-assets/article-thumbnails/wellbeing.jpg';
   image.alt = title;
   image.loading = 'lazy';
   image.referrerPolicy = 'no-referrer';

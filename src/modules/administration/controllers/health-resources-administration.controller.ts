@@ -1,3 +1,4 @@
+import { sendProviderImage } from '../../../common/media/provider-image';
 import {
   Body,
   Controller,
@@ -6,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Res,
   UploadedFile,
@@ -67,6 +69,18 @@ export class HealthResourcesAdministrationController {
     response.setHeader('Content-Disposition', `attachment; filename="${type}-template.xlsx"`);
     response.setHeader('Cache-Control', 'private, no-store');
     response.send(Buffer.from(await workbook.xlsx.writeBuffer()));
+  }
+  @Get('articles/:id/thumbnail') async thumbnail(@Param('id') id: string, @Res() response: Response) {
+    sendProviderImage(response, await this.directory.articleThumbnail(id, true));
+  }
+  @Put('articles/:id/thumbnail')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 4 * 1024 * 1024, files: 1, fields: 0 } }))
+  uploadThumbnail(@CurrentUser() user: RequestUser, @Param('id') id: string, @UploadedFile() file?: Express.Multer.File) {
+    return this.audit.audit(user.userId, 'articles.thumbnail.upload', id, () => this.directory.saveArticleThumbnail(id, file));
+  }
+  @Delete('articles/:id/thumbnail')
+  deleteThumbnail(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.audit.audit(user.userId, 'articles.thumbnail.remove', id, () => this.directory.removeArticleThumbnail(id));
   }
   @Get(':kind/:id') get(@Param('kind') kind: string, @Param('id') id: string) {
     return this.directory.kind(kind) === 'articles'

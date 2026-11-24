@@ -14,7 +14,7 @@ describe('Excel directory imports', () => {
     expect(parsed.articles).toHaveLength(284);
     expect(result.categories).toHaveLength(17);
     expect(parsed.articles[0]).toMatchObject({
-      source_id: '1',
+      record_key: '1',
       category: 'Yoga & Breathing',
       title_en: 'Gentle Yoga for PCOS',
     });
@@ -56,7 +56,7 @@ describe('Excel directory imports', () => {
     const parsed = prepareImport('articles', await workbookToCsv(await bytes(workbook)));
     expect(parsed.errors).toEqual([]);
     expect(parsed.articles[0]).toMatchObject({
-      source_id: '7',
+      record_key: '7',
       title_hi: 'स्वास्थ्य',
       content_en: 'First\nSecond',
       is_published: true,

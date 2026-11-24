@@ -101,7 +101,7 @@ describe('Medical departments', () => {
       .post('/api/v1/admin/departments')
       .set(admin())
       .send({
-        source_key: 'cardiology',
+        record_key: 'cardiology',
         name_en: 'Cardiology',
         name_hi: 'हृदय रोग',
         description_en: 'Heart care',
@@ -113,7 +113,7 @@ describe('Medical departments', () => {
     await request(app.getHttpServer())
       .post('/api/v1/admin/departments')
       .set(admin())
-      .send({ source_key: 'another', name_en: ' cardiology ' })
+      .send({ record_key: 'another', name_en: ' cardiology ' })
       .expect(409);
     await request(app.getHttpServer())
       .patch(`/api/v1/admin/departments/${row.id}`)
@@ -172,11 +172,11 @@ describe('Medical departments', () => {
       .set(admin());
     expect(current.body.total).toBe(2);
     expect(
-      (current.body.items as { id: string; source_key: string }[]).some(
-        (row: { source_key: string }) => row.source_key === 'swasthya:101',
+      (current.body.items as { id: string; record_key: string }[]).some(
+        (row: { record_key: string }) => row.record_key === 'swasthya:101',
       ),
     ).toBe(true);
-    const ids = (current.body.items as { id: string; source_key: string }[])
+    const ids = (current.body.items as { id: string; record_key: string }[])
       .map((row: { id: string }) => row.id)
       .sort();
     const repeated = await upload('preview', file).expect(201);
@@ -215,7 +215,7 @@ describe('Medical departments', () => {
     await request(app.getHttpServer())
       .post('/api/v1/admin/departments')
       .set(admin())
-      .send({ source_key: 'local', name_en: 'Surgery' })
+      .send({ record_key: 'local', name_en: 'Surgery' })
       .expect(201);
     const conflict = await upload('preview', csv([['remote', 'SURGERY', '', '', '', '1']])).expect(
       201,
@@ -243,7 +243,7 @@ describe('Medical departments', () => {
     await request(app.getHttpServer())
       .post('/api/v1/admin/departments')
       .set(admin())
-      .send({ source_key: 'other', name_en: 'Other' })
+      .send({ record_key: 'other', name_en: 'Other' })
       .expect(201);
     await upload('apply', file, preview.body.previewToken as string).expect(409);
     expect(

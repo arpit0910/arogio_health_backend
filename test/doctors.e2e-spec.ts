@@ -26,14 +26,14 @@ const csv = (rows: Record<string, string | number>[]) =>
     ].join('\r\n'),
   );
 const draft = (key = 'test:doctor') => ({
-  source_key: key,
+  record_key: key,
   name_en: 'Synthetic doctor',
   name_hi: '??????? ????????',
   city: 'Delhi',
   state: 'Delhi',
   address_line1: 'Synthetic address',
   phone_1: '+919000000000',
-  source_url: 'https://example.test/doctor',
+
   registration_number: 'TEST-123',
   medical_council: 'Test council',
   qualifications: ['MBBS'],
@@ -44,9 +44,9 @@ const draft = (key = 'test:doctor') => ({
 const review = (version: number) => ({
   expectedVersion: version,
   publish: true,
-  confirmedSource: true,
+  confirmedDetails: true,
   reviewerName: 'Test reviewer',
-  reviewerQualification: 'Test source review role',
+  reviewerQualification: 'Test listing reviewer',
   evidence: 'Synthetic verification evidence for automated tests only.',
 });
 describe('Structured doctors', () => {
@@ -105,7 +105,7 @@ describe('Structured doctors', () => {
       await request(app.getHttpServer())
         .post('/api/v1/admin/departments')
         .set(auth())
-        .send({ source_key: 'test:dept', name_en: 'Test specialty', is_active: true })
+        .send({ record_key: 'test:dept', name_en: 'Test specialty', is_active: true })
         .expect(201)
     ).body as { id: string; version: number };
   const createHospital = async () =>
@@ -114,13 +114,13 @@ describe('Structured doctors', () => {
         .post('/api/v1/admin/hospitals')
         .set(auth())
         .send({
-          source_key: 'test:hospital',
+          record_key: 'test:hospital',
           name_en: 'Test hospital',
           city: 'Delhi',
           state: 'Delhi',
           address_line1: 'Synthetic address',
           phone_1: '+919000000000',
-          source_url: 'https://example.test/hospital',
+
         })
         .expect(201)
     ).body as { id: string; version: number };
@@ -306,12 +306,12 @@ describe('Structured doctors', () => {
     await createHospital();
     const bytes = csv([
       {
-        source_key: 'import:doctor',
+        record_key: 'import:doctor',
         name_en: 'Imported doctor',
         city: 'Delhi',
         state: 'Delhi',
-        department_source_keys: 'test:dept',
-        hospital_source_keys: 'test:hospital',
+        department_record_keys: 'test:dept',
+        hospital_record_keys: 'test:hospital',
         schedule_days: '1;3',
         schedule_start: '09:00',
         schedule_end: '11:00',
@@ -341,13 +341,13 @@ describe('Structured doctors', () => {
       .expect(200);
     expect(updated.body.version).toBe(2);
     const bad = csv([
-      { source_key: 'good', name_en: 'Good', city: 'Delhi', state: 'Delhi' },
+      { record_key: 'good', name_en: 'Good', city: 'Delhi', state: 'Delhi' },
       {
-        source_key: 'bad',
+        record_key: 'bad',
         name_en: 'Bad',
         city: 'Delhi',
         state: 'Delhi',
-        department_source_keys: 'missing',
+        department_record_keys: 'missing',
       },
     ]);
     const invalid = await upload('preview', bad).expect(201);
@@ -359,11 +359,11 @@ describe('Structured doctors', () => {
     const d = await createDepartment();
     const bytes = csv([
       {
-        source_key: 'import:doctor',
+        record_key: 'import:doctor',
         name_en: 'Import',
         city: 'Delhi',
         state: 'Delhi',
-        department_source_keys: 'test:dept',
+        department_record_keys: 'test:dept',
       },
     ]);
     const p = await upload('preview', bytes).expect(201);
@@ -402,7 +402,7 @@ describe('Structured doctors', () => {
         (k) =>
           (
             ({
-              source_key: 'xlsx',
+              record_key: 'xlsx',
               name_en: 'Xlsx doctor',
               city: 'Delhi',
               state: 'Delhi',
@@ -425,7 +425,7 @@ describe('Structured doctors', () => {
       .post('/api/v1/admin/hospitals')
       .set(auth())
       .send({
-        source_key: 'legacy:hospital:2',
+        record_key: 'legacy:hospital:2',
         name_en: 'Second hospital',
         city: 'Pune',
         state: 'Maharashtra',
@@ -516,7 +516,7 @@ describe('Structured doctors', () => {
       .set(auth())
       .expect(200);
     expect(list.body.items[0]).toMatchObject({
-      source_key: 'swasthya:doctor:12',
+      record_key: 'swasthya:doctor:12',
       published: false,
       department_ids: [d.id],
     });
@@ -529,7 +529,7 @@ describe('Structured doctors', () => {
       sheet = wb.addWorksheet('Doctors');
     sheet.addRow([...hospitalHeaders]);
     const record: Record<string, string> = {
-      source_key: 'xlsx:doctor',
+      record_key: 'xlsx:doctor',
       name_en: 'Xlsx doctor',
       city: 'Delhi',
       state: 'Delhi',
@@ -552,11 +552,11 @@ describe('Structured doctors', () => {
       .put('/api/v1/admin/care/' + id)
       .set(auth())
       .send({
-        sourceKey: base.sourceKey,
+        recordKey: base.recordKey,
         kind: 'doctor',
         name: base.name,
         city: 'Jaipur',
-        sourceUrl: 'https://example.test/doctor',
+
         details: base.details,
         expectedUpdatedAt: base.updatedAt,
       })

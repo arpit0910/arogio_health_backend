@@ -86,9 +86,9 @@ async function diseasesPage(current = 1, term = '', status = 'all') {
       if (data.sample.length)
         review.append(
           table(
-            ['Source key', 'English', 'Hindi', 'Visibility'],
+            ['Record key', 'English', 'Hindi', 'Visibility'],
             data.sample.map((row) => [
-              row.source_key,
+              row.record_key,
               row.name_en,
               row.name_hi,
               row.is_active ? 'Active' : 'Inactive',
@@ -135,7 +135,7 @@ async function diseasesPage(current = 1, term = '', status = 'all') {
   uploader.append(
     el(
       'p',
-      'Match existing records by source_key. Legacy numeric id is accepted as swasthya:disease:<id>. Blank is_active stays inactive. Departments must exist already. No doctors or symptoms are created.',
+      'Match existing records by record_key. Legacy numeric id is accepted as swasthya:disease:<id>. Blank is_active stays inactive. Departments must exist already. No doctors or symptoms are created.',
     ),
     file,
     preview,
@@ -148,7 +148,7 @@ async function diseasesPage(current = 1, term = '', status = 'all') {
   if (rev !== requestRevision) return;
   section.append(
     table(
-      ['English name', 'Hindi name', 'Department', 'Source key', 'Visibility', 'Actions'],
+      ['English name', 'Hindi name', 'Department', 'Record key', 'Visibility', 'Actions'],
       data.items.map((row) => {
         const actions = el('div', null, 'actions');
         actions.append(
@@ -171,7 +171,7 @@ async function diseasesPage(current = 1, term = '', status = 'all') {
           row.name_en,
           row.name_hi,
           row.department?.name_en || 'Unavailable',
-          row.source_key,
+          row.record_key,
           row.is_active ? 'Active' : 'Inactive',
           actions,
         ];
@@ -208,7 +208,6 @@ async function diseaseEditor(id) {
       masters.map((item) => [item.id, item.name_en + (item.is_active ? '' : ' (inactive)')]),
     ),
   ];
-  if (!id) fields.push(field('source_key', 'Stable source key', '', 'text'));
   fields.push(
     field('name_en', 'English name', row.name_en),
     field('name_hi', 'Hindi name', row.name_hi),
@@ -229,15 +228,14 @@ async function diseaseEditor(id) {
         is_active: data.has('is_active'),
       };
       if (id) body.expectedVersion = row.version;
-      else body.source_key = data.get('source_key');
       await send(id ? `/admin/diseases/${id}` : '/admin/diseases', body, id ? 'PATCH' : 'POST');
       await diseasesPage();
     },
     id
-      ? `Source key: ${row.source_key}. Reload if another administrator changes this record.`
-      : 'Choose a permanent source key. Existing records are matched by this key during import.',
+      ? `Record key: ${row.record_key}. Reload if another administrator changes this record.`
+      : 'A record ID is assigned automatically.',
   );
-  for (const name of ['source_key', 'name_en']) {
+  for (const name of ['name_en']) {
     const input = $('editor-fields').querySelector(`[name=${name}]`);
     if (input) input.required = true;
   }

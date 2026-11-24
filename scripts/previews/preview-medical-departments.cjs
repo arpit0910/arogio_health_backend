@@ -14,7 +14,7 @@ html = html.replace('</head>', `<style>${css}</style></head>`);
 const rows = [
   {
     id: '11111111-1111-4111-8111-111111111111',
-    source_key: 'sample:cardiology',
+    record_key: 'sample:cardiology',
     name_en: 'Cardiology',
     name_hi: 'हृदय रोग',
     description_en: 'Heart and cardiovascular care.',
@@ -24,7 +24,7 @@ const rows = [
   },
   {
     id: '22222222-2222-4222-8222-222222222222',
-    source_key: 'sample:neurology',
+    record_key: 'sample:neurology',
     name_en: 'Neurology',
     name_hi: 'तंत्रिका विज्ञान',
     description_en: 'Brain and nervous-system care.',

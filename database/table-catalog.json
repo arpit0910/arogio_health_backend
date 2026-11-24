@@ -60,6 +60,11 @@
     "export": "healthArticles"
   },
   {
+    "table": "health_article_thumbnails",
+    "schemaFile": "src/database/schema/health-articles.schema.ts",
+    "export": "healthArticleThumbnails"
+  },
+  {
     "table": "blood_bank_directory_entries",
     "previousTable": "blood_banks",
     "schemaFile": "src/database/schema/blood-bank-directory-entries.schema.ts",
@@ -70,6 +75,16 @@
     "previousTable": "meditation_content",
     "schemaFile": "src/database/schema/meditation-library-items.schema.ts",
     "export": "meditationLibraryItems"
+  },
+  {
+    "table": "wellness_publication_versions",
+    "schemaFile": "src/database/schema/meditation-library-items.schema.ts",
+    "export": "wellnessPublicationVersions"
+  },
+  {
+    "table": "wellness_practice_history",
+    "schemaFile": "src/database/schema/meditation-library-items.schema.ts",
+    "export": "wellnessPracticeHistory"
   },
   {
     "table": "user_accounts",

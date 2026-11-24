@@ -26,8 +26,8 @@ const hospitalGroups = [
     ],
   ],
   [
-    'Contacts and sources',
-    ['country_code_1', 'phone_1', 'country_code_2', 'phone_2', 'email', 'website', 'source_url'],
+    'Contacts',
+    ['country_code_1', 'phone_1', 'country_code_2', 'phone_2', 'email', 'website'],
   ],
   ['Hospital information', ['summary_en', 'summary_hi', 'specialties', 'cashless_schemes']],
 ];
@@ -43,7 +43,6 @@ const hospitalLabel = (key) =>
     country_code_2: 'Secondary country code',
     phone_1: 'Primary phone',
     phone_2: 'Secondary phone',
-    source_url: 'Source evidence URL',
     summary_en: 'English summary',
     summary_hi: 'Hindi summary',
     cashless_schemes: 'Cashless schemes (semicolon-separated)',
@@ -132,7 +131,7 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
         ),
         el(
           'p',
-          `Imported hospitals appear as directory listings; source review is a separate status. ${data.returnsToDraft} currently published records would return to draft. ${data.ignoredVerificationFlags} legacy verification flags will not be used to publish records.`,
+          `Imported hospitals appear as directory listings; listing review is a separate status. ${data.returnsToDraft} currently published records would return to draft. ${data.ignoredVerificationFlags} legacy verification flags will not be used to publish records.`,
         ),
       );
       for (const error of data.errors)
@@ -140,8 +139,8 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
       if (data.sample.length)
         review.append(
           table(
-            ['Source key', 'Name', 'City', 'State'],
-            data.sample.map((row) => [row.source_key, row.name_en, row.city, row.state]),
+            ['Record key', 'Name', 'City', 'State'],
+            data.sample.map((row) => [row.record_key, row.name_en, row.city, row.state]),
           ),
         );
       if (data.previewToken) {
@@ -180,7 +179,7 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
   importer.append(
     el(
       'p',
-      'Match records by source_key. Supported SwasthyaSearch CSV IDs become swasthya:hospital:<id>. City and state are required. Leave unknown scheme eligibility blank. No doctors or affiliations are created.',
+      'Match records by record_key. Supported SwasthyaSearch CSV IDs become swasthya:hospital:<id>. City and state are required. Leave unknown scheme eligibility blank. No doctors or affiliations are created.',
     ),
     file,
     preview,
@@ -202,7 +201,7 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
         actions.append(
           button('Edit', () => hospitalEditor(row.id)),
           button('Image', () => providerImageEditor('hospitals', row.id)),
-          button('Source review', () => hospitalReviewEditor(row.id)),
+          button('Review / approve', () => hospitalReviewEditor(row.id)),
           button(row.listed ? 'Hide from app' : 'Show in app', async () => { await api(`/admin/hospitals/${row.id}/visibility`, { method: 'POST', body: { listed: !row.listed, expectedVersion: row.version } }); await hospitalsPage(current, term, city, status); }),
           button('Delete', () =>
             openEditor(
@@ -234,7 +233,7 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
   section.append(
     el(
       'p',
-      `${data.total} matching hospitals. Listed hospitals appear in the app. Source review is shown separately; use Hide from app to remove a listing.`,
+      `${data.total} matching hospitals. Listed hospitals appear in the app. Listing review is shown separately; use Hide from app to remove a listing.`,
     ),
   );
   pager(section, current, data.hasNext, (next) => hospitalsPage(next, term, city, status));
@@ -245,7 +244,6 @@ async function hospitalEditor(id) {
     row = id ? await api(`/admin/hospitals/${id}`) : {};
   if (rev !== requestRevision) return;
   const fields = [];
-  if (!id) fields.push(field('source_key', 'Permanent source key'));
   for (const [title, keys] of hospitalGroups) {
     fields.push(el('h3', title));
     const group = el('div', null, 'field-row');
@@ -283,6 +281,7 @@ async function hospitalEditor(id) {
       ),
     );
   fields.push(benefits);
+  fields.push(field('reviewAfterSave', 'Review this listing after saving', false, 'checkbox'));
   openEditor(
     id ? 'Edit hospital' : 'Add hospital',
     fields,
@@ -300,20 +299,23 @@ async function hospitalEditor(id) {
                   .split(';')
                   .map((value) => value.trim())
                   .filter(Boolean)
-              : ['phone_1', 'phone_2', 'email', 'website', 'source_url'].includes(key)
+              : ['phone_1', 'phone_2', 'email', 'website'].includes(key)
                 ? text || null
                 : text;
         }
       for (const key of hospitalFlags)
         body[key] = data.get(key) === 'true' ? true : data.get(key) === 'false' ? false : null;
       if (id) body.expectedVersion = row.version;
-      else body.source_key = String(data.get('source_key') ?? '').trim();
-      await send(id ? `/admin/hospitals/${id}` : '/admin/hospitals', body, id ? 'PATCH' : 'POST');
+      const saved = await send(id ? `/admin/hospitals/${id}` : '/admin/hospitals', body, id ? 'PATCH' : 'POST');
+      if (data.has('reviewAfterSave')) return async () => {
+        await hospitalsPage();
+        await hospitalReviewEditor(saved.id);
+      };
       await hospitalsPage();
     },
-    `Every save returns this hospital to draft for source review. Supply a country code unless the phone number already starts with +.${id ? ' Source key: ' + row.source_key : ''}`,
+    `Every save returns this hospital to draft for listing review. Supply a country code unless the phone number already starts with +.${id ? ' Import key: ' + row.record_key : ''}`,
   );
-  for (const key of ['source_key', 'name_en', 'city', 'state']) {
+  for (const key of ['name_en', 'city', 'state']) {
     const input = $('editor-fields').querySelector(`[name=${key}]`);
     if (input) input.required = true;
   }
@@ -324,25 +326,20 @@ async function hospitalReviewEditor(id) {
     row = await api(`/admin/hospitals/${id}`);
   if (rev !== requestRevision) return;
   openEditor(
-    'Hospital source review',
+    'Hospital listing review',
     [
-      field('reviewerName', 'Reviewer name'),
-      field('reviewerQualification', 'Reviewer role / qualification'),
-      field('evidence', 'Source review evidence', '', 'textarea'),
-      field('confirmedSource', 'I checked the source, address and contacts', false, 'checkbox'),
-      field('publish', 'Publish after review', true, 'checkbox'),
+      field('confirmedDetails', 'I checked the listing details shown here', false, 'checkbox'),
+      field('publish', 'Approve for publication', true, 'checkbox'),
     ],
     async (data) => {
       await send(`/admin/hospitals/${id}/review`, {
         expectedVersion: row.version,
-        reviewerName: data.get('reviewerName'),
-        reviewerQualification: data.get('reviewerQualification'),
-        evidence: data.get('evidence'),
-        confirmedSource: data.has('confirmedSource'),
+        confirmedDetails: data.has('confirmedDetails'),
         publish: data.has('publish'),
       });
       await hospitalsPage();
     },
-    `${row.name_en} · ${row.city}, ${row.state}. Source: ${row.source_url || 'Missing — edit before publishing'}. Review covers the supplied facility and eligibility information; it does not establish live beds or appointment availability.`,
+    [row.name_en, row.address_line1, row.city, row.state, row.phone_1].filter(Boolean).join(' · '),
   );
+  $('save-editor').textContent = 'Save review';
 }

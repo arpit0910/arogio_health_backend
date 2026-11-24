@@ -72,7 +72,7 @@ describe('Administrator database reset', () => {
     await post('preview', { password }, ordinary).expect(403);
     await post('preview', { password: 'wrong' }).expect(401);
     const data = await preview();
-    expect(data.tables).toHaveLength(26);
+    expect(data.tables).toHaveLength(29);
     expect(data.tables.find((t) => t.name === 'user_accounts')?.records).toBe('2');
     expect(JSON.stringify(data)).not.toContain('password_hash');
     const again = await preview();
@@ -131,15 +131,15 @@ describe('Administrator database reset', () => {
   });
   it('clears every app table, preserves migrations and invalidates all account sessions', async () => {
     await database.exec(`
-      insert into care_directory_entries (source_key, kind, name, city, source_url, details)
-      values ('reset:hospital', 'hospital', 'Synthetic hospital', 'Delhi', 'https://example.test', '{}'),
-             ('reset:doctor', 'doctor', 'Synthetic doctor', 'Delhi', 'https://example.test', '{}');
-      insert into hospitals (id, source_key, name_en, city, state, image_data)
-      select id, source_key, name, city, 'Delhi', decode('abcd','hex') from care_directory_entries where kind = 'hospital';
-      insert into doctors (id, source_key, name_en, city, state, image_data)
-      select id, source_key, name, city, 'Delhi', decode('abcd','hex') from care_directory_entries where kind = 'doctor';
-      insert into medical_departments (source_key, name_en) values ('reset:department', 'Synthetic department');
-      insert into medical_diseases (source_key, name_en, department_id)
+      insert into care_directory_entries (record_key, kind, name, city, details)
+      values ('reset:hospital', 'hospital', 'Synthetic hospital', 'Delhi', '{}'),
+             ('reset:doctor', 'doctor', 'Synthetic doctor', 'Delhi', '{}');
+      insert into hospitals (id, record_key, name_en, city, state, image_data)
+      select id, record_key, name, city, 'Delhi', decode('abcd','hex') from care_directory_entries where kind = 'hospital';
+      insert into doctors (id, record_key, name_en, city, state, image_data)
+      select id, record_key, name, city, 'Delhi', decode('abcd','hex') from care_directory_entries where kind = 'doctor';
+      insert into medical_departments (record_key, name_en) values ('reset:department', 'Synthetic department');
+      insert into medical_diseases (record_key, name_en, department_id)
       select 'reset:disease', 'Synthetic disease', id from medical_departments;
       insert into home_banners (title, alt, image, created_by)
       select 'Synthetic banner', 'Test image', decode('abcd','hex'), id from user_accounts where role = 'super_admin';
@@ -161,7 +161,10 @@ describe('Administrator database reset', () => {
       confirmation: data.confirmation,
       previewToken: data.previewToken,
     }).expect(201);
-    expect(result.body).toEqual({ reset: true, tableCount: 26, remainingRecords: 0 });
+    expect(result.body).toEqual({ reset: true, tableCount: data.tables.length, remainingRecords: 0 });
+    expect(data.tables.map((table) => table.name)).toEqual(expect.arrayContaining([
+      'health_article_thumbnails', 'wellness_publication_versions', 'wellness_practice_history',
+    ]));
     for (const table of data.tables) {
       const count = await database.query<{ n: string }>(
         `select count(*)::text as n from public."${table.name}"`,

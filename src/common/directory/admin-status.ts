@@ -18,8 +18,8 @@ export function directoryPredicates(kind: DirectoryKind) {
   const approved = sql`coalesce((${approvedFlag}=true and ${reviewed} >= ${fresh}), false)`;
   const expired = sql`(${approvedFlag}=true and (${reviewed} is null or ${reviewed} < ${fresh}))`;
   const incomplete = kind === 'blood-banks'
-    ? sql`(${blank(banks.name_en)} or ${blank(banks.city)} or ${blank(banks.state)} or ${blank(banks.address_en)} or ${blank(banks.phone)} or ${blank(banks.source_url)})`
-    : sql`(${blank(provider.name_en)} or ${blank(provider.city)} or ${blank(provider.state)} or ${blank(provider.address_line1)} or ${blank(provider.phone_1)} or ${blank(provider.source_url)} ${kind === 'doctors' ? sql`or ${blank(doctors.registration_number)} or ${blank(doctors.medical_council)} or jsonb_array_length(${doctors.qualifications})=0 or not (${activeDoctorDepartment})` : sql``})`;
+    ? sql`(${blank(banks.name_en)} or ${blank(banks.city)} or ${blank(banks.state)} or ${blank(banks.address_en)} or ${blank(banks.phone)})`
+    : sql`(${blank(provider.name_en)} or ${blank(provider.city)} or ${blank(provider.state)} or ${blank(provider.address_line1)} or ${blank(provider.phone_1)} ${kind === 'doctors' ? sql`or ${blank(doctors.registration_number)} or ${blank(doctors.medical_council)} or jsonb_array_length(${doctors.qualifications})=0 or not (${activeDoctorDepartment})` : sql``})`;
   return { active, inactive: sql`not (${active})`, draft: sql`${approvedFlag}=false and ${reviewed} is null`, withdrawn: sql`${approvedFlag}=false and ${reviewed} is not null`, incomplete, approved, expired, ready: sql`(${active}) and not (${incomplete}) and not (${approved})` };
 }
 export function directoryCountFields(predicates: ReturnType<typeof directoryPredicates>) {
@@ -27,7 +27,7 @@ export function directoryCountFields(predicates: ReturnType<typeof directoryPred
 }
 
 type StatusRow = {
-  name_en: string; city: string; state: string; source_url?: string | null;
+  name_en: string; city: string; state: string;
   address_line1?: string; address_en?: string; phone_1?: string | null; phone?: string | null;
   listed?: boolean; published?: boolean; reviewedAt?: Date | string | null;
   is_active?: boolean; is_verified?: boolean; verified_at?: Date | string | null;
@@ -39,7 +39,6 @@ export function directoryRowStatus(kind: DirectoryKind, row: StatusRow) {
   require('Name', row.name_en); require('City', row.city); require('State', row.state);
   require('Address', kind === 'blood-banks' ? row.address_en : row.address_line1);
   require('Phone', kind === 'blood-banks' ? row.phone : row.phone_1);
-  require('Source URL', row.source_url);
   if (kind === 'doctors') {
     require('Registration number', row.registration_number); require('Medical council', row.medical_council);
     if (!row.qualifications?.length) missingFields.push('Qualifications');

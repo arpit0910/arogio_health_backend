@@ -41,9 +41,23 @@ describe('application API', () => {
   afterAll(async () => app.close());
   beforeEach(() => jest.clearAllMocks());
 
-  it('serves the status homepage and CSP-compatible assets outside the API prefix', async () => {
+  it('serves the admin dashboard at the root and keeps existing admin links working', async () => {
+    const server = request(app.getHttpServer());
+    for (const path of ['/', '/admin', '/admin/']) {
+      await server.get(path).expect(200).expect('content-type', /text\/html/)
+        .expect('cache-control', 'no-store')
+        .expect(({ text }) => {
+          expect(text).toContain('Arogio - Super admin');
+          expect(text).toContain('/admin-assets/admin.js');
+        });
+    }
+    await server.get('/admin-assets/admin.js').expect(200);
+    await server.get('/api/v1/admin/analytics').expect(401);
+  });
+
+  it('serves the status page and CSP-compatible assets outside the API prefix', async () => {
     await request(app.getHttpServer())
-      .get('/')
+      .get('/status')
       .expect(200)
       .expect('content-type', /text\/html/)
       .expect('cache-control', 'no-store')
@@ -53,6 +67,7 @@ describe('application API', () => {
         expect(text).toContain('/status-assets/status.js');
         expect(headers['content-security-policy']).toContain("script-src 'self'");
       });
+    await request(app.getHttpServer()).get('/status/').expect(200, /Arogio backend status/);
     await request(app.getHttpServer()).get('/status-assets/status.js').expect(200);
     await request(app.getHttpServer()).get('/status-assets/status.css').expect(200);
     await request(app.getHttpServer()).get('/api/v1/health').expect(200);

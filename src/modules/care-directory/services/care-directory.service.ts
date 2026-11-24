@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { auditReviewSummary } from '../../../common/directory/review-input';
 import {
   BadRequestException,
   ConflictException,
@@ -45,7 +47,7 @@ export class CareDirectoryService {
   }
   private present(row: typeof entries.$inferSelect, admin: boolean) {
     if (admin) return row;
-    const publicRow = { ...row, reviewedBy: undefined, reviewEvidence: undefined };
+    const publicRow = { ...row, recordKey: undefined, reviewedBy: undefined, reviewEvidence: undefined };
     return { ...publicRow, verification: 'source-reviewed', freshnessDays: 180 };
   }
   async list(query: unknown, admin = false) {
@@ -96,7 +98,7 @@ export class CareDirectoryService {
       .where(and(eq(entries.id, id), ...(admin ? [] : this.publicFilter())))
       .limit(1);
     if (!row)
-      throw new NotFoundException('This care entry is unavailable or awaiting source review.');
+      throw new NotFoundException('This care entry is unavailable or awaiting listing review.');
     const relations = await this.database.db
       .select()
       .from(links)
@@ -145,8 +147,8 @@ export class CareDirectoryService {
         // Stable identity is immutable. Every edit unpublishes and requires a new review.
         const current = await tx.select().from(entries).where(eq(entries.id, id)).limit(1);
         if (!current[0]) throw new NotFoundException();
-        if (current[0].sourceKey !== data.sourceKey || current[0].kind !== data.kind)
-          throw new BadRequestException('Source key and kind are immutable.');
+        if ((data.recordKey && current[0].recordKey !== data.recordKey) || current[0].kind !== data.kind)
+          throw new BadRequestException('Record key and kind are immutable.');
         [result] = await tx
           .update(entries)
           .set({
@@ -163,12 +165,12 @@ export class CareDirectoryService {
       } else {
         [result] = await tx
           .insert(entries)
-          .values({ ...data, updatedAt: new Date() })
-          .onConflictDoNothing({ target: entries.sourceKey })
+          .values({ ...data, recordKey: data.recordKey ?? randomUUID(), updatedAt: new Date() })
+          .onConflictDoNothing({ target: entries.recordKey })
           .returning();
         if (!result)
           throw new ConflictException(
-            'This source identifier already exists. Edit the existing entry.',
+            'This record identifier already exists. Edit the existing entry.',
           );
       }
       await tx.insert(administrationAuditLogs).values({
@@ -195,13 +197,11 @@ export class CareDirectoryService {
         row.kind === 'hospital'
           ? await tx.select().from(hospitals).where(eq(hospitals.id, id))
           : [];
-      if (profile && review.publish && !profile.source_url)
-        throw new BadRequestException('A hospital source URL is required before publication.');
       if (row.updatedAt.toISOString() !== review.expectedUpdatedAt)
         throw new ConflictException('Entry changed. Reload before reviewing.');
       if (review.publish && row.kind !== 'medicine' && (!row.address || !row.phone))
         throw new BadRequestException(
-          'A sourced address and contact number are required before publication.',
+          'An address and contact number are required before publication.',
         );
       if (
         review.publish &&
@@ -219,7 +219,12 @@ export class CareDirectoryService {
         throw new BadRequestException(
           'Clinically reviewed education and precautions are required.',
         );
-      const evidence = `${review.reviewerName} (${review.reviewerQualification}): ${review.evidence}`;
+      if (row.kind === 'medicine' && review.publish
+        && ((review.evidence?.length ?? 0) < 20 || (review.reviewerName?.length ?? 0) < 3
+          || (review.reviewerQualification?.length ?? 0) < 3)) {
+        throw new BadRequestException('Medicine publication requires a named reviewer and clinical review notes.');
+      }
+      const evidence = auditReviewSummary(review);
       const [saved] = await tx
         .update(entries)
         .set({
@@ -241,7 +246,7 @@ export class CareDirectoryService {
         action: review.publish ? 'care.review.publish' : 'care.withdraw',
         targetId: id,
         outcome: 'succeeded',
-        metadata: { evidence, sourceUrl: row.sourceUrl },
+        metadata: { evidence },
       });
       return saved;
     });
@@ -334,15 +339,7 @@ export class CareDirectoryService {
   async reviewBank(id: string, actor: string, body: unknown, requireActive = false) {
     this.parse(z.uuid(), id);
     const review = this.parse(
-      reviewInput.extend({
-        sourceUrl: z
-          .url()
-          .max(2000)
-          .refine((value) => {
-            const url = new URL(value);
-            return url.protocol === 'https:' && !url.username && !url.password;
-          }),
-      }),
+      reviewInput,
       body,
     );
     return this.database.db.transaction(async (tx) => {
@@ -361,13 +358,12 @@ export class CareDirectoryService {
           !/^\+?\d{6,15}$/.test((bank.phone ?? '').replace(/[ ()-]/g, '')))
       )
         throw new BadRequestException(
-          'A sourced address and usable phone number are required.',
+          'An address and usable phone number are required.',
         );
       const [saved] = await tx
         .update(bloodBankDirectoryEntries)
         .set({
           is_verified: review.publish,
-          source_url: review.publish ? review.sourceUrl : null,
           verified_at: review.publish ? new Date() : null,
           updated_at: new Date(),
         })
@@ -379,10 +375,7 @@ export class CareDirectoryService {
         targetId: id,
         outcome: 'succeeded',
         metadata: {
-          sourceUrl: review.sourceUrl,
-          reviewer: review.reviewerName,
-          qualification: review.reviewerQualification,
-          evidence: review.evidence,
+          evidence: auditReviewSummary(review),
         },
       });
       return saved;

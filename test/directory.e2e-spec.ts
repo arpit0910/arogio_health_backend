@@ -216,7 +216,7 @@ describe('Articles and nearby blood-bank directory', () => {
     expect(nearby.body.missingCoordinates).toBe(1);
     expect(nearby.headers['cache-control']).toContain('no-store');
     await database.exec(
-      "update blood_bank_directory_entries set is_verified = true, source_url = 'https://example.test/old-source', verified_at = now()",
+      "update blood_bank_directory_entries set is_verified = true, verified_at = now()",
     );
     await request(app.getHttpServer())
       .post('/api/v1/admin/content/blood-banks/import/apply')
@@ -225,12 +225,12 @@ describe('Articles and nearby blood-bank directory', () => {
       .expect(201);
     const afterImport = await database.query<{
       is_verified: boolean;
-      source_url: string | null;
+
       verified_at: string | null;
-    }>('select is_verified, source_url, verified_at from blood_bank_directory_entries');
+    }>('select is_verified, verified_at from blood_bank_directory_entries');
     expect(
       afterImport.rows.every(
-        (row) => !row.is_verified && row.source_url === null && row.verified_at === null,
+        (row) => !row.is_verified && row.verified_at === null,
       ),
     ).toBe(true);
     expect(

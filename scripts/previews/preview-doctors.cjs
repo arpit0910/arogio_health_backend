@@ -13,13 +13,13 @@ const css = fs
 html = html.replace('</head>', `<style>${css}</style></head>`);
 const department = {
   id: '33333333-3333-4333-8333-333333333333',
-  source_key: 'sample:dept',
+  record_key: 'sample:dept',
   name_en: 'Sample Cardiology',
   is_active: true,
 };
 const hospital = {
   id: '44444444-4444-4444-8444-444444444444',
-  source_key: 'sample:hospital',
+  record_key: 'sample:hospital',
   name_en: 'Sample Community Hospital',
   city: 'Delhi',
   state: 'Delhi',
@@ -27,7 +27,7 @@ const hospital = {
 const rows = [
   {
     id: '11111111-1111-4111-8111-111111111111',
-    source_key: 'sample:doctor:1',
+    record_key: 'sample:doctor:1',
     name_en: 'Dr. Sample Sharma',
     name_hi: '',
     city: 'Delhi',
@@ -38,7 +38,7 @@ const rows = [
     languages: ['Hindi', 'English'],
     consultation_fee: 500,
     experience_years: 10,
-    source_url: 'https://example.test/doctor',
+
     address_line1: 'Illustrative address only',
     phone_1: '+919000000000',
     published: true,
@@ -59,7 +59,7 @@ const rows = [
   },
   {
     id: '22222222-2222-4222-8222-222222222222',
-    source_key: 'sample:doctor:2',
+    record_key: 'sample:doctor:2',
     name_en: 'Dr. Sample Mehta',
     city: 'Pune',
     state: 'Maharashtra',

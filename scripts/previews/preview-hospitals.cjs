@@ -14,7 +14,7 @@ html = html.replace('</head>', `<style>${css}</style></head>`);
 const rows = [
   {
     id: '11111111-1111-4111-8111-111111111111',
-    source_key: 'sample:hospital:1',
+    record_key: 'sample:hospital:1',
     name_en: 'Sample Community Hospital',
     name_hi: 'उदाहरण सामुदायिक अस्पताल',
     hospital_type: 'Government',
@@ -23,7 +23,7 @@ const rows = [
     state: 'Delhi',
     country_code_1: '+91',
     phone_1: '9000000000',
-    source_url: 'https://example.test/hospital',
+
     published: true,
     reviewedAt: '2026-11-15T00:00:00Z',
     version: 2,
@@ -34,7 +34,7 @@ const rows = [
   },
   {
     id: '22222222-2222-4222-8222-222222222222',
-    source_key: 'sample:hospital:2',
+    record_key: 'sample:hospital:2',
     name_en: 'Sample Private Hospital',
     name_hi: '',
     hospital_type: 'Private',

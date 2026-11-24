@@ -218,8 +218,9 @@ $('editor-form').addEventListener('submit', async (e) => {
   $('save-editor').disabled = true;
   $('editor-error').textContent = '';
   try {
-    await dialogSave(new FormData(e.target));
+    const afterSave = await dialogSave(new FormData(e.target));
     $('editor').close();
+    if (typeof afterSave === 'function') await safely(afterSave);
   } catch (error) {
     $('editor-error').textContent = error.message;
   } finally {

@@ -22,7 +22,7 @@ All paths below are under `/api/v1`.
 | GET | `/admin/departments` | Protected list including inactive records; `status=all/active/inactive` |
 | GET | `/admin/departments/:id` | Protected record for editing |
 | POST | `/admin/departments` | Create, inactive unless explicitly activated |
-| PATCH | `/admin/departments/:id` | Partial edit with required `expectedVersion`; source key is immutable |
+| PATCH | `/admin/departments/:id` | Partial edit with required `expectedVersion`; record key is immutable |
 | DELETE | `/admin/departments/:id?expected_version=1` | Version-checked deletion; referenced records cannot be removed |
 | GET | `/admin/departments/template?format=xlsx` | Empty XLSX template; `format=csv` returns UTF-8 CSV |
 | POST | `/admin/departments/import/preview` | Multipart `file`; reports creates/updates/errors without writes |
@@ -32,17 +32,17 @@ List parameters: `search`, `language=en/hi`, `page`, `limit` (1–100). Both lan
 
 ## Data and import identity
 
-The `medical_departments` table holds UUID `id`, unique `source_key`, `name_en`, `name_hi`, `description_en`, `description_hi`, `is_active`, `version`, `created_at` and `updated_at`. English names are unique without case or surrounding whitespace. Hindi fields are optional; they remain stored and searchable independently. No city default is introduced.
+The `medical_departments` table holds UUID `id`, unique `record_key`, `name_en`, `name_hi`, `description_en`, `description_hi`, `is_active`, `version`, `created_at` and `updated_at`. English names are unique without case or surrounding whitespace. Hindi fields are optional; they remain stored and searchable independently. No city default is introduced.
 
 Canonical template columns:
 
 ```csv
-source_key,name_en,name_hi,description_en,description_hi,is_active
+record_key,name_en,name_hi,description_en,description_hi,is_active
 ```
 
-`source_key` is a permanent external/business identifier, up to 100 ASCII letters, digits, dots, underscores, colons and hyphens; it must start with a letter or digit. Matching keys update existing records. Names alone never silently merge two different identities. A legacy numeric `id` column may replace `source_key`; its key becomes `swasthya:<id>`. Do not provide both keys on a row. Optional bilingual descriptions default to empty; blank/omitted `is_active` means inactive. Use `1/0` or `true/false` for visibility.
+`record_key` is a permanent external/business identifier, up to 100 ASCII letters, digits, dots, underscores, colons and hyphens; it must start with a letter or digit. Matching keys update existing records. Names alone never silently merge two different identities. A legacy numeric `id` column may replace `record_key`; its key becomes `swasthya:<id>`. Do not provide both keys on a row. Optional bilingual descriptions default to empty; blank/omitted `is_active` means inactive. Use `1/0` or `true/false` for visibility.
 
-Files are limited to 8 MB and 5,000 records. XLSX must have one visible, populated worksheet with plain values. Formula/error/hyperlink cells, merged cells, macros, encrypted archives and oversized expanded workbooks are rejected by the reused workbook validation. Unknown CSV headers and duplicate source keys/names are errors. Fix every row error before applying.
+Files are limited to 8 MB and 5,000 records. XLSX must have one visible, populated worksheet with plain values. Formula/error/hyperlink cells, merged cells, macros, encrypted archives and oversized expanded workbooks are rejected by the reused workbook validation. Unknown CSV headers and duplicate record keys/names are errors. Fix every row error before applying.
 
 Preview tokens expire after 10 minutes and bind the administrator, uploaded bytes and current department state. A changed file, intervening edit, expired preview or repeated successful apply requires another preview. Writes serialize through a transaction-scoped lock; successful creates/updates/deletions/imports are audited in the existing administration log. No new audit table is introduced.
 

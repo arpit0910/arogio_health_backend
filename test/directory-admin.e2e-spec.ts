@@ -11,7 +11,7 @@ import { DatabaseService } from '../src/database/database.service';
 import { configureApplication } from '../src/bootstrap/configure-application';
 import * as schema from '../src/database/schema';
 const { migrateLocal } = createRequire(__filename)('../scripts/database/migrate-local.cjs') as { migrateLocal: (db: PGlite, directory: string) => Promise<void> };
-const review = { reviewerName: 'Directory test reviewer', reviewerQualification: 'Test directory reviewer', evidence: 'Synthetic source and contact review for isolated automated tests.', confirmedSource: true };
+const review = { reviewerName: 'Directory test reviewer', reviewerQualification: 'Test directory reviewer', evidence: 'Synthetic source and contact review for isolated automated tests.', confirmedDetails: true };
 jest.setTimeout(60000);
 describe('Directory status indexes and selected-record approvals', () => {
   let app: NestExpressApplication, database: PGlite, token: string, ordinary: string;
@@ -28,13 +28,13 @@ describe('Directory status indexes and selected-record approvals', () => {
   });
   afterAll(async () => { await app?.close(); await database?.close(); });
   afterEach(async () => { await database.exec('delete from administration_audit_logs; delete from blood_bank_directory_entries; delete from doctor_departments; delete from doctor_hospital_affiliations; delete from doctors; delete from hospitals; delete from care_directory_entries; delete from medical_departments;'); });
-  const hospital = async (key: string, extra: Record<string, unknown> = {}) => (await request(app.getHttpServer()).post('/api/v1/admin/hospitals').set(auth()).send({ source_key: key, name_en: `Test ${key}`, city: 'Delhi', state: 'Delhi', address_line1: 'Synthetic address', phone_1: '+919000000000', source_url: 'https://example.test/source', ...extra }).expect(201)).body as { id: string; version: number };
-  const bank = async (name: string, active = true) => (await request(app.getHttpServer()).post('/api/v1/admin/content/blood-banks').set(auth()).send({ name_en: name, city: 'Delhi', state: 'Delhi', address_en: 'Synthetic address', phone: '9000000000', source_url: active ? 'https://example.test/bank-directory' : null, is_active: active }).expect(201)).body as { id: string; updated_at: string };
+  const hospital = async (key: string, extra: Record<string, unknown> = {}) => (await request(app.getHttpServer()).post('/api/v1/admin/hospitals').set(auth()).send({ record_key: key, name_en: `Test ${key}`, city: 'Delhi', state: 'Delhi', address_line1: 'Synthetic address', phone_1: '+919000000000', ...extra }).expect(201)).body as { id: string; version: number };
+  const bank = async (name: string, active = true) => (await request(app.getHttpServer()).post('/api/v1/admin/content/blood-banks').set(auth()).send({ name_en: name, city: 'Delhi', state: 'Delhi', address_en: 'Synthetic address', phone: '9000000000', is_active: active }).expect(201)).body as { id: string; updated_at: string };
 
   it('lists and approves 500 records in one request', async () => {
     await database.exec(`
-      insert into blood_bank_directory_entries (source_id, name_en, city, state, address_en, phone, source_url)
-      select 'batch-' || n, 'Test bank ' || n, 'Delhi', 'Delhi', 'Synthetic address', '9000000000', 'https://example.test/bank-directory'
+      insert into blood_bank_directory_entries (record_key, name_en, city, state, address_en, phone)
+      select 'batch-' || n, 'Test bank ' || n, 'Delhi', 'Delhi', 'Synthetic address', '9000000000'
       from generate_series(1, 501) as n
     `);
     for (const kind of ['hospitals', 'doctors', 'content/blood-banks']) {
@@ -82,29 +82,29 @@ describe('Directory status indexes and selected-record approvals', () => {
     expect(stale.body).toMatchObject({ approved: 0, failed: 1 });
     expect((await request(app.getHttpServer()).get('/api/v1/admin/hospitals?status=approved').set(auth())).body.total).toBe(1);
   });
-  it('protects bulk approval with administrator authorization, source confirmation and duplicate/version validation', async () => {
+  it('protects bulk approval with administrator authorization, listing confirmation and duplicate/version validation', async () => {
     const row = await hospital('authorization'), items = [{ id: row.id, expectedVersion: 1 }];
     await request(app.getHttpServer()).post('/api/v1/admin/directory-approvals/hospitals').send({ ...review, items }).expect(401);
     await request(app.getHttpServer()).post('/api/v1/admin/directory-approvals/hospitals').set({ Authorization: `Bearer ${ordinary}` }).send({ ...review, items }).expect(403);
     await request(app.getHttpServer()).get('/api/v1/admin/directory-approvals/summary').set({ Authorization: `Bearer ${ordinary}` }).expect(403);
-    for (const body of [{ ...review, items, confirmedSource: false }, { ...review, items: [...items, ...items] }, { ...review, items: [{ id: row.id }] }]) await request(app.getHttpServer()).post('/api/v1/admin/directory-approvals/hospitals').set(auth()).send(body).expect(400);
+    for (const body of [{ ...review, items, confirmedDetails: false }, { ...review, items: [...items, ...items] }, { ...review, items: [{ id: row.id }] }]) await request(app.getHttpServer()).post('/api/v1/admin/directory-approvals/hospitals').set(auth()).send(body).expect(400);
     expect((await request(app.getHttpServer()).get(`/api/v1/admin/hospitals/${row.id}`).set(auth())).body.published).toBe(false);
   });
   it('includes inactive blood banks and approves checked banks in any city without activating inactive ones', async () => {
     const active = await bank('Test active bank'), inactive = await bank('Test inactive bank', false);
     const list = await request(app.getHttpServer()).get('/api/v1/admin/content/blood-banks?status=inactive').set(auth()).expect(200);
     expect(list.body.items).toHaveLength(1); expect(list.body.total).toBe(1);
-    expect(list.body.summary).toMatchObject({ all: 2, active: 1, inactive: 1, incomplete: 1 });
+    expect(list.body.summary).toMatchObject({ all: 2, active: 1, inactive: 1, incomplete: 0 });
     const result = await request(app.getHttpServer()).post('/api/v1/admin/directory-approvals/blood-banks').set(auth()).send({ items: [active, inactive].map(row => ({ id: row.id, expectedUpdatedAt: row.updated_at })) }).expect(201);
     expect(result.body).toMatchObject({ approved: 1, failed: 1 });
     const shown = await request(app.getHttpServer()).get('/api/v1/public/blood-banks').expect(200);
     expect(shown.body.items).toHaveLength(1); expect(shown.body.items[0].city).toBe('Delhi'); expect(shown.body.items[0].is_verified).toBe(true);
   });
   it('reports incomplete doctors, approves selected complete doctors and prevents stale replay', async () => {
-    const department = await request(app.getHttpServer()).post('/api/v1/admin/departments').set(auth()).send({ source_key: 'test-department', name_en: 'Test department', is_active: true }).expect(201);
-    const input = { source_key: 'complete-doctor', name_en: 'Test doctor', city: 'Delhi', state: 'Delhi', address_line1: 'Synthetic address', phone_1: '+919000000000', source_url: 'https://example.test/doctor', registration_number: 'TEST-123', medical_council: 'Test council', qualifications: ['MBBS'], department_ids: [department.body.id as string] };
+    const department = await request(app.getHttpServer()).post('/api/v1/admin/departments').set(auth()).send({ record_key: 'test-department', name_en: 'Test department', is_active: true }).expect(201);
+    const input = { record_key: 'complete-doctor', name_en: 'Test doctor', city: 'Delhi', state: 'Delhi', address_line1: 'Synthetic address', phone_1: '+919000000000', registration_number: 'TEST-123', medical_council: 'Test council', qualifications: ['MBBS'], department_ids: [department.body.id as string] };
     const valid = await request(app.getHttpServer()).post('/api/v1/admin/doctors').set(auth()).send(input).expect(201);
-    await request(app.getHttpServer()).post('/api/v1/admin/doctors').set(auth()).send({ ...input, source_key: 'incomplete-doctor', registration_number: '', department_ids: [] }).expect(201);
+    await request(app.getHttpServer()).post('/api/v1/admin/doctors').set(auth()).send({ ...input, record_key: 'incomplete-doctor', registration_number: '', department_ids: [] }).expect(201);
     const list = await request(app.getHttpServer()).get('/api/v1/admin/doctors?status=incomplete').set(auth()).expect(200);
     expect(list.body.items).toHaveLength(1); expect(list.body.summary).toMatchObject({ all: 2, incomplete: 1, ready: 1 });
     expect(list.body.items[0].adminStatus.missingFields).toEqual(expect.arrayContaining(['Registration number', 'Active department']));

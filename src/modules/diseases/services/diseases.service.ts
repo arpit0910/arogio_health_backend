@@ -147,7 +147,7 @@ export class DiseasesService {
       });
     } catch (error) {
       if (isUniqueViolation(error))
-        throw new ConflictException('A disease already uses this source key or English name.');
+        throw new ConflictException('A disease already uses this record key or English name.');
       if (getDatabaseErrorCode(error) === '23503')
         throw new ConflictException('This disease is still referenced. Deactivate it instead.');
       throw error;
@@ -216,19 +216,19 @@ export class DiseasesService {
   }
   private plan(prepared: Awaited<ReturnType<typeof prepareDiseases>>, existing: Disease[]) {
     const errors = [...prepared.errors],
-      keys = new Map(existing.map((row) => [row.source_key, row])),
-      names = new Map(existing.map((row) => [row.name_en.trim().toLowerCase(), row.source_key]));
+      keys = new Map(existing.map((row) => [row.record_key, row])),
+      names = new Map(existing.map((row) => [row.name_en.trim().toLowerCase(), row.record_key]));
     let creates = 0,
       updates = 0;
     for (const { row, value } of prepared.rows) {
       const owner = names.get(value.name_en.toLowerCase());
-      if (owner && owner !== value.source_key)
+      if (owner && owner !== value.record_key)
         errors.push({
           row,
           message:
-            'English name belongs to a different source key. Correct the identity before importing.',
+            'English name belongs to a different record key. Correct the identity before importing.',
         });
-      if (keys.has(value.source_key)) updates++;
+      if (keys.has(value.record_key)) updates++;
       else creates++;
     }
     return {
@@ -306,7 +306,7 @@ export class DiseasesService {
           .insert(diseases)
           .values(value)
           .onConflictDoUpdate({
-            target: diseases.source_key,
+            target: diseases.record_key,
             set: { ...value, version: sql`${diseases.version} + 1`, updated_at: new Date() },
           });
       await this.audit(tx, actorId, 'import', null, {

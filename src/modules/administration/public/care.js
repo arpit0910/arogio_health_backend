@@ -2,7 +2,7 @@
 async function carePage(current = 1, term = '') {
   reset('Care directory');
   const rev = requestRevision,
-    section = panel('Source-reviewed care'),
+    section = panel('Care directory'),
     tools = el('form', null, 'toolbar');
   const search = el('input');
   search.type = 'search';
@@ -48,7 +48,7 @@ async function carePage(current = 1, term = '') {
   );
   if (!result.items.length)
     section.append(
-      el('p', 'No sourced entries. Add only real provider records with primary-source evidence.'),
+      el('p', 'No listings yet. Add real provider records.'),
     );
   pager(section, current, result.hasNext, (next) => carePage(next, term));
   const queue = await api('/admin/care/corrections');
@@ -74,7 +74,7 @@ async function carePage(current = 1, term = '') {
               );
               await carePage();
             },
-            'Resolve only after reviewing the source. Update and review the provider separately if needed.',
+            'Resolve only after checking the listing details. Update and review the provider separately if needed.',
           ),
         ),
       ]),
@@ -95,16 +95,14 @@ async function careEditor(id) {
       'text',
       ['hospital', 'doctor', 'medicine', 'lab', 'pharmacy'].map((value) => [value, value]),
     ),
-    field('sourceKey', 'Stable source identifier (immutable)', row.sourceKey),
     field('name', 'Name', row.name),
     field('nameHi', 'Hindi name', row.nameHi),
     field('address', 'Verified physical address', row.address, 'textarea'),
     field('addressHi', 'Hindi address', row.addressHi, 'textarea'),
-    field('phone', 'Sourced phone number', row.phone),
-    field('sourceUrl', 'Primary HTTPS source', row.sourceUrl, 'url'),
+    field('phone', 'Phone number', row.phone),
   ];
   if (id)
-    fields.slice(0, 2).forEach((wrap) => {
+    fields.slice(0, 1).forEach((wrap) => {
       wrap.querySelector('input,select').disabled = true;
     });
   for (const key of [
@@ -161,14 +159,12 @@ async function careEditor(id) {
       details.longitude = values.longitude === '' ? null : Number(values.longitude);
       const body = {
         kind: row.id ? row.kind : values.kind,
-        sourceKey: row.id ? row.sourceKey : values.sourceKey,
         name: values.name,
         nameHi: values.nameHi,
         city: 'Jaipur',
         address: values.address,
         addressHi: values.addressHi,
         phone: values.phone || null,
-        sourceUrl: values.sourceUrl,
         details,
         ...(id ? { expectedUpdatedAt: row.updatedAt } : {}),
       };
@@ -180,12 +176,14 @@ async function careEditor(id) {
 }
 function careReview(row) {
   openEditor(
-    'Source and publication review',
+    'Listing review',
     [
-      field('reviewerName', 'Reviewer full name'),
-      field('reviewerQualification', 'Reviewer role / clinical qualification'),
-      field('evidence', 'Evidence checked, source date and limitations', '', 'textarea'),
-      field('confirmedSource', 'Primary source independently checked', false, 'checkbox'),
+      ...(row.kind === 'medicine' ? [
+        field('reviewerName', 'Reviewer full name'),
+        field('reviewerQualification', 'Reviewer role / clinical qualification'),
+        field('evidence', 'Clinical review notes', '', 'textarea'),
+      ] : []),
+      field('confirmedDetails', 'I checked the listing details', false, 'checkbox'),
       field(
         'publish',
         'Publish this reviewed record (uncheck to withdraw)',
@@ -199,7 +197,7 @@ function careReview(row) {
         `/admin/care/${row.id}/review`,
         {
           ...values,
-          confirmedSource: form.has('confirmedSource'),
+          confirmedDetails: form.has('confirmedDetails'),
           publish: form.has('publish'),
           expectedUpdatedAt: row.updatedAt,
         },
@@ -236,6 +234,6 @@ async function careLinks(row) {
       );
       await carePage();
     },
-    'Only attach hospitals whose affiliation has been checked. This change unpublishes the doctor until a new source review.',
+    'Only attach hospitals whose affiliation has been checked. This change unpublishes the doctor until a new listing review.',
   );
 }

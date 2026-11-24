@@ -11,7 +11,7 @@ See [API_ROUTES.md](../../API_ROUTES.md) for canonical URLs, compatibility alias
 - Versioned REST API at `/api/v1`.
 - PostgreSQL schema and versioned Drizzle migrations for users, external identities, and refresh sessions.
 - Liveness and database-readiness checks.
-- Backend status homepage and a bounded, privacy-safe API request monitor.
+- Backend status page at `/status` and a bounded, privacy-safe API request monitor.
 - Email/password registration and login using Argon2id, with optional height/weight collection.
 - Backend Google ID-token verification.
 - Short-lived JWT access tokens and rotating opaque refresh tokens.
@@ -100,9 +100,9 @@ Disable Swagger in an exposed environment unless it is intentionally required by
 
 ## Check APK connectivity
 
-Open the backend homepage (`https://backend.arogio.com/` after deployment), click **Run connection checks**, then leave the page open while trying login or signup in the APK. The request feed refreshes every five seconds. Application API requests and diagnostic probes have separate counts; monitor polling does not count as app traffic. Enable **Include diagnostic probes** to see health/readiness/test calls.
+Open the backend status page (`https://backend.arogio.com/status` after deployment), click **Run connection checks**, then leave the page open while trying login or signup in the APK. The request feed refreshes every five seconds. Application API requests and diagnostic probes have separate counts; monitor polling does not count as app traffic. Enable **Include diagnostic probes** to see health/readiness/test calls.
 
-The APK uses `https://backend.arogio.com/api/v1`. A successful API connection must return JSON, not a hosting HTML page or a Node welcome message. A 400/401 response in the feed still proves the request reached Nest; inspect its validation/authentication error next. If an app action adds no row, compare the APK URL with the homepage API base URL and check domain routing, TLS and device networking. All clients share this feed; it does not identify an individual APK or phone.
+The APK uses `https://backend.arogio.com/api/v1`. A successful API connection must return JSON, not a hosting HTML page or a Node welcome message. A 400/401 response in the feed still proves the request reached Nest; inspect its validation/authentication error next. If an app action adds no row, compare the APK URL with the API base URL shown on the status page and check domain routing, TLS and device networking. All clients share this feed; it does not identify an individual APK or phone.
 
 `GET /api/v1/diagnostics` returns process identity, start time, counters and the latest 50 completed requests. `GET /api/v1/diagnostics/ping` is a safe test request. The public feed only records method, registered route pattern, HTTP status, timestamp and duration. It never records bodies, credentials, headers, query strings, raw unmatched paths, IP addresses or user identifiers. It is an in-memory connectivity aid: restart clears it, older entries are dropped, and each worker has its own counters/feed. Use structured server logs for persistent investigation.
 
@@ -260,6 +260,6 @@ Before public release:
 
 Set `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD` (16?128 characters), and `SUPER_ADMIN_NAME` in your private environment file.
 
-For the local embedded database, run `npm run start:local -- --seed-admin`, then open http://localhost:3001/admin. Credentials are read from `.env.local`.
+For the local embedded database, run `npm run start:local -- --seed-admin`, then open http://localhost:3001/. Credentials are read from `.env.local`.
 
-For production, configure these values in `.env.production`, run `npm run build` and `npm run seed:super-admin:production`, then open `/admin` on the backend host. The seeder creates a dedicated super-admin account; rerunning it never resets an existing account password. Setting environment values alone does not create the account.
+For production, configure these values in `.env.production`, run `npm run build` and `npm run seed:super-admin:production`, then open the backend host at `/`. Existing `/admin` links also open the dashboard. The seeder creates a dedicated super-admin account; rerunning it never resets an existing account password. Setting environment values alone does not create the account.

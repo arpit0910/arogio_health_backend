@@ -1,3 +1,4 @@
+import { decodeProviderImage } from '../../../common/media/provider-image';
 import { directoryCountFields, directoryPredicates, directoryRowStatus } from '../../../common/directory/admin-status';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
@@ -19,7 +20,7 @@ import {
 } from 'drizzle-orm';
 import { z } from 'zod';
 import { DatabaseService } from '../../../database/database.service';
-import { healthArticles, healthArticleCategories, bloodBankDirectoryEntries } from '../../../database/schema';
+import { healthArticles, healthArticleCategories, healthArticleThumbnails, bloodBankDirectoryEntries } from '../../../database/schema';
 import {
   articleInput,
   categoryInput,
@@ -36,7 +37,6 @@ import { articleTopics } from '../content/article-topics';
 
 const articleSummary = {
   id: healthArticles.id,
-  source_id: healthArticles.source_id,
   title_en: healthArticles.title_en,
   title_hi: healthArticles.title_hi,
   excerpt_en: healthArticles.excerpt_en,
@@ -45,6 +45,7 @@ const articleSummary = {
   reading_minutes_hi: sql<number>`greatest(1, ceil(array_length(regexp_split_to_array(btrim(coalesce(nullif(${healthArticles.content_hi}, ''), ${healthArticles.content_en})), '[[:space:]]+'), 1) / 200.0))::integer`,
   category: healthArticles.category,
   image_url: healthArticles.image_url,
+  thumbnailRevision: sql<string | null>`(select t.revision from health_article_thumbnails t where t.article_id = ${healthArticles.id})`,
   author_name: healthArticles.author_name,
   is_published: healthArticles.is_published,
   created_at: healthArticles.created_at,
@@ -114,14 +115,16 @@ export class HealthResourcesService {
       total: total[0]!.count,
     };
   }
-  private withThumbnail<T extends { category: string; image_url: string }>(
+  private withThumbnail<T extends { id: string; category: string; image_url: string; thumbnailRevision: string | null }>(
     row: T,
     categories: { name: string; name_hi: string; image_url: string }[],
   ) {
     const category = categories.find((item) => item.name === row.category);
     return {
       ...row,
-      thumbnail_url: row.image_url || category?.image_url || topicImage(row.category),
+      thumbnail_url: row.thumbnailRevision
+        ? `/api/v1/public/articles/${row.id}/thumbnail?v=${row.thumbnailRevision}`
+        : row.image_url || category?.image_url || topicImage(row.category),
       category_hi: category?.name_hi || '',
     };
   }
@@ -166,20 +169,46 @@ export class HealthResourcesService {
   async article(id: string, admin = false) {
     this.parse(z.uuid(), id);
     const [row] = await this.database.db
-      .select()
+      .select({ ...articleSummary, content_en: healthArticles.content_en, content_hi: healthArticles.content_hi })
       .from(healthArticles)
       .where(and(eq(healthArticles.id, id), admin ? undefined : eq(healthArticles.is_published, true)))
       .limit(1);
     if (!row) throw new NotFoundException('Article not found.');
     return this.withThumbnail(row, await this.categories(admin));
   }
-  private bankFilters(bloodGroup?: string, only24h = false, admin = false, sourced = false): SQL[] {
+  async articleThumbnail(id: string, admin = false) {
+    this.parse(z.uuid(), id);
+    const [row] = await this.database.db.select({ image_data: healthArticleThumbnails.imageData, image_revision: healthArticleThumbnails.revision })
+      .from(healthArticleThumbnails)
+      .innerJoin(healthArticles, eq(healthArticleThumbnails.articleId, healthArticles.id))
+      .where(and(eq(healthArticles.id, id), admin ? undefined : eq(healthArticles.is_published, true)));
+    if (!row) throw new NotFoundException('Article thumbnail not found.');
+    return row;
+  }
+  async saveArticleThumbnail(id: string, file?: Express.Multer.File) {
+    this.parse(z.uuid(), id);
+    const imageData = await decodeProviderImage(file);
+    return this.database.db.transaction(async tx => {
+      const [article] = await tx.select({ id: healthArticles.id }).from(healthArticles)
+        .where(eq(healthArticles.id, id)).for('update');
+      if (!article) throw new NotFoundException('Article not found.');
+      const revision = randomUUID();
+      await tx.insert(healthArticleThumbnails).values({ articleId: id, imageData, revision })
+        .onConflictDoUpdate({ target: healthArticleThumbnails.articleId, set: { imageData, revision } });
+      return { revision };
+    });
+  }
+  async removeArticleThumbnail(id: string) {
+    this.parse(z.uuid(), id);
+    await this.database.db.delete(healthArticleThumbnails).where(eq(healthArticleThumbnails.articleId, id));
+    return { removed: true };
+  }
+  private bankFilters(bloodGroup?: string, only24h = false, admin = false, reviewedOnly = false): SQL[] {
     const filters = admin ? [] : [eq(bloodBankDirectoryEntries.is_active, true)];
-    if (sourced)
+    if (reviewedOnly)
       filters.push(
         eq(bloodBankDirectoryEntries.city, 'Jaipur'),
         eq(bloodBankDirectoryEntries.is_verified, true),
-        sql`${bloodBankDirectoryEntries.source_url} like 'https://%'`,
         gte(bloodBankDirectoryEntries.verified_at, new Date(Date.now() - 180 * 86400000)),
       );
     if (bloodGroup)
@@ -187,9 +216,9 @@ export class HealthResourcesService {
     if (only24h) filters.push(eq(bloodBankDirectoryEntries.is_24_7, true));
     return filters;
   }
-  async listBanks(query: unknown, admin = false, sourced = false) {
+  async listBanks(query: unknown, admin = false, reviewedOnly = false) {
     const q = this.parse(admin ? adminBankListInput : listInput, query),
-      filters = this.bankFilters(q.bloodGroup, q.only24h === 'true', admin, sourced);
+      filters = this.bankFilters(q.bloodGroup, q.only24h === 'true', admin, reviewedOnly);
     if (q.search)
       filters.push(
         or(
@@ -227,9 +256,9 @@ export class HealthResourcesService {
       missingCoordinates: missing[0]!.count,
     };
   }
-  async nearby(body: unknown, sourced = false) {
+  async nearby(body: unknown, reviewedOnly = false) {
     const q = this.parse(nearbyInput, body),
-      filters = this.bankFilters(q.bloodGroup, q.only24h, false, sourced);
+      filters = this.bankFilters(q.bloodGroup, q.only24h, false, reviewedOnly);
     const distance = sql<number>`(6371.0 * 2 * asin(sqrt(least(1.0, greatest(0.0,
       power(sin(radians(${bloodBankDirectoryEntries.latitude} - ${q.latitude}) / 2), 2) + cos(radians(${q.latitude})) * cos(radians(${bloodBankDirectoryEntries.latitude})) * power(sin(radians(${bloodBankDirectoryEntries.longitude} - ${q.longitude}) / 2), 2)
     )))))`.mapWith(Number);
@@ -291,13 +320,13 @@ export class HealthResourcesService {
             .returning()
         : await this.database.db
             .insert(healthArticles)
-            .values({ ...value, source_id: `manual-${randomUUID()}` })
+            .values({ ...value, record_key: `manual-${randomUUID()}` })
             .returning();
       if (!rows[0]) throw new NotFoundException();
       return rows[0];
     }
     const draft = this.parse(bankInput, body);
-    const value = { ...draft, is_verified: false, source_url: draft.source_url || null, verified_at: null };
+    const value = { ...draft, is_verified: false, verified_at: null };
     const rows = id
       ? await this.database.db
           .update(bloodBankDirectoryEntries)
@@ -306,7 +335,7 @@ export class HealthResourcesService {
           .returning()
       : await this.database.db
           .insert(bloodBankDirectoryEntries)
-          .values({ ...value, source_id: `manual-${randomUUID()}` })
+          .values({ ...value, record_key: `manual-${randomUUID()}` })
           .returning();
     if (!rows[0]) throw new NotFoundException();
     return rows[0];
@@ -350,18 +379,18 @@ export class HealthResourcesService {
   }
   async preview(kind: DirectoryKind, file?: Express.Multer.File) {
     const result = await this.prepared(kind, file),
-      ids = [...result.articles, ...result.banks].map((row) => row.source_id);
+      ids = [...result.articles, ...result.banks].map((row) => row.record_key);
     const existing = !ids.length
       ? []
       : kind === 'articles'
         ? await this.database.db
             .select({ id: healthArticles.id })
             .from(healthArticles)
-            .where(inArray(healthArticles.source_id, ids))
+            .where(inArray(healthArticles.record_key, ids))
         : await this.database.db
             .select({ id: bloodBankDirectoryEntries.id })
             .from(bloodBankDirectoryEntries)
-            .where(inArray(bloodBankDirectoryEntries.source_id, ids));
+            .where(inArray(bloodBankDirectoryEntries.record_key, ids));
     return {
       totalRows: result.totalRows,
       validRows: ids.length,
@@ -377,10 +406,10 @@ export class HealthResourcesService {
         kind === 'articles'
           ? result.articles
               .slice(0, 5)
-              .map((row) => ({ source_id: row.source_id, title: row.title_en }))
+              .map((row) => ({ record_key: row.record_key, title: row.title_en }))
           : result.banks
               .slice(0, 5)
-              .map((row) => ({ source_id: row.source_id, title: row.name_en })),
+              .map((row) => ({ record_key: row.record_key, title: row.name_en })),
     };
   }
   async import(kind: DirectoryKind, file?: Express.Multer.File) {
@@ -408,7 +437,7 @@ export class HealthResourcesService {
             .insert(healthArticles)
             .values(row)
             .onConflictDoUpdate({
-              target: healthArticles.source_id,
+              target: healthArticles.record_key,
               set: { ...row, ...(row.image_url ? {} : { image_url: sql`${healthArticles.image_url}` }) },
             });
       } else
@@ -417,10 +446,10 @@ export class HealthResourcesService {
           void _active;
           await tx
             .insert(bloodBankDirectoryEntries)
-            .values({ ...row, is_verified: false, source_url: null, verified_at: null })
+            .values({ ...row, is_verified: false, verified_at: null })
             .onConflictDoUpdate({
-              target: bloodBankDirectoryEntries.source_id,
-              set: { ...updates, is_verified: false, source_url: null, verified_at: null, updated_at: new Date() },
+              target: bloodBankDirectoryEntries.record_key,
+              set: { ...updates, is_verified: false, verified_at: null, updated_at: new Date() },
             });
         }
     });

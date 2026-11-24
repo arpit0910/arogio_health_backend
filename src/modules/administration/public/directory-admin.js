@@ -36,7 +36,7 @@ function directorySummary(kind, summary, onFilter) {
     metric.append(el('span', label), el('strong', number(summary?.[key] ?? 0)));
     metrics.append(metric);
   }
-  wrap.append(metrics, el('p', 'Counts cover the current search and city across all pages. Status groups overlap: an inactive record may also be incomplete. Completeness refers to fields required for source approval.'));
+  wrap.append(metrics, el('p', 'Counts cover the current search and city across all pages. Status groups overlap: an inactive record may also be incomplete. Completeness refers to fields required for listing approval.'));
   return wrap;
 }
 function directoryStatusCell(row) {

@@ -15,7 +15,7 @@ export const careDirectoryEntries = pgTable(
   'care_directory_entries',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    sourceKey: text('source_key').notNull().unique(),
+    recordKey: text('record_key').notNull().unique(),
     kind: text('kind').notNull(),
     name: text('name').notNull(),
     nameHi: text('name_hi').notNull().default(''),
@@ -25,7 +25,6 @@ export const careDirectoryEntries = pgTable(
     phone: text('phone'),
     imageUrl: text('image_url'),
     imageAlt: text('image_alt').notNull().default(''),
-    sourceUrl: text('source_url').notNull(),
     details: jsonb('details').$type<CareDetails>().notNull(),
     published: boolean('published').notNull().default(false),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),

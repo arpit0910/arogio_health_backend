@@ -15,7 +15,7 @@ export const medicalDiseases = pgTable(
   'medical_diseases',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    source_key: text('source_key').notNull().unique(),
+    record_key: text('record_key').notNull().unique(),
     name_en: text('name_en').notNull(),
     name_hi: text('name_hi').notNull().default(''),
     description_en: text('description_en').notNull().default(''),

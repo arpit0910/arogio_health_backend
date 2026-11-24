@@ -76,7 +76,7 @@ describe('Diseases', () => {
       await request(app.getHttpServer())
         .post('/api/v1/admin/departments')
         .set(admin())
-        .send({ source_key: 'swasthya:1', name_en: 'Test department', is_active: true })
+        .send({ record_key: 'swasthya:1', name_en: 'Test department', is_active: true })
         .expect(201)
     ).body as { id: string };
   it('protects administration and returns empty public records and templates', async () => {
@@ -102,7 +102,7 @@ describe('Diseases', () => {
       .post('/api/v1/admin/diseases')
       .set(admin())
       .send({
-        source_key: 'bad',
+        record_key: 'bad',
         name_en: 'Bad',
         department_id: '00000000-0000-4000-8000-000000000000',
       })
@@ -111,7 +111,7 @@ describe('Diseases', () => {
       .post('/api/v1/admin/diseases')
       .set(admin())
       .send({
-        source_key: 'test:disease',
+        record_key: 'test:disease',
         name_en: 'Test disease',
         name_hi: 'Hindi disease',
         description_en: 'Test description',

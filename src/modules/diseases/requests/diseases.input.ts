@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 const editable = z
   .object({
@@ -10,12 +11,12 @@ const editable = z
   })
   .strict();
 export const diseaseInput = editable.extend({
-  source_key: z
+  record_key: z
     .string()
     .trim()
     .min(1)
     .max(100)
-    .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/),
+    .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/).default(randomUUID),
   name_hi: editable.shape.name_hi.default(''),
   description_en: editable.shape.description_en.default(''),
   description_hi: editable.shape.description_hi.default(''),

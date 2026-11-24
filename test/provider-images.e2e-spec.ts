@@ -16,14 +16,14 @@ const { migrateLocal } = createRequire(__filename)('../scripts/database/migrate-
   migrateLocal: (db: PGlite, directory: string) => Promise<void>;
 };
 const draft = (key = 'test:doctor') => ({
-  source_key: key,
+  record_key: key,
   name_en: 'Synthetic doctor',
   name_hi: '??????? ????????',
   city: 'Delhi',
   state: 'Delhi',
   address_line1: 'Synthetic address',
   phone_1: '+919000000000',
-  source_url: 'https://example.test/doctor',
+
   registration_number: 'TEST-123',
   medical_council: 'Test council',
   qualifications: ['MBBS'],
@@ -34,9 +34,9 @@ const draft = (key = 'test:doctor') => ({
 const review = (version: number) => ({
   expectedVersion: version,
   publish: true,
-  confirmedSource: true,
+  confirmedDetails: true,
   reviewerName: 'Test reviewer',
-  reviewerQualification: 'Test source review role',
+  reviewerQualification: 'Test listing reviewer',
   evidence: 'Synthetic verification evidence for automated tests only.',
 });
 describe('Provider image uploads', () => {
@@ -84,7 +84,7 @@ describe('Provider image uploads', () => {
       const d = await request(app.getHttpServer())
         .post('/api/v1/admin/departments')
         .set(auth())
-        .send({ source_key: 'image:dept', name_en: 'Test department', is_active: true })
+        .send({ record_key: 'image:dept', name_en: 'Test department', is_active: true })
         .expect(201);
       departmentId = d.body.id as string;
     }
@@ -95,13 +95,13 @@ describe('Provider image uploads', () => {
         kind === 'doctors'
           ? { ...draft(), department_ids: [departmentId] }
           : {
-              source_key: 'image:hospital',
+              record_key: 'image:hospital',
               name_en: 'Test hospital',
               city: 'Delhi',
               state: 'Delhi',
               address_line1: 'Test address',
               phone_1: '+919000000000',
-              source_url: 'https://example.test/hospital',
+
             },
       )
       .expect(201);
@@ -111,6 +111,37 @@ describe('Provider image uploads', () => {
     sharp({ create: { width: 64, height: 48, channels: 3, background: '#007f70' } })
       .png()
       .toBuffer();
+
+  it('serves uploaded article thumbnails after publication and restores the fallback on removal', async () => {
+    const server = request(app.getHttpServer());
+    const article = {
+      title_en: 'Article thumbnail example',
+      content_en: 'Example article body.',
+      category: 'Daily Wellness',
+      image_url: 'https://example.test/fallback.jpg',
+    };
+    const created = await server.post('/api/v1/admin/content/articles').set(auth()).send(article).expect(201);
+    const id = created.body.id as string;
+    const admin = `/api/v1/admin/content/articles/${id}`;
+    const publicArticle = `/api/v1/public/articles/${id}`;
+    const upload = await server.put(`${admin}/thumbnail`).set(auth())
+      .attach('file', await photo(), 'cover.png').expect(200);
+    await server.get(`${admin}/thumbnail`).set(auth()).expect(200).expect('Content-Type', /image\/jpeg/);
+    await server.get(`${publicArticle}/thumbnail`).expect(404);
+
+    await server.patch(admin).set(auth()).send({ ...article, is_published: true }).expect(200);
+    const thumbnail = `${publicArticle}/thumbnail?v=${upload.body.revision}`;
+    const detail = await server.get(publicArticle).expect(200);
+    expect(detail.body.thumbnail_url).toBe(thumbnail);
+    const list = await server.get('/api/v1/public/articles').query({ search: article.title_en }).expect(200);
+    expect(list.body.items).toEqual(expect.arrayContaining([expect.objectContaining({ id, thumbnail_url: thumbnail })]));
+    await server.get(thumbnail).expect(200).expect('Content-Type', /image\/jpeg/);
+
+    await server.delete(`${admin}/thumbnail`).set(auth()).expect(200);
+    await server.get(thumbnail).expect(404);
+    const restored = await server.get(publicArticle).expect(200);
+    expect(restored.body.thumbnail_url).toBe(article.image_url);
+  });
   const uploadImage = (
     kind: string,
     id: string,
@@ -191,7 +222,7 @@ describe('Provider image uploads', () => {
         .expect(200);
       expect(still.body.image_url).toBe(upload.body.image_url);
       const csv = Buffer.from(
-        `source_key,name_en,city,state\n${still.body.source_key},Imported profile,Delhi,Delhi`,
+        `record_key,name_en,city,state\n${still.body.record_key},Imported profile,Delhi,Delhi`,
       );
       const preview = await request(app.getHttpServer())
         .post(`/api/v1/admin/${kind}/import/preview`)
