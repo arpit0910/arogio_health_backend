@@ -111,6 +111,7 @@ async function api(path, options = {}) {
       status: response.status,
     });
   }
+  if (options.stream) return response;
   if (options.blob) return response.blob();
   return response.status === 204 ? null : response.json();
 }
@@ -236,6 +237,7 @@ async function signOut(revoke = true) {
   $('editor-fields').replaceChildren();
   requestRevision++;
   $('portal').hidden = true;
+  $('approval-activity').hidden = true;
   $('login').hidden = false;
   content.replaceChildren();
   imageUrls.forEach(URL.revokeObjectURL);
@@ -248,6 +250,7 @@ async function signOut(revoke = true) {
     }).catch(() => {});
 }
 $('logout').onclick = () => void signOut();
+$('dismiss-approval').onclick = () => { $('approval-activity').hidden = true; };
 async function openPortal(user) {
   currentUser = user;
   $('login').hidden = true;

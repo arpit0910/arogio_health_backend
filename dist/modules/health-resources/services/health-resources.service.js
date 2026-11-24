@@ -22,6 +22,10 @@ const import_1 = require("../imports/import");
 const workbook_1 = require("../imports/workbook");
 const thumbnails_1 = require("../content/thumbnails");
 const article_topics_1 = require("../content/article-topics");
+const adminArticleListInput = health_resources_input_1.adminBankListInput.extend({
+    status: zod_1.z.enum(['all', 'draft', 'published']).default('all'),
+});
+const articleVisibilityInput = zod_1.z.object({ visible: zod_1.z.boolean(), expectedUpdatedAt: zod_1.z.iso.datetime() }).strict();
 const articleSummary = {
     id: schema_1.healthArticles.id,
     source_id: schema_1.healthArticles.source_id,
@@ -53,7 +57,9 @@ let HealthResourcesService = class HealthResourcesService {
         return this.parse(zod_1.z.enum(['articles', 'blood-banks']), value);
     }
     async listArticles(query, admin = false) {
-        const q = this.parse(health_resources_input_1.listInput, query), conditions = admin ? [] : [(0, drizzle_orm_1.eq)(schema_1.healthArticles.is_published, true)];
+        const q = this.parse(admin ? adminArticleListInput : health_resources_input_1.listInput, query), conditions = admin ? [] : [(0, drizzle_orm_1.eq)(schema_1.healthArticles.is_published, true)];
+        if (admin && q.status !== 'all')
+            conditions.push((0, drizzle_orm_1.eq)(schema_1.healthArticles.is_published, q.status === 'published'));
         if (q.search)
             conditions.push((0, drizzle_orm_1.or)((0, drizzle_orm_1.ilike)(schema_1.healthArticles.title_en, `%${q.search}%`), (0, drizzle_orm_1.ilike)(schema_1.healthArticles.title_hi, `%${q.search}%`), (0, drizzle_orm_1.ilike)(schema_1.healthArticles.category, `%${q.search}%`), (0, drizzle_orm_1.sql) `exists (select 1 from ${schema_1.healthArticleCategories} where ${schema_1.healthArticleCategories.name} = ${schema_1.healthArticles.category} and ${schema_1.healthArticleCategories.name_hi} ilike ${`%${q.search}%`})`));
         if (q.category)
@@ -150,7 +156,7 @@ let HealthResourcesService = class HealthResourcesService {
     bankFilters(bloodGroup, only24h = false, admin = false, sourced = false) {
         const filters = admin ? [] : [(0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.is_active, true)];
         if (sourced)
-            filters.push((0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.city, 'Jaipur'), (0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.is_verified, true), (0, drizzle_orm_1.sql) `${schema_1.bloodBankDirectoryEntries.source_url} like 'https://%'`, (0, drizzle_orm_1.gte)(schema_1.bloodBankDirectoryEntries.verified_at, new Date(Date.now() - 180 * 86400000)));
+            filters.push((0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.city, 'Jaipur'), (0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.is_verified, true), (0, drizzle_orm_1.gte)(schema_1.bloodBankDirectoryEntries.verified_at, new Date(Date.now() - 180 * 86400000)));
         if (bloodGroup)
             filters.push((0, drizzle_orm_1.sql) `${schema_1.bloodBankDirectoryEntries.available_blood_groups} @> ARRAY[${bloodGroup}]::text[]`);
         if (only24h)
@@ -272,6 +278,24 @@ let HealthResourcesService = class HealthResourcesService {
         if (!rows[0])
             throw new common_1.NotFoundException();
         return rows[0];
+    }
+    async setArticleVisibility(id, body, actorId) {
+        this.parse(zod_1.z.uuid(), id);
+        const { visible, expectedUpdatedAt } = this.parse(articleVisibilityInput, body);
+        return this.database.db.transaction(async (tx) => {
+            const [row] = await tx.select({ title: schema_1.healthArticles.title_en, visible: schema_1.healthArticles.is_published, updatedAt: schema_1.healthArticles.updated_at })
+                .from(schema_1.healthArticles).where((0, drizzle_orm_1.eq)(schema_1.healthArticles.id, id)).for('update');
+            if (!row)
+                throw new common_1.NotFoundException('Article not found.');
+            if (row.updatedAt.toISOString() !== expectedUpdatedAt)
+                throw new common_1.ConflictException('This article changed. Refresh the list before changing visibility.');
+            if (row.visible === visible)
+                return row;
+            const updatedAt = new Date(Math.max(Date.now(), row.updatedAt.getTime() + 1));
+            await tx.update(schema_1.healthArticles).set({ is_published: visible, updated_at: updatedAt }).where((0, drizzle_orm_1.eq)(schema_1.healthArticles.id, id));
+            await tx.insert(schema_1.administrationAuditLogs).values({ actorId, targetId: id, action: visible ? 'articles.publish' : 'articles.unpublish', outcome: 'succeeded' });
+            return { title: row.title, visible, updatedAt };
+        });
     }
     async remove(kind, id) {
         this.parse(zod_1.z.uuid(), id);

@@ -744,3 +744,23 @@ dialog::backdrop {
 .directory-summary .directory-metric { padding: 10px 12px; min-height: 88px; border-radius: 10px; }
 .directory-summary .directory-metric strong { font-size: 25px; margin: 4px 0 0; }
 .directory-summary .directory-metric span { font-size: 12px; line-height: 16px; }
+
+.approval-activity {
+  position: sticky;
+  top: 8px;
+  z-index: 2;
+  border: 1px solid #c9dfd2;
+  border-radius: 12px;
+  background: #e8f3ed;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.approval-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.approval-heading h2 { font-size: 16px; margin: 0; }
+#approval-count { margin-inline-start: auto; font-size: 13px; font-variant-numeric: tabular-nums; }
+#dismiss-approval { min-height: 36px; padding: 6px 12px; }
+#approval-progress { display: block; width: 100%; height: 12px; margin: 12px 0 8px; accent-color: #176348; }
+#approval-outcome { font-size: 13px; margin: 0; }
+.approval-error { background: #fff0f2; border-color: #e8b7c2; }
+.approval-error #approval-outcome { color: #90283a; }
+.screen-reader-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

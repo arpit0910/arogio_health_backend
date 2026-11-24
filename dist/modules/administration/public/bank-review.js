@@ -1,23 +1,15 @@
 function reviewBloodBank(row) {
   openEditor(
-    'Review blood-bank source',
+    'Blood bank listing review',
     [
-      field('sourceUrl', 'Primary HTTPS source', row.source_url || '', 'url'),
-      field('reviewerName', 'Reviewer full name'),
-      field('reviewerQualification', 'Reviewer role'),
-      field('evidence', 'Contact/address evidence independently checked', '', 'textarea'),
-      field('confirmedSource', 'Primary source checked', false, 'checkbox'),
-      field('publish', 'Publish the independently reviewed entry', row.is_verified, 'checkbox'),
+      field('confirmedDetails', 'I checked the address and contact information', false, 'checkbox'),
+      field('publish', 'Approve this listing', true, 'checkbox'),
     ],
     async (form) => {
       await send(
         `/admin/care/blood-banks/${row.id}/review`,
         {
-          sourceUrl: String(form.get('sourceUrl')),
-          reviewerName: String(form.get('reviewerName')),
-          reviewerQualification: String(form.get('reviewerQualification')),
-          evidence: String(form.get('evidence')),
-          confirmedSource: form.has('confirmedSource'),
+          confirmedDetails: form.has('confirmedDetails'),
           publish: form.has('publish'),
           expectedUpdatedAt: row.updated_at,
         },
@@ -25,6 +17,7 @@ function reviewBloodBank(row) {
       );
       await directoryPage('blood-banks');
     },
-    'Editing or importing always clears earlier review. This explicit source check is recorded in the audit trail. Stock is never represented as live.',
+    [row.name_en, row.address_en, row.city, row.state, row.phone].filter(Boolean).join(' · '),
   );
+  $('save-editor').textContent = 'Save review';
 }

@@ -294,15 +294,16 @@ let CareDirectoryService = class CareDirectoryService {
     }
     async reviewBank(id, actor, body, requireActive = false) {
         this.parse(zod_1.z.uuid(), id);
-        const review = this.parse(care_directory_input_1.reviewInput.extend({
-            sourceUrl: zod_1.z
-                .url()
-                .max(2000)
-                .refine((value) => {
-                const url = new URL(value);
-                return url.protocol === 'https:' && !url.username && !url.password;
-            }),
-        }), body);
+        const review = this.parse(zod_1.z.object({
+            expectedUpdatedAt: zod_1.z.iso.datetime(),
+            publish: zod_1.z.boolean(),
+            confirmedDetails: zod_1.z.literal(true).optional(),
+            confirmedSource: zod_1.z.literal(true).optional(),
+            reviewerName: zod_1.z.string().trim().max(200).optional(),
+            reviewerQualification: zod_1.z.string().trim().max(200).optional(),
+            evidence: zod_1.z.string().trim().max(4000).optional(),
+            sourceUrl: zod_1.z.unknown().optional(),
+        }).strict().refine((value) => value.confirmedDetails === true || value.confirmedSource === true, 'Confirm the listing details before continuing.'), body);
         return this.database.db.transaction(async (tx) => {
             const [bank] = await tx
                 .select()
@@ -316,14 +317,13 @@ let CareDirectoryService = class CareDirectoryService {
             if (bank.updated_at.toISOString() !== review.expectedUpdatedAt)
                 throw new common_1.ConflictException('Bank changed. Reload before reviewing.');
             if (review.publish &&
-                (!bank.address_en ||
+                (!bank.address_en.trim() ||
                     !/^\+?\d{6,15}$/.test((bank.phone ?? '').replace(/[ ()-]/g, ''))))
-                throw new common_1.BadRequestException('A sourced address and usable phone number are required.');
+                throw new common_1.BadRequestException('An address and usable phone number are required.');
             const [saved] = await tx
                 .update(schema_1.bloodBankDirectoryEntries)
                 .set({
                 is_verified: review.publish,
-                source_url: review.publish ? review.sourceUrl : null,
                 verified_at: review.publish ? new Date() : null,
                 updated_at: new Date(),
             })
@@ -335,10 +335,9 @@ let CareDirectoryService = class CareDirectoryService {
                 targetId: id,
                 outcome: 'succeeded',
                 metadata: {
-                    sourceUrl: review.sourceUrl,
                     reviewer: review.reviewerName,
                     qualification: review.reviewerQualification,
-                    evidence: review.evidence,
+                    evidence: review.evidence || 'Listing details approved by the signed-in administrator.',
                 },
             });
             return saved;

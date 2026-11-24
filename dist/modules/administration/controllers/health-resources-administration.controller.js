@@ -63,6 +63,9 @@ let HealthResourcesAdministrationController = class HealthResourcesAdministratio
             ? this.directory.article(id, true)
             : this.directory.bank(id);
     }
+    articleVisibility(user, id, body) {
+        return this.directory.setArticleVisibility(id, body, user.userId);
+    }
     preview(kind, file) {
         return this.directory.preview(this.directory.kind(kind), file);
     }
@@ -122,6 +125,15 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], HealthResourcesAdministrationController.prototype, "get", null);
+__decorate([
+    (0, common_1.Patch)('articles/:id/visibility'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], HealthResourcesAdministrationController.prototype, "articleVisibility", null);
 __decorate([
     (0, common_1.Post)(':kind/import/preview'),
     (0, common_1.UseInterceptors)(upload),

@@ -55,17 +55,15 @@ async function directoryPage(kind, current = 1, term = '', status = 'all') {
   input.setAttribute('aria-label', input.placeholder);
   tools.addEventListener('submit', (event) => {
     event.preventDefault();
-    void safely(() => directoryPage(kind, 1, input.value.trim(), filter?.value ?? status));
+    void safely(() => directoryPage(kind, 1, input.value.trim(), filter.value));
   });
-  const filter = articles ? null : directoryStatusFilter('blood-banks', status, next => directoryPage(kind, 1, input.value.trim(), next));
+  const filter = directoryStatusFilter(kind, status, next => directoryPage(kind, 1, input.value.trim(), next));
   const submit = el('button', 'Search');
   submit.type = 'submit';
   tools.append(
     input,
-    ...(filter ? [
-      filter,
-      directoryPageSizeSelector('blood-banks', () => directoryPage(kind, 1, input.value.trim(), filter.value)),
-    ] : []),
+    filter,
+    directoryPageSizeSelector(kind, () => directoryPage(kind, 1, input.value.trim(), filter.value)),
     submit,
     button(articles ? 'Create article' : 'Add blood bank', () => directoryEditor(kind)),
   );
@@ -170,17 +168,20 @@ async function directoryPage(kind, current = 1, term = '', status = 'all') {
   );
   content.append(uploader);
   const data = await api(
-    `/admin/content/${kind}?page=${current}&search=${encodeURIComponent(term)}${articles ? '' : `&status=${status}&limit=${directoryPageSizes[kind]}`}`,
+    `/admin/content/${kind}?page=${current}&search=${encodeURIComponent(term)}&status=${status}&limit=${directoryPageSizes[kind]}`,
   );
   if (rev !== requestRevision) return;
-  const bulk = articles ? null : directoryBulkApproval('blood-banks', () => directoryPage(kind, current, term, status));
-  if (bulk) section.append(directorySummary('blood-banks', data.summary, next => directoryPage(kind, 1, term, next)), bulk.section, bulk.results);
+  if (current > 1 && !data.items.length) return directoryPage(kind, 1, term, status);
+  const reload = () => directoryPage(kind, current, term, status);
+  const bulk = directoryBulkApproval(kind, reload);
+  if (!articles) section.append(directorySummary(kind, data.summary, next => directoryPage(kind, 1, term, next)));
+  section.append(bulk.section, bulk.results);
   if (!articles && data.missingCoordinates)
     section.append(el('p', `${data.missingCoordinates} matching listings need coordinates.`));
   section.append(
     table(
       articles
-        ? ['Thumbnail', 'Title', 'Category', 'Status', 'Updated', 'Actions']
+        ? ['Select', 'Thumbnail', 'Title', 'Category', 'Visibility', 'Updated', 'Actions']
         : ['Select', 'Name', 'City', 'Coordinates', 'Status', 'Completeness', 'Review date', 'Actions'],
       data.items.map((row) => {
         const actions = el('div', null, 'actions');
@@ -198,13 +199,14 @@ async function directoryPage(kind, current = 1, term = '', status = 'all') {
             ),
           ),
         );
-        if (!articles) actions.append(button('Source review', () => reviewBloodBank(row)));
+        if (!articles) actions.append(button('Review / approve', () => reviewBloodBank(row)));
         return articles
           ? [
+              bulk.checkbox(row),
               articleThumbnail(row.thumbnail_url, row.title_en),
               row.title_en,
               row.category,
-              row.is_published ? 'Published' : 'Draft',
+              articleVisibilityCell(row, reload),
               date(row.updated_at),
               actions,
             ]
@@ -224,6 +226,23 @@ async function directoryPage(kind, current = 1, term = '', status = 'all') {
   if (!data.items.length)
     section.append(el('p', articles ? 'No records found. Import a CSV or add a record.' : 'No records match this search and status. Choose All records to view the full index.'));
   pager(section, current, data.hasNext, (next) => directoryPage(kind, next, term, status));
+}
+function articleVisibilityCell(row, reload) {
+  const cell = el('div', null, 'directory-status');
+  const label = row.is_published ? 'Unpublish' : 'Publish';
+  const toggle = button(label, async () => {
+    const revision = requestRevision;
+    toggle.disabled = true;
+    try {
+      await send(`/admin/content/articles/${row.id}/visibility`, { visible: !row.is_published, expectedUpdatedAt: row.updated_at }, 'PATCH');
+      if (revision === requestRevision) await reload();
+    } finally {
+      toggle.disabled = false;
+    }
+  });
+  toggle.setAttribute('aria-label', `${label}: ${row.title_en}`);
+  cell.append(el('span', row.is_published ? 'Published' : 'Draft', row.is_published ? 'status-label status-active' : 'status-label'), toggle);
+  return cell;
 }
 async function directoryEditor(kind, id) {
   const articles = kind === 'articles',

@@ -70,6 +70,16 @@
           <button id="create-user" class="secondary">Create account</button>
         </header>
         <div id="message" role="status" aria-live="polite"></div>
+        <section id="approval-activity" class="approval-activity" aria-labelledby="approval-title" hidden>
+          <div class="approval-heading">
+            <h2 id="approval-title"></h2>
+            <span id="approval-count"></span>
+            <button id="dismiss-approval" type="button" class="secondary" hidden>Dismiss</button>
+          </div>
+          <progress id="approval-progress" aria-labelledby="approval-title" aria-describedby="approval-count" value="0"></progress>
+          <p id="approval-outcome"></p>
+          <span id="approval-announcement" class="screen-reader-only" role="status" aria-atomic="true"></span>
+        </section>
         <section id="content" aria-busy="false"></section>
       </main>
     </div>

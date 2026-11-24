@@ -50,21 +50,41 @@ let DirectoryApprovalsController = DirectoryApprovalsController_1 = class Direct
         const [hospitals, doctors, banks] = await Promise.all([this.hospitals.list({ limit: 1 }, true), this.doctors.list({ limit: 1 }, true), this.banks.listBanks({ limit: 1 }, true)]);
         return { hospitals: hospitals.summary, doctors: doctors.summary, 'blood-banks': banks.summary };
     }
-    async approve(actor, rawKind, body) {
-        const parsed = batchInput.safeParse(body), kind = zod_1.z.enum(['hospitals', 'doctors', 'blood-banks']).safeParse(rawKind);
+    async approve(actor, rawKind, body, accept, response) {
+        // Keep the legacy shared-hosting artifact compatible with source-free bank reviews.
+        if (rawKind === 'blood-banks' && body && typeof body === 'object' && !Array.isArray(body)) {
+            const { sourceUrl, confirmedDetails, ...bankRequest } = body;
+            body = confirmedDetails === true ? { ...bankRequest, confirmedSource: true } : bankRequest;
+        }
+        const parsed = batchInput.safeParse(body), kind = zod_1.z.enum(['hospitals', 'doctors', 'blood-banks', 'articles']).safeParse(rawKind);
         if (!parsed.success || !kind.success)
-            throw new common_1.BadRequestException(parsed.success ? 'Choose hospitals, doctors or blood banks.' : parsed.error.issues.map(issue => issue.message).join('; '));
+            throw new common_1.BadRequestException(parsed.success ? 'Choose articles, hospitals, doctors or blood banks.' : parsed.error.issues.map(issue => issue.message).join('; '));
         const { items, sourceUrl, ...review } = 'reviewerName' in parsed.data ? parsed.data : {
             items: parsed.data.items,
             sourceUrl: undefined,
             reviewerName: 'Signed-in administrator',
             reviewerQualification: 'Super administrator',
-            evidence: 'Approved using the directory record and its saved source.',
+            evidence: rawKind === 'blood-banks' ? 'Listing details approved by the signed-in administrator.' : 'Approved using the directory record and its saved source.',
             confirmedSource: true,
         };
-        if (items.some(item => kind.data === 'blood-banks' ? !item.expectedUpdatedAt || item.expectedVersion !== undefined : !item.expectedVersion || item.expectedUpdatedAt !== undefined))
+        const timestamped = kind.data === 'blood-banks' || kind.data === 'articles';
+        if (items.some(item => timestamped ? !item.expectedUpdatedAt || item.expectedVersion !== undefined : !item.expectedVersion || item.expectedUpdatedAt !== undefined))
             throw new common_1.BadRequestException('Refresh the list and select records with their current version.');
+        const stream = accept?.split(',').some(type => type.trim() === 'application/x-ndjson');
+        if (stream) {
+            response.status(201).set({
+                'Content-Type': 'application/x-ndjson; charset=utf-8',
+                'Cache-Control': 'no-store, no-transform',
+                'X-Accel-Buffering': 'no',
+            });
+            response.flushHeaders();
+        }
+        const writeProgress = (event) => {
+            if (stream && !response.destroyed && !response.writableEnded)
+                response.write(`${JSON.stringify(event)}\n`);
+        };
         const results = [];
+        let approved = 0;
         for (const item of items) {
             let name = item.id;
             try {
@@ -82,16 +102,19 @@ let DirectoryApprovalsController = DirectoryApprovalsController_1 = class Direct
                         throw new common_1.ConflictException('Withdrawn doctor. Review and restore this record individually.');
                     await this.doctors.review(actor.userId, item.id, { ...review, expectedVersion: item.expectedVersion, publish: true });
                 }
-                else {
+                else if (kind.data === 'blood-banks') {
                     const row = await this.banks.bank(item.id);
                     name = row.name_en;
                     if (!row.is_active)
                         throw new common_1.ConflictException('Inactive blood bank. Activate this record before approving.');
-                    if (!sourceUrl && !row.source_url)
-                        throw new common_1.BadRequestException('Save a source URL on this blood bank before approval.');
-                    await this.care.reviewBank(item.id, actor.userId, { ...review, expectedUpdatedAt: item.expectedUpdatedAt, publish: true, sourceUrl: sourceUrl ?? row.source_url }, true);
+                    await this.care.reviewBank(item.id, actor.userId, { ...review, expectedUpdatedAt: item.expectedUpdatedAt, publish: true }, true);
                 }
-                results.push({ id: item.id, name, status: 'approved', message: 'Approval recorded.' });
+                else {
+                    const row = await this.banks.setArticleVisibility(item.id, { visible: true, expectedUpdatedAt: item.expectedUpdatedAt }, actor.userId);
+                    name = row.title;
+                }
+                results.push({ id: item.id, name, status: 'approved', message: kind.data === 'articles' ? 'Article is published.' : 'Approval recorded.' });
+                approved++;
             }
             catch (error) {
                 let message = 'Approval could not be completed. Refresh and try again.';
@@ -103,8 +126,17 @@ let DirectoryApprovalsController = DirectoryApprovalsController_1 = class Direct
                     this.logger.error('Unexpected failure while approving a directory record.');
                 results.push({ id: item.id, name, status: 'failed', message });
             }
+            writeProgress({ type: 'progress', processed: results.length, approved, failed: results.length - approved });
         }
-        return { approved: results.filter(item => item.status === 'approved').length, failed: results.filter(item => item.status === 'failed').length, results };
+        const result = { approved, failed: results.length - approved, results };
+        if (stream) {
+            writeProgress({ type: 'complete', ...result });
+            if (!response.destroyed)
+                response.end();
+        }
+        else {
+            response.status(201).json(result);
+        }
     }
 };
 exports.DirectoryApprovalsController = DirectoryApprovalsController;
@@ -120,8 +152,10 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('kind')),
     __param(2, (0, common_1.Body)()),
+    __param(3, (0, common_1.Headers)('accept')),
+    __param(4, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:paramtypes", [Object, String, Object, String, Object]),
     __metadata("design:returntype", Promise)
 ], DirectoryApprovalsController.prototype, "approve", null);
 exports.DirectoryApprovalsController = DirectoryApprovalsController = DirectoryApprovalsController_1 = __decorate([
