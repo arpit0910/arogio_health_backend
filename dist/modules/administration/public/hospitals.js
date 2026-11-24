@@ -59,6 +59,7 @@ const hospitalLabel = (key) =>
   })[key] || key.replace(/_/g, ' ').replace(/^./, (letter) => letter.toUpperCase());
 
 async function hospitalsPage(current = 1, term = '', city = '', status = 'all') {
+  rememberDirectoryView('hospitals', { current, term, city, status, size: directoryPageSizes.hospitals });
   reset('Hospitals');
   const rev = requestRevision,
     section = panel(),

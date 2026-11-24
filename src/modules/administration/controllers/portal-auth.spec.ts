@@ -21,7 +21,7 @@ function actualFunctions(names: string[]) {
     .join('\n');
 }
 describe('portal session lifecycle', () => {
-  it('keeps the selected section on the canonical root URL', () => {
+  it('upgrades old section links to the module URL and preserves browser history', () => {
     const location = new URL('https://backend.arogio.com/admin/#doctors');
     const replaceState = jest.fn(), pushState = jest.fn();
     const context = vm.createContext({ URL, window: { location, history: { replaceState, pushState } } });
@@ -32,8 +32,12 @@ describe('portal session lifecycle', () => {
       syncPortalUrl();
     `, context);
     expect(replaceState).toHaveBeenCalledTimes(1);
-    expect(String(replaceState.mock.calls[0]?.[2])).toBe('https://backend.arogio.com/#doctors');
+    expect(String(replaceState.mock.calls[0]?.[2])).toBe('https://backend.arogio.com/admin/doctors');
     expect(pushState).not.toHaveBeenCalled();
+    location.href = String(replaceState.mock.calls[0]?.[2]);
+    expect(vm.runInContext('portalPageFromUrl()', context)).toBe('doctors');
+    vm.runInContext("page = 'hospitals'; syncPortalUrl()", context);
+    expect(String(pushState.mock.calls[0]?.[2])).toBe('https://backend.arogio.com/admin/hospitals');
   });
 
   it('retries a delayed old-token 401 with current tokens instead of rotating twice', async () => {

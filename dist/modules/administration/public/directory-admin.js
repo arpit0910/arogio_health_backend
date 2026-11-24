@@ -218,5 +218,7 @@ async function directoryOverviewStatus(revision) {
 
 function openDirectoryStatus(kind, status) {
   page = kind;
+  syncPortalUrl();
+  $('create-user').hidden = true;
   return kind === 'hospitals' ? hospitalsPage(1, '', '', status) : kind === 'doctors' ? doctorsPage(1, '', '', status) : directoryPage(kind, 1, '', status);
 }

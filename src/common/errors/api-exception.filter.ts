@@ -29,6 +29,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     let code = 'INTERNAL_ERROR';
     let message = 'An unexpected error occurred';
     let details: unknown;
+    const databaseErrorCode = getDatabaseErrorCode(exception);
 
     if (exception instanceof ApiError) {
       ({ status, code, message, details } = exception);
@@ -44,6 +45,10 @@ export class ApiExceptionFilter implements ExceptionFilter {
         message = String(body);
         code = `HTTP_${status}`;
       }
+    } else if (request.originalUrl.startsWith('/api/v1/admin/') && ['42703', '42P01'].includes(databaseErrorCode ?? '')) {
+      status = HttpStatus.SERVICE_UNAVAILABLE;
+      code = 'DATABASE_SCHEMA_MISMATCH';
+      message = 'The backend release and database schema do not match. Check the deployed release and applied migrations.';
     }
 
     const requestId = request.id ?? response.getHeader('x-request-id') ?? 'unknown';
@@ -52,7 +57,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
       this.logger.error({
         event: 'unhandled_api_error',
         requestId,
-        databaseErrorCode: getDatabaseErrorCode(exception) ?? 'UNKNOWN',
+        databaseErrorCode: databaseErrorCode ?? 'UNKNOWN',
       });
     }
     response.status(status).json({

@@ -29,16 +29,22 @@ let tokens = null,
   requestRevision = 0;
 const imageUrls = new Set();
 function portalPageFromUrl() {
-  const section = window.location.hash.slice(1);
+  const route = /^\/admin\/([^/]+)\/?$/.exec(window.location.pathname);
+  const section = route?.[1] ?? window.location.hash.slice(1);
   return portalPages.has(section) ? section : 'overview';
 }
 function syncPortalUrl() {
   const url = new URL(window.location.href);
-  const oldPath = url.pathname;
-  if (oldPath === '/admin' || oldPath === '/admin/') url.pathname = '/';
-  url.hash = page === 'overview' ? '' : page;
+  if (url.protocol === 'file:') {
+    url.hash = page === 'overview' ? '' : page;
+    if (url.href !== window.location.href) window.history.pushState(null, '', url);
+    return;
+  }
+  const samePage = portalPageFromUrl() === page;
+  url.pathname = page === 'overview' ? '/' : `/admin/${page}`;
+  url.hash = '';
   if (url.href === window.location.href) return;
-  if (oldPath !== url.pathname) window.history.replaceState(null, '', url);
+  if (samePage) window.history.replaceState(null, '', url);
   else window.history.pushState(null, '', url);
 }
 function rememberDirectoryView(kind, view) {
@@ -123,11 +129,15 @@ async function api(path, options = {}) {
   }
   if (!response.ok) {
     let message = 'Request could not be completed.';
+    let requestId = response.headers?.get?.('x-request-id');
     try {
       const body = await response.json();
       message = body.error?.message ?? body.message ?? message;
+      requestId = body.error?.requestId ?? requestId;
     } catch {}
-    throw Object.assign(new Error(Array.isArray(message) ? message.join(' ') : message), {
+    message = Array.isArray(message) ? message.join(' ') : message;
+    if (response.status >= 500 && requestId && requestId !== 'unknown') message += ` Request ID: ${requestId}`;
+    throw Object.assign(new Error(message), {
       status: response.status,
     });
   }

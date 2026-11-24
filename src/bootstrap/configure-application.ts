@@ -11,6 +11,8 @@ import { ApiExceptionFilter } from '../common/errors/api-exception.filter';
 import { validationExceptionFactory } from '../common/validation/validation-exception.factory';
 import { RequestActivityService } from '../modules/system-status/services/request-activity.service';
 
+const adminPagePath = /^\/admin(?:\/(?:overview|people|banners|articles|meditation|hospitals|doctors|blood-banks|departments|diseases|care|feedback|audit|database-reset))?\/?$/;
+
 export function configureApplication(app: NestExpressApplication): void {
   const config = app.get(ConfigService);
   app.useLogger(app.get(Logger));
@@ -27,7 +29,7 @@ export function configureApplication(app: NestExpressApplication): void {
     maxAge: 0,
   });
   app.use((request: Request, response: Response, next: NextFunction) => {
-    if (request.method === 'GET' && ['/', '/admin', '/admin/'].includes(request.path)) {
+    if ((request.method === 'GET' || request.method === 'HEAD') && (request.path === '/' || adminPagePath.test(request.path))) {
       response.setHeader('Cache-Control', 'no-store');
       response.sendFile(join(__dirname, '..', 'modules', 'administration', 'public', 'index.html'));
     } else next();

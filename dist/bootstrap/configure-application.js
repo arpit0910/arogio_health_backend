@@ -14,6 +14,7 @@ const nestjs_pino_1 = require("nestjs-pino");
 const api_exception_filter_1 = require("../common/errors/api-exception.filter");
 const validation_exception_factory_1 = require("../common/validation/validation-exception.factory");
 const request_activity_service_1 = require("../modules/system-status/services/request-activity.service");
+const adminPagePath = /^\/admin(?:\/(?:overview|people|banners|articles|meditation|hospitals|doctors|blood-banks|departments|diseases|care|feedback|audit|database-reset))?\/?$/;
 function configureApplication(app) {
     const config = app.get(config_1.ConfigService);
     app.useLogger(app.get(nestjs_pino_1.Logger));
@@ -28,7 +29,7 @@ function configureApplication(app) {
         maxAge: 0,
     });
     app.use((request, response, next) => {
-        if (request.method === 'GET' && (request.path === '/admin' || request.path === '/admin/')) {
+        if ((request.method === 'GET' || request.method === 'HEAD') && (request.path === '/' || adminPagePath.test(request.path))) {
             response.setHeader('Cache-Control', 'no-store');
             response.sendFile((0, node_path_1.join)(__dirname, '..', 'modules', 'administration', 'public', 'index.html'));
         }
@@ -41,7 +42,7 @@ function configureApplication(app) {
         maxAge: 0,
     });
     app.use((request, response, next) => {
-        if (request.method !== 'GET' || request.path !== '/') {
+        if ((request.method !== 'GET' && request.method !== 'HEAD') || !['/status', '/status/'].includes(request.path)) {
             next();
             return;
         }

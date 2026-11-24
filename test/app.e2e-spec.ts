@@ -43,7 +43,7 @@ describe('application API', () => {
 
   it('serves the admin dashboard at the root and keeps existing admin links working', async () => {
     const server = request(app.getHttpServer());
-    for (const path of ['/', '/admin', '/admin/']) {
+    for (const path of ['/', '/admin', '/admin/', '/admin/articles', '/admin/doctors/', '/admin/blood-banks', '/admin/database-reset']) {
       await server.get(path).expect(200).expect('content-type', /text\/html/)
         .expect('cache-control', 'no-store')
         .expect(({ text }) => {
@@ -52,6 +52,8 @@ describe('application API', () => {
         });
     }
     await server.get('/admin-assets/admin.js').expect(200);
+    await server.head('/admin/articles').expect(200).expect('cache-control', 'no-store');
+    await server.get('/admin/not-a-module').expect(404);
     await server.get('/api/v1/admin/analytics').expect(401);
   });
 

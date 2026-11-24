@@ -22,6 +22,7 @@ let ApiExceptionFilter = ApiExceptionFilter_1 = class ApiExceptionFilter {
         let code = 'INTERNAL_ERROR';
         let message = 'An unexpected error occurred';
         let details;
+        const databaseErrorCode = (0, database_error_1.getDatabaseErrorCode)(exception);
         if (exception instanceof api_error_1.ApiError) {
             ({ status, code, message, details } = exception);
         }
@@ -39,13 +40,18 @@ let ApiExceptionFilter = ApiExceptionFilter_1 = class ApiExceptionFilter {
                 code = `HTTP_${status}`;
             }
         }
+        else if (request.originalUrl.startsWith('/api/v1/admin/') && ['42703', '42P01'].includes(databaseErrorCode ?? '')) {
+            status = common_1.HttpStatus.SERVICE_UNAVAILABLE;
+            code = 'DATABASE_SCHEMA_MISMATCH';
+            message = 'The backend release and database schema do not match. Check the deployed release and applied migrations.';
+        }
         const requestId = request.id ?? response.getHeader('x-request-id') ?? 'unknown';
         response.locals.requestDiagnostic = (0, response_summary_1.summarizeError)(status, code, details, exception);
         if (status >= common_1.HttpStatus.INTERNAL_SERVER_ERROR && !(exception instanceof api_error_1.ApiError)) {
             this.logger.error({
                 event: 'unhandled_api_error',
                 requestId,
-                databaseErrorCode: (0, database_error_1.getDatabaseErrorCode)(exception) ?? 'UNKNOWN',
+                databaseErrorCode: databaseErrorCode ?? 'UNKNOWN',
             });
         }
         response.status(status).json({

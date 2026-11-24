@@ -14,6 +14,7 @@ const button = (title, action, cls = 'secondary') => {
   return n;
 };
 const content = $('content');
+const portalPages = new Set([...document.querySelectorAll('nav [data-page]')].map((node) => node.dataset.page));
 let tokens = null,
   renewing = null,
   authEpoch = 0,
@@ -27,6 +28,31 @@ let tokens = null,
   dialogSave = null,
   requestRevision = 0;
 const imageUrls = new Set();
+function portalPageFromUrl() {
+  const route = /^\/admin\/([^/]+)\/?$/.exec(window.location.pathname);
+  const section = route?.[1] ?? window.location.hash.slice(1);
+  return portalPages.has(section) ? section : 'overview';
+}
+function syncPortalUrl() {
+  const url = new URL(window.location.href);
+  if (url.protocol === 'file:') {
+    url.hash = page === 'overview' ? '' : page;
+    if (url.href !== window.location.href) window.history.pushState(null, '', url);
+    return;
+  }
+  const samePage = portalPageFromUrl() === page;
+  url.pathname = page === 'overview' ? '/' : `/admin/${page}`;
+  url.hash = '';
+  if (url.href === window.location.href) return;
+  if (samePage) window.history.replaceState(null, '', url);
+  else window.history.pushState(null, '', url);
+}
+function rememberDirectoryView(kind, view) {
+  try { sessionStorage.setItem(`arogio.admin.directory.${kind}`, JSON.stringify(view)); } catch {}
+}
+function readDirectoryView(kind) {
+  try { return JSON.parse(sessionStorage.getItem(`arogio.admin.directory.${kind}`)) ?? {}; } catch { return {}; }
+}
 const date = (value) =>
   value
     ? new Date(value).toLocaleString('en-IN', {
@@ -103,11 +129,15 @@ async function api(path, options = {}) {
   }
   if (!response.ok) {
     let message = 'Request could not be completed.';
+    let requestId = response.headers?.get?.('x-request-id');
     try {
       const body = await response.json();
       message = body.error?.message ?? body.message ?? message;
+      requestId = body.error?.requestId ?? requestId;
     } catch {}
-    throw Object.assign(new Error(Array.isArray(message) ? message.join(' ') : message), {
+    message = Array.isArray(message) ? message.join(' ') : message;
+    if (response.status >= 500 && requestId && requestId !== 'unknown') message += ` Request ID: ${requestId}`;
+    throw Object.assign(new Error(message), {
       status: response.status,
     });
   }
@@ -231,6 +261,11 @@ $('close-editor').onclick = $('cancel-editor').onclick = () => $('editor').close
 async function signOut(revoke = true) {
   const previous = tokens;
   savePortalSession(null);
+  try {
+    for (const kind of ['hospitals', 'doctors', 'blood-banks', 'articles']) {
+      sessionStorage.removeItem(`arogio.admin.directory.${kind}`);
+    }
+  } catch {}
   authEpoch++;
   currentUser = null;
   $('editor').close();
@@ -255,6 +290,7 @@ async function openPortal(user) {
   currentUser = user;
   $('login').hidden = true;
   $('portal').hidden = false;
+  page = portalPageFromUrl();
   await safely(show);
 }
 async function restorePortal() {
@@ -293,7 +329,6 @@ $('login-form').addEventListener('submit', async (e) => {
     const user = await api('/admin/me');
     savePortalSession(tokens);
     e.target.reset();
-    page = 'overview';
     await openPortal(user);
   } catch (error) {
     await signOut();
@@ -315,6 +350,12 @@ document.querySelectorAll('[data-page]').forEach((n) =>
     void safely(show);
   }),
 );
+window.addEventListener('popstate', () => {
+  if (!currentUser) return;
+  page = portalPageFromUrl();
+  if ($('editor').open) $('editor').close();
+  void safely(show);
+});
 $('create-user').onclick = () =>
   openEditor(
     'Create an account',
@@ -332,7 +373,12 @@ $('create-user').onclick = () =>
     'The person will complete their profile when signing in. Share initial credentials through your approved secure channel.',
   );
 async function show() {
-  $('create-user').hidden = page === 'database-reset';
+  syncPortalUrl();
+  $('create-user').hidden = page !== 'overview' && page !== 'people';
+  const { current, term, city, status, size } = readDirectoryView(page);
+  if (['hospitals', 'doctors', 'blood-banks', 'articles'].includes(page) && [20, 25, 50, 100, 250, 500].includes(size)) {
+    directoryPageSizes[page] = size;
+  }
   if (page === 'database-reset') return databaseResetPage();
   if (page === 'feedback') return feedbackPage();
   if (page === 'overview') return overview();
@@ -340,11 +386,11 @@ async function show() {
   if (page === 'banners') return homeBanners();
   if (page === 'meditation') return meditationPage();
   if (page === 'departments') return departmentsPage();
-  if (page === 'hospitals') return hospitalsPage();
-  if (page === 'doctors') return doctorsPage();
+  if (page === 'hospitals') return hospitalsPage(current, term, city, status);
+  if (page === 'doctors') return doctorsPage(current, term, city, status);
   if (page === 'diseases') return diseasesPage();
   if (page === 'care') return carePage();
-  if (page === 'articles' || page === 'blood-banks') return directoryPage(page);
+  if (page === 'articles' || page === 'blood-banks') return directoryPage(page, current, term, status);
   return audit();
 }
 async function overview() {
