@@ -98,7 +98,8 @@ export const listInput = z
     status: directoryStatusInput,
   })
   .strict();
-export const adminBankListInput = listInput.extend({ limit: adminDirectoryPageSize.default(25) });
+export const bankListInput = listInput.extend({ city: z.string().trim().max(80).optional() });
+export const adminBankListInput = bankListInput.extend({ limit: adminDirectoryPageSize.default(25) });
 export const adminArticleListInput = adminBankListInput.extend({
   status: z.enum(['all', 'draft', 'published']).default('all'),
 });
@@ -112,6 +113,7 @@ export const nearbyInput = z
     limit: z.number().int().min(1).max(100).default(25),
     bloodGroup: z.enum(bloodGroups).optional(),
     only24h: z.boolean().default(false),
+    search: z.string().trim().max(150).default(''),
   })
   .strict();
 export type DirectoryKind = 'articles' | 'blood-banks';

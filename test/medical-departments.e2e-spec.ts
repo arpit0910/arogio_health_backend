@@ -277,7 +277,8 @@ describe('Medical departments', () => {
     const script = await request(app.getHttpServer())
       .get('/admin-assets/medical-departments.js')
       .expect(200);
-    expect(script.text).toContain('/admin/departments/import/preview');
-    expect(script.text).toContain("payload.append('previewToken'");
+    expect(script.text).toContain("endpoint: '/admin/departments'");
+    expect(script.text).toContain('${catalog.endpoint}/import/preview');
+    expect(script.text).toContain("body.append('previewToken'");
   });
 });

@@ -1,4 +1,5 @@
 import { decodeProviderImage } from '../../../common/media/provider-image';
+import { nearbyDirectory } from '../../../common/directory/nearby';
 import { directoryCountFields, directoryPredicates, directoryRowStatus } from '../../../common/directory/admin-status';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
@@ -11,9 +12,7 @@ import {
   gte,
   ilike,
   inArray,
-  isNotNull,
   isNull,
-  lte,
   or,
   sql,
   type SQL,
@@ -27,6 +26,7 @@ import {
   bankInput,
   adminBankListInput,
   adminArticleListInput,
+  bankListInput,
   listInput,
   nearbyInput,
   visibilityInput,
@@ -227,20 +227,10 @@ export class HealthResourcesService {
     return filters;
   }
   async listBanks(query: unknown, admin = false, reviewedOnly = false) {
-    const q = this.parse(admin ? adminBankListInput : listInput, query),
+    const q = this.parse(admin ? adminBankListInput : bankListInput, query),
       filters = this.bankFilters(q.bloodGroup, q.only24h === 'true', admin, reviewedOnly);
-    if (q.search)
-      filters.push(
-        or(
-          ...[
-            bloodBankDirectoryEntries.name_en,
-            bloodBankDirectoryEntries.name_hi,
-            bloodBankDirectoryEntries.city,
-            bloodBankDirectoryEntries.state,
-            bloodBankDirectoryEntries.pincode,
-          ].map((column) => ilike(column, `%${q.search}%`)),
-        )!,
-      );
+    if (q.city) filters.push(sql`lower(btrim(${bloodBankDirectoryEntries.city})) = ${q.city.toLowerCase()}`);
+    if (q.search) filters.push(this.bankSearch(q.search));
     const baseWhere = and(...filters), statusPredicates = directoryPredicates('blood-banks');
     const summary = admin ? (await this.database.db.select(directoryCountFields(statusPredicates)).from(bloodBankDirectoryEntries).where(baseWhere))[0] : undefined;
     if (admin && q.status !== 'all') filters.push(q.status === 'published' ? statusPredicates.approved : statusPredicates[q.status]);
@@ -266,23 +256,24 @@ export class HealthResourcesService {
       missingCoordinates: missing[0]!.count,
     };
   }
+  private bankSearch(search: string) {
+    const term = `%${search.replace(/[\\%_]/g, '\\$&')}%`;
+    return or(...[
+      bloodBankDirectoryEntries.name_en, bloodBankDirectoryEntries.name_hi,
+      bloodBankDirectoryEntries.city, bloodBankDirectoryEntries.state, bloodBankDirectoryEntries.pincode,
+    ].map(column => ilike(column, term)))!;
+  }
   async nearby(body: unknown, reviewedOnly = false) {
     const q = this.parse(nearbyInput, body),
       filters = this.bankFilters(q.bloodGroup, q.only24h, false, reviewedOnly);
-    const distance = sql<number>`(6371.0 * 2 * asin(sqrt(least(1.0, greatest(0.0,
-      power(sin(radians(${bloodBankDirectoryEntries.latitude} - ${q.latitude}) / 2), 2) + cos(radians(${q.latitude})) * cos(radians(${bloodBankDirectoryEntries.latitude})) * power(sin(radians(${bloodBankDirectoryEntries.longitude} - ${q.longitude}) / 2), 2)
-    )))))`.mapWith(Number);
+    if (q.search) filters.push(this.bankSearch(q.search));
+    const { distance, withinRadius } = nearbyDirectory(bloodBankDirectoryEntries.latitude, bloodBankDirectoryEntries.longitude, q);
     const [items, missing] = await Promise.all([
       this.database.db
         .select({ bank: bloodBankDirectoryEntries, distanceKm: distance })
         .from(bloodBankDirectoryEntries)
         .where(
-          and(
-            ...filters,
-            isNotNull(bloodBankDirectoryEntries.latitude),
-            isNotNull(bloodBankDirectoryEntries.longitude),
-            lte(distance, q.radiusKm),
-          ),
+          and(...filters, withinRadius),
         )
         .orderBy(asc(distance), asc(bloodBankDirectoryEntries.id))
         .limit(q.limit + 1)

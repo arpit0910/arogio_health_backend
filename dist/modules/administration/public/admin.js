@@ -379,7 +379,6 @@ async function show() {
   if (['hospitals', 'doctors', 'blood-banks', 'articles'].includes(page) && [20, 25, 50, 100, 250, 500].includes(size)) {
     directoryPageSizes[page] = size;
   }
-  if (page === 'database-reset') return databaseResetPage();
   if (page === 'feedback') return feedbackPage();
   if (page === 'overview') return overview();
   if (page === 'people') return people();

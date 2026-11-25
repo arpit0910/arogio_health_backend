@@ -120,6 +120,12 @@ describe('Diseases', () => {
       })
       .expect(201);
     const id = row.body.id as string;
+    await request(app.getHttpServer()).get('/api/v1/admin/diseases').set(admin())
+      .query({ department_id: d.id, status: 'inactive' }).expect(200)
+      .expect(({ body }) => expect(body.items).toEqual([]));
+    await request(app.getHttpServer()).get('/api/v1/admin/diseases').set(admin())
+      .query({ department_id: d.id, status: 'active' }).expect(200)
+      .expect(({ body }) => expect(body.items).toEqual([expect.objectContaining({ id })]));
     await request(app.getHttpServer())
       .get('/api/v1/public/diseases?search=Hindi&department_id=' + d.id)
       .expect(200)
@@ -169,7 +175,9 @@ describe('Diseases', () => {
       ['test:disease', 'Imported disease', 'Hindi', 'Description', '', 'swasthya:1', 'true'],
     ]);
     const p = await upload('preview', bytes).expect(201);
-    expect(p.body).toMatchObject({ creates: 1, errorCount: 0 });
+    expect(p.body).toMatchObject({ creates: 1, errorCount: 0, sample: [
+      { name_en: 'Imported disease', department_name_en: 'Test department' },
+    ] });
     await upload('apply', bytes, p.body.previewToken as string).expect(201);
     const listed = await request(app.getHttpServer())
       .get('/api/v1/admin/diseases')

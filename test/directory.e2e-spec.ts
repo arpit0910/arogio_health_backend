@@ -215,6 +215,14 @@ describe('Articles and nearby blood-bank directory', () => {
     expect(nearby.body.items[1].distanceKm).toBeGreaterThan(10);
     expect(nearby.body.missingCoordinates).toBe(1);
     expect(nearby.headers['cache-control']).toContain('no-store');
+    await request(app.getHttpServer()).get('/api/v1/public/blood-banks')
+      .query({ city: 'jaipur', limit: 1 }).expect(200)
+      .expect(({ body }) => expect(body).toMatchObject({ hasNext: true, items: [{ city: 'Jaipur' }] }));
+    await request(app.getHttpServer()).get('/api/v1/public/blood-banks')
+      .query({ city: 'Jai' }).expect(200).expect(({ body }) => expect(body.items).toEqual([]));
+    await request(app.getHttpServer()).post('/api/v1/public/blood-banks/nearby')
+      .send({ latitude: 26.9, longitude: 75.8, search: 'Further' }).expect(200)
+      .expect(({ body }) => expect(body.items).toEqual([expect.objectContaining({ name_en: 'Further bank' })]));
     await database.exec(
       "update blood_bank_directory_entries set is_verified = true, verified_at = now()",
     );

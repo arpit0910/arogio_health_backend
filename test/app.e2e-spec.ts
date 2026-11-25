@@ -49,6 +49,8 @@ describe('application API', () => {
         .expect(({ text }) => {
           expect(text).toContain('Arogio - Super admin');
           expect(text).toContain('/admin-assets/admin.js');
+          expect(text).not.toContain('data-page="database-reset"');
+          expect(text).not.toContain('/admin-assets/database-reset.js');
         });
     }
     await server.get('/admin-assets/admin.js').expect(200);

@@ -15,7 +15,7 @@ const rows = [
   {
     id: '11111111-1111-4111-8111-111111111111',
     department_id: '33333333-3333-4333-8333-333333333333',
-    department: { name_en: 'Sample Department' },
+    department: { name_en: 'Sample Department', is_active: true },
     record_key: 'sample:cardiology',
     name_en: 'Sample condition A',
     name_hi: 'हृदय रोग',
@@ -27,7 +27,7 @@ const rows = [
   {
     id: '22222222-2222-4222-8222-222222222222',
     department_id: '33333333-3333-4333-8333-333333333333',
-    department: { name_en: 'Sample Department' },
+    department: { name_en: 'Sample Department', is_active: true },
     record_key: 'sample:neurology',
     name_en: 'Sample condition B',
     name_hi: 'तंत्रिका विज्ञान',
@@ -40,13 +40,15 @@ const rows = [
 const code =
   fs.readFileSync(path.join(dir, 'admin.js'), 'utf8') +
   '\n' +
+  fs.readFileSync(path.join(dir, 'medical-departments.js'), 'utf8') +
+  '\n' +
   fs.readFileSync(path.join(dir, 'diseases.js'), 'utf8');
 const out = path.join(__dirname, '../../.tmp/diseases-preview');
 fs.mkdirSync(out, { recursive: true });
 for (const mode of ['list', 'editor', 'empty']) {
   const data = JSON.stringify(mode === 'empty' ? [] : rows).replace(/</g, '\\u003c');
   const mock = `const previewRows=${data}; globalThis.fetch=async(path)=>{const url=new URL(path,'https://preview.invalid');if(url.pathname.endsWith('/admin/departments'))return {ok:true,status:200,json:async()=>({items:[{id:'33333333-3333-4333-8333-333333333333',name_en:'Sample Department',is_active:true}],total:1,hasNext:false})};const selected=previewRows.find(row=>url.pathname.endsWith(row.id));const items=previewRows.filter(row=>(url.searchParams.get('status')!=='active'||row.is_active)&&(url.searchParams.get('status')!=='inactive'||!row.is_active)&&(!url.searchParams.get('search')||(row.name_en+' '+row.name_hi).toLowerCase().includes(url.searchParams.get('search').toLowerCase())));return {ok:true,status:200,json:async()=>selected||{items,total:items.length,hasNext:false,page:1}};};`;
-  const start = `tokens={accessToken:'preview-only'}; $('login').hidden=true; $('portal').hidden=false; page='diseases';void(async()=>{await show();content.prepend(el('p','Synthetic preview only. The application database is unchanged.','notice'));${mode === 'editor' ? `await diseaseEditor('${rows[0].id}');` : ''}})();`;
+  const start = `document.addEventListener('DOMContentLoaded',()=>{tokens={accessToken:'preview-only'}; $('login').hidden=true; $('portal').hidden=false; $('create-user').hidden=true; page='diseases';void(async()=>{await diseasesPage();content.prepend(el('p','Synthetic preview only. The application database is unchanged.','notice'));${mode === 'editor' ? `await diseaseEditor('${rows[0].id}');` : ''}})();},{once:true});`;
   fs.writeFileSync(
     path.join(out, `${mode}.html`),
     html.replace('</body>', `<script>${mock}\n${code}\n${start}</script></body>`),

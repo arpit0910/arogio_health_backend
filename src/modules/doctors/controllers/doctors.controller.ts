@@ -4,6 +4,8 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
+  HttpCode,
   Param,
   Patch,
   Put,
@@ -32,6 +34,12 @@ export class PublicDoctorsController {
   constructor(private readonly service: DoctorsService) {}
   @Get() list(@Query() query: unknown) {
     return this.service.list(query);
+  }
+  @Post('nearby')
+  @HttpCode(200)
+  @Header('Cache-Control', 'private, no-store')
+  nearby(@Body() body: unknown) {
+    return this.service.nearby(body);
   }
   @Get(':id/image') async image(@Param('id') id: string, @Res() response: Response) {
     sendProviderImage(response, await this.service.image(id));

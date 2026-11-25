@@ -274,7 +274,7 @@ async function signOut(revoke = true) {
   const previous = tokens;
   savePortalSession(null);
   try {
-    for (const kind of ['hospitals', 'doctors', 'blood-banks', 'articles']) {
+    for (const kind of ['hospitals', 'doctors', 'blood-banks', 'articles', 'departments', 'diseases']) {
       sessionStorage.removeItem(`arogio.admin.directory.${kind}`);
     }
   } catch {}
@@ -387,20 +387,19 @@ $('create-user').onclick = () =>
 async function show() {
   syncPortalUrl();
   $('create-user').hidden = page !== 'overview' && page !== 'people';
-  const { current, term, city, status, size } = readDirectoryView(page);
+  const { current, term, city, status, size, departmentId } = readDirectoryView(page);
   if (['hospitals', 'doctors', 'blood-banks', 'articles'].includes(page) && [20, 25, 50, 100, 250, 500].includes(size)) {
     directoryPageSizes[page] = size;
   }
-  if (page === 'database-reset') return databaseResetPage();
   if (page === 'feedback') return feedbackPage();
   if (page === 'overview') return overview();
   if (page === 'people') return people();
   if (page === 'banners') return homeBanners();
   if (page === 'meditation') return meditationPage();
-  if (page === 'departments') return departmentsPage();
+  if (page === 'departments') return departmentsPage(current, term, status);
   if (page === 'hospitals') return hospitalsPage(current, term, city, status);
   if (page === 'doctors') return doctorsPage(current, term, city, status);
-  if (page === 'diseases') return diseasesPage();
+  if (page === 'diseases') return diseasesPage(current, term, status, departmentId);
   if (page === 'care') return carePage();
   if (page === 'articles' || page === 'blood-banks') return directoryPage(page, current, term, status);
   return audit();

@@ -48,7 +48,7 @@ export class DiseasesService {
     const conditions: SQL[] = [];
     if (!admin) conditions.push(eq(diseases.is_active, true), eq(departments.is_active, true));
     if (q.department_id) conditions.push(eq(diseases.department_id, q.department_id));
-    else if ('status' in q && q.status !== 'all')
+    if (admin && 'status' in q && q.status !== 'all')
       conditions.push(eq(diseases.is_active, q.status === 'active'));
     if (q.search) {
       const term = `%${q.search.replace(/[\\%_]/g, '\\$&')}%`;
@@ -251,6 +251,7 @@ export class DiseasesService {
     const prepared = await this.prepared(file, masters);
     const existing = await this.database.db.select().from(diseases).orderBy(asc(diseases.id));
     const plan = this.plan(prepared, existing);
+    const namesById = new Map(masters.map(item => [item.id, item.name_en]));
     const expiresAt = Date.now() + 10 * 60 * 1000;
     const payload = Buffer.from(
       JSON.stringify({
@@ -262,6 +263,7 @@ export class DiseasesService {
     ).toString('base64url');
     return {
       ...plan,
+      sample: plan.sample.map(row => ({ ...row, department_name_en: namesById.get(row.department_id) })),
       expiresAt: new Date(expiresAt).toISOString(),
       previewToken: plan.errorCount ? null : payload + '.' + this.sign(payload),
     };

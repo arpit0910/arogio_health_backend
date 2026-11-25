@@ -122,6 +122,27 @@ describe('Structured hospital directory', () => {
       .expect(200)
       .expect('Content-Type', /spreadsheetml/);
   });
+  it('pages by distance and lists hospitals without coordinates in city mode', async () => {
+    for (const [name, city, latitude] of [
+      ['A farther hospital', 'Delhi', 28.7],
+      ['Z nearer hospital', 'Delhi', 28.6],
+      ['Unmapped hospital', 'Delhi', null],
+      ['Out of range hospital', 'Jaipur', 26.9],
+    ] as const) {
+      await request(app.getHttpServer()).post('/api/v1/admin/hospitals').set(auth())
+        .send({ ...draft(`test:${name.toLowerCase().replaceAll(' ', '-')}`), name_en: name, city, latitude, longitude: latitude == null ? null : 77.2 })
+        .expect(201);
+    }
+    const location = { latitude: 28.6, longitude: 77.2, radiusKm: 50 };
+    const nearby = () => request(app.getHttpServer()).post('/api/v1/public/hospitals/nearby');
+    const first = await nearby().send({ location, limit: 1 }).expect(200).expect('Cache-Control', /no-store/);
+    expect(first.body).toMatchObject({ total: 2, hasNext: true, items: [{ name_en: 'Z nearer hospital', distanceKm: 0 }] });
+    const second = await nearby().send({ location, limit: 1, page: 2 }).expect(200);
+    expect(second.body).toMatchObject({ hasNext: false, items: [{ name_en: 'A farther hospital', distanceKm: expect.any(Number) }] });
+    await nearby().send({ location: { latitude: 28.6 } }).expect(400);
+    const byCity = await request(app.getHttpServer()).get('/api/v1/public/hospitals').query({ city: 'delhi' }).expect(200);
+    expect(byCity.body.total).toBe(3);
+  });
   it('publishes through review and preserves shared care IDs, contacts, multi-city discovery and corrections', async () => {
     const created = await request(app.getHttpServer())
       .post('/api/v1/admin/hospitals')

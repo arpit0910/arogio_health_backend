@@ -1,4 +1,5 @@
 import { auditReviewSummary } from '../../../common/directory/review-input';
+import { nearbyDirectory, nearbyLocationInput, type NearbyLocation } from '../../../common/directory/nearby';
 import { directoryCountFields, directoryPredicates, directoryStatusInput, directoryRowStatus, activeDoctorDepartment } from '../../../common/directory/admin-status';
 import {
   decodeProviderImage,
@@ -96,7 +97,11 @@ export class DoctorsService {
   ) {
     return admin ? row : { ...row, reviewedBy: undefined, reviewEvidence: undefined };
   }
-  async list(query: unknown, admin = false) {
+  async nearby(body: unknown) {
+    const { location, ...query } = this.parse(doctorQuery.extend({ location: nearbyLocationInput }), body);
+    return this.list(query, false, location);
+  }
+  async list(query: unknown, admin = false, location?: NearbyLocation) {
     const q = this.parse(admin ? doctorAdminQuery : doctorQuery, query),
       conditions: SQL[] = [];
     if (!admin) conditions.push(this.visible()!);
@@ -126,14 +131,17 @@ export class DoctorsService {
     const status = directoryStatusInput.parse('status' in q ? q.status : 'all');
     if (admin && status !== 'all') conditions.push(status === 'published' ? sql`${care.published}=true` : statusPredicates[status]);
     const summary = admin ? (await this.database.db.select(directoryCountFields(statusPredicates)).from(doctors).innerJoin(care, eq(care.id, doctors.id)).where(baseWhere))[0] : undefined;
+    const nearby = location ? nearbyDirectory(doctors.latitude, doctors.longitude, location) : null;
+    if (nearby) conditions.push(nearby.withinRadius);
     const where = and(...conditions),
       [items, total] = await Promise.all([
         this.database.db
-          .select(fields)
+          .select({ ...fields, distanceKm: nearby?.distance ?? sql<number | null>`null` })
           .from(doctors)
           .innerJoin(care, eq(care.id, doctors.id))
           .where(where)
           .orderBy(
+            ...(nearby ? [asc(nearby.distance)] : []),
             asc(
               q.language === 'hi'
                 ? sql`coalesce(nullif(${doctors.name_hi},''),${doctors.name_en})`

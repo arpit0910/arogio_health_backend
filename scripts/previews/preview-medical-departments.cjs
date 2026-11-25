@@ -42,7 +42,7 @@ fs.mkdirSync(out, { recursive: true });
 for (const mode of ['list', 'editor', 'empty']) {
   const data = JSON.stringify(mode === 'empty' ? [] : rows).replace(/</g, '\\u003c');
   const mock = `const previewRows=${data}; globalThis.fetch=async(path)=>{const url=new URL(path,'https://preview.invalid');const selected=previewRows.find(row=>url.pathname.endsWith(row.id));const items=previewRows.filter(row=>(url.searchParams.get('status')!=='active'||row.is_active)&&(url.searchParams.get('status')!=='inactive'||!row.is_active)&&(!url.searchParams.get('search')||(row.name_en+' '+row.name_hi).toLowerCase().includes(url.searchParams.get('search').toLowerCase())));return {ok:true,status:200,json:async()=>selected||{items,total:items.length,hasNext:false,page:1}};};`;
-  const start = `tokens={accessToken:'preview-only'}; $('login').hidden=true; $('portal').hidden=false; page='departments';void(async()=>{await show();content.prepend(el('p','Synthetic preview only. The application database is unchanged.','notice'));${mode === 'editor' ? `await departmentEditor('${rows[0].id}');` : ''}})();`;
+  const start = `document.addEventListener('DOMContentLoaded',()=>{tokens={accessToken:'preview-only'}; $('login').hidden=true; $('portal').hidden=false; $('create-user').hidden=true; page='departments';void(async()=>{await departmentsPage();content.prepend(el('p','Synthetic preview only. The application database is unchanged.','notice'));${mode === 'editor' ? `await departmentEditor('${rows[0].id}');` : ''}})();},{once:true});`;
   fs.writeFileSync(
     path.join(out, `${mode}.html`),
     html.replace('</body>', `<script>${mock}\n${code}\n${start}</script></body>`),

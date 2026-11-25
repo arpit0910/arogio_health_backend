@@ -155,6 +155,8 @@ describe('Structured doctors', () => {
       h = await createHospital();
     const row = await createDoctor({
       ...draft(),
+      latitude: 28.6,
+      longitude: 77.2,
       department_ids: [d.id],
       affiliations: [
         {
@@ -169,6 +171,9 @@ describe('Structured doctors', () => {
     await request(app.getHttpServer())
       .get('/api/v1/public/doctors/' + row.id)
       .expect(404);
+    const nearby = () => request(app.getHttpServer()).post('/api/v1/public/doctors/nearby')
+      .send({ location: { latitude: 28.6, longitude: 77.2 }, department_id: d.id });
+    await nearby().expect(200).expect(({ body }) => expect(body.items).toEqual([]));
     const admin = await request(app.getHttpServer())
       .get('/api/v1/admin/doctors/' + row.id)
       .set(auth())
@@ -190,6 +195,8 @@ describe('Structured doctors', () => {
     expect(pub.body.total).toBe(1);
     expect(pub.body.items[0].reviewEvidence).toBeUndefined();
     expect(pub.body.items[0].affiliations).toEqual([]);
+    await nearby().expect(200).expect('Cache-Control', /no-store/)
+      .expect(({ body }) => expect(body.items).toEqual([expect.objectContaining({ id: row.id, distanceKm: 0 })]));
     await request(app.getHttpServer())
       .post(`/api/v1/admin/hospitals/${h.id}/review`)
       .set(auth())

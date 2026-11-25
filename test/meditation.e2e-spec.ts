@@ -9,6 +9,7 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApplication } from '../src/bootstrap/configure-application';
 import { DatabaseService } from '../src/database/database.service';
+import { prepareWellnessSeed, seedWellness } from '../src/database/seeds/seed-wellness';
 import * as schema from '../src/database/schema';
 
 describe('Admin-managed meditation library', () => {
@@ -304,4 +305,36 @@ describe('Admin-managed meditation library', () => {
     }).expect(409);
   });
 
+  it('imports the starter catalog as editable drafts and preserves edits and publication history on rerun', async () => {
+    const db = app.get(DatabaseService).db;
+    const catalog = prepareWellnessSeed();
+    expect(catalog.filter(({ section }) => section === 'yoga').length).toBeGreaterThanOrEqual(150);
+    expect(catalog.filter(({ section }) => section === 'meditation')).toHaveLength(12);
+    expect(await seedWellness(db)).toEqual({ inserted: catalog.length, skipped: 0 });
+    const server = app.getHttpServer();
+    const page = await request(server)
+      .get('/api/v1/admin/meditation?section=yoga&limit=24&page=2')
+      .set(auth())
+      .expect(200);
+    expect(page.body).toMatchObject({ page: 2, hasNext: true });
+    expect(page.body.items).toHaveLength(24);
+    expect(page.body.items).toEqual(expect.arrayContaining([expect.objectContaining({ section: 'yoga', published: false })]));
+
+    const { id, ...practice } = catalog.find(({ section }) => section === 'yoga')!;
+    const seeded = await request(server).get(`/api/v1/admin/meditation/${id}`).set(auth()).expect(200);
+    await request(server).get(`/api/v1/public/meditation/content/${id}`).expect(404);
+    await request(server).patch(`/api/v1/admin/meditation/${id}`).set(auth()).send({
+      ...practice,
+      title_en: 'Chair Mountain edited',
+      published: true,
+      expectedUpdatedAt: seeded.body.updatedAt,
+    }).expect(200);
+    expect(await seedWellness(db)).toEqual({ inserted: 0, skipped: catalog.length });
+    const published = await request(server).get(`/api/v1/public/meditation/content/${id}`).expect(200);
+    expect(published.body).toMatchObject({ title_en: 'Chair Mountain edited', publishedVersion: 1 });
+
+    await request(server).delete(`/api/v1/admin/meditation/${id}`).set(auth()).expect(200);
+    expect(await seedWellness(db)).toEqual({ inserted: 0, skipped: catalog.length });
+    await request(server).get(`/api/v1/public/meditation/content/${id}`).expect(404);
+  });
 });
