@@ -15,7 +15,7 @@ export const thumbnailInput = z
     } catch {
       return false;
     }
-  }, 'Use a full HTTPS image URL, or leave empty for the topic image.')
+  }, 'Use a full HTTPS image URL or leave the field empty.')
   .default('');
 export const categoryInput = z
   .object({

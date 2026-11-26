@@ -109,7 +109,7 @@ let HealthResourcesService = class HealthResourcesService {
             ...row,
             thumbnail_url: row.thumbnailRevision
                 ? `/api/v1/public/articles/${row.id}/thumbnail?v=${row.thumbnailRevision}`
-                : row.image_url || category?.image_url || (0, thumbnails_1.topicImage)(row.category),
+                : row.image_url,
             category_hi: category?.name_hi || '',
         };
     }

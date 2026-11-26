@@ -113,7 +113,7 @@ async function directoryPage(kind, current = 1, term = '', status = 'all') {
           review.append(
             el(
               'p',
-              `${data.publishedRows} articles will be published across ${data.categoryCount} categories. ${data.thumbnailFallbacks} will use their category thumbnail. Existing custom images are kept when the import has no image URL.`,
+              `${data.publishedRows} articles will be published across ${data.categoryCount} categories. ${data.thumbnailFallbacks} import rows have no article image URL. Existing article images are kept.`,
             ),
           );
         else
@@ -207,7 +207,9 @@ async function directoryPage(kind, current = 1, term = '', status = 'all') {
         return articles
           ? [
               bulk.checkbox(row),
-              articleThumbnail(!row.is_published && row.thumbnailRevision ? row.image_url : row.thumbnail_url, row.title_en),
+              !row.is_published && row.thumbnailRevision
+                ? button('View uploaded thumbnail', () => articleThumbnailEditor(row, reload))
+                : articleThumbnail(row.thumbnail_url, row.title_en),
               row.title_en,
               row.category,
               visibility,
@@ -295,7 +297,7 @@ async function directoryEditor(kind, id) {
       await directoryPage(kind);
     },
     articles
-      ? 'English content is required. Hindi is optional. Enter an existing category or a new name. Image URL must use HTTPS; leave it empty to use the category thumbnail. Publish to make this article visible in the app.'
+      ? 'English content is required. Hindi is optional. Enter an existing category or a new name. Enter an HTTPS image URL or upload a thumbnail for this article. Publish to make it visible in the app.'
       : 'Enter both coordinates or leave both empty. Listed blood groups are not live stock. Separate groups with semicolons, for example A+;O-.',
   );
 }
@@ -332,14 +334,15 @@ async function articleThumbnailEditor(row, reload) {
       await api(path, { method: 'PUT', body });
       await reload();
     },
-    'An uploaded image takes priority over the image URL and the category cover.',
+    'An uploaded thumbnail takes priority over this article’s image URL.',
   );
   $('save-editor').textContent = 'Upload thumbnail';
 }
 
 function articleThumbnail(url, title) {
+  if (!url) return el('span', 'No image');
   const image = el('img');
-  image.src = url || '/admin-assets/article-thumbnails/wellbeing.jpg';
+  image.src = url;
   image.alt = title;
   image.loading = 'lazy';
   image.referrerPolicy = 'no-referrer';
@@ -350,7 +353,7 @@ function articleThumbnail(url, title) {
   image.addEventListener(
     'error',
     () => {
-      image.src = '/admin-assets/article-thumbnails/wellbeing.jpg';
+      image.replaceWith(el('span', 'Image unavailable'));
     },
     { once: true },
   );
@@ -363,7 +366,7 @@ async function categoryManager() {
   section.append(
     el(
       'p',
-      'Each article belongs to one category. Category thumbnails also cover articles without a custom image. Category names are stable; update the Hindi name, description or thumbnail below.',
+      'Each article belongs to one category. Category names are stable. Update the Hindi name, description or category thumbnail below.',
     ),
   );
   const actions = el('div', null, 'toolbar');

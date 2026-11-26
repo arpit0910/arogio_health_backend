@@ -322,7 +322,7 @@ describe('Articles and nearby blood-bank directory', () => {
     expect(
       (asc.body.items as { category: string; thumbnail_url: string }[]).every(
         (row: { category: string; thumbnail_url: string }) =>
-          row.category === 'Food & Nutrition' && !!row.thumbnail_url,
+          row.category === 'Food & Nutrition' && row.thumbnail_url === '',
       ),
     ).toBe(true);
     const newest = await request(app.getHttpServer())
@@ -362,9 +362,9 @@ describe('Articles and nearby blood-bank directory', () => {
         image_url: 'https://example.com/category.jpg',
       })
       .expect(201);
-    const inherited = await request(app.getHttpServer()).get(path).set(auth()).expect(200);
-    expect(inherited.body.items[0].thumbnail_url).toBe('https://example.com/category.jpg');
-    const article = inherited.body.items[0];
+    const updatedList = await request(app.getHttpServer()).get(path).set(auth()).expect(200);
+    expect(updatedList.body.items[0].thumbnail_url).toBe('');
+    const article = updatedList.body.items[0];
     const detail = await request(app.getHttpServer())
       .get(`/api/v1/admin/content/articles/${article.id}`)
       .set(auth())

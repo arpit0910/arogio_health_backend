@@ -127,14 +127,14 @@ export class HealthResourcesService {
   }
   private withThumbnail<T extends { id: string; category: string; image_url: string; thumbnailRevision: string | null }>(
     row: T,
-    categories: { name: string; name_hi: string; image_url: string }[],
+    categories: { name: string; name_hi: string }[],
   ) {
     const category = categories.find((item) => item.name === row.category);
     return {
       ...row,
       thumbnail_url: row.thumbnailRevision
         ? `/api/v1/public/articles/${row.id}/thumbnail?v=${row.thumbnailRevision}`
-        : row.image_url || category?.image_url || topicImage(row.category),
+        : row.image_url,
       category_hi: category?.name_hi || '',
     };
   }

@@ -112,7 +112,7 @@ describe('Provider image uploads', () => {
       .png()
       .toBuffer();
 
-  it('serves uploaded article thumbnails after publication and restores the fallback on removal', async () => {
+  it('serves uploaded thumbnails and the article image without substituting its category cover', async () => {
     const server = request(app.getHttpServer());
     const article = {
       title_en: 'Article thumbnail example',
@@ -141,6 +141,15 @@ describe('Provider image uploads', () => {
     await server.get(thumbnail).expect(404);
     const restored = await server.get(publicArticle).expect(200);
     expect(restored.body.thumbnail_url).toBe(article.image_url);
+
+    await server.post('/api/v1/admin/content/article-categories').set(auth()).send({
+      name: article.category,
+      image_url: 'https://example.test/category-cover.jpg',
+    }).expect(201);
+    await server.patch(admin).set(auth()).send({ ...article, image_url: '', is_published: true }).expect(200);
+    await server.get(publicArticle).expect(200).expect(({ body }) => {
+      expect(body).toMatchObject({ image_url: '', thumbnail_url: '' });
+    });
   });
   const uploadImage = (
     kind: string,

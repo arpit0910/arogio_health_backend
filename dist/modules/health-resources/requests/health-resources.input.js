@@ -19,7 +19,7 @@ exports.thumbnailInput = zod_1.z
     catch {
         return false;
     }
-}, 'Use a full HTTPS image URL, or leave empty for the topic image.')
+}, 'Use a full HTTPS image URL or leave the field empty.')
     .default('');
 exports.categoryInput = zod_1.z
     .object({
