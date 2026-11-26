@@ -2,7 +2,7 @@ import { z } from 'zod';
 export declare const diseaseInput: z.ZodObject<{
     name_en: z.ZodString;
     department_id: z.ZodUUID;
-    source_key: z.ZodString;
+    record_key: z.ZodDefault<z.ZodString>;
     name_hi: z.ZodDefault<z.ZodString>;
     description_en: z.ZodDefault<z.ZodString>;
     description_hi: z.ZodDefault<z.ZodString>;

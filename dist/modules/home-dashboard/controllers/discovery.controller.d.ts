@@ -12,14 +12,13 @@ export declare class DiscoveryController {
                 updatedAt: Date;
                 city: string;
                 phone: string | null;
-                sourceKey: string;
+                recordKey: string;
                 kind: string;
                 nameHi: string;
                 address: string;
                 addressHi: string;
                 imageUrl: string | null;
                 imageAlt: string;
-                sourceUrl: string;
                 details: import("../../../database/schema").CareDetails;
                 published: boolean;
                 reviewedAt: Date | null;
@@ -28,6 +27,7 @@ export declare class DiscoveryController {
             } | {
                 verification: string;
                 freshnessDays: number;
+                recordKey: undefined;
                 reviewedBy: undefined;
                 reviewEvidence: undefined;
                 name: string;
@@ -35,14 +35,12 @@ export declare class DiscoveryController {
                 updatedAt: Date;
                 city: string;
                 phone: string | null;
-                sourceKey: string;
                 kind: string;
                 nameHi: string;
                 address: string;
                 addressHi: string;
                 imageUrl: string | null;
                 imageAlt: string;
-                sourceUrl: string;
                 details: import("../../../database/schema").CareDetails;
                 published: boolean;
                 reviewedAt: Date | null;
@@ -59,14 +57,13 @@ export declare class DiscoveryController {
                 updatedAt: Date;
                 city: string;
                 phone: string | null;
-                sourceKey: string;
+                recordKey: string;
                 kind: string;
                 nameHi: string;
                 address: string;
                 addressHi: string;
                 imageUrl: string | null;
                 imageAlt: string;
-                sourceUrl: string;
                 details: import("../../../database/schema").CareDetails;
                 published: boolean;
                 reviewedAt: Date | null;
@@ -75,6 +72,7 @@ export declare class DiscoveryController {
             } | {
                 verification: string;
                 freshnessDays: number;
+                recordKey: undefined;
                 reviewedBy: undefined;
                 reviewEvidence: undefined;
                 name: string;
@@ -82,14 +80,12 @@ export declare class DiscoveryController {
                 updatedAt: Date;
                 city: string;
                 phone: string | null;
-                sourceKey: string;
                 kind: string;
                 nameHi: string;
                 address: string;
                 addressHi: string;
                 imageUrl: string | null;
                 imageAlt: string;
-                sourceUrl: string;
                 details: import("../../../database/schema").CareDetails;
                 published: boolean;
                 reviewedAt: Date | null;

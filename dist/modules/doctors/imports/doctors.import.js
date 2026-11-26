@@ -2,11 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doctorHeaders = void 0;
 exports.prepareDoctors = prepareDoctors;
+const directory_columns_1 = require("../../health-resources/imports/directory-columns");
 const csv_1 = require("../../health-resources/imports/csv");
 const workbook_1 = require("../../health-resources/imports/workbook");
 const doctors_input_1 = require("../requests/doctors.input");
 exports.doctorHeaders = [
-    'source_key',
+    'record_key',
     'name_en',
     'name_hi',
     'registration_number',
@@ -28,13 +29,12 @@ exports.doctorHeaders = [
     'phone_2',
     'email',
     'website',
-    'source_url',
     'latitude',
     'longitude',
     'summary_en',
     'summary_hi',
-    'department_source_keys',
-    'hospital_source_keys',
+    'department_record_keys',
+    'hospital_record_keys',
     'schedule_days',
     'schedule_start',
     'schedule_end',
@@ -71,30 +71,13 @@ async function prepareDoctors(file, masters) {
     const extension = file.originalname.toLowerCase().split('.').pop();
     if (!['csv', 'xlsx'].includes(extension ?? ''))
         throw new Error('Use a .csv or .xlsx file.');
-    const rows = (0, csv_1.parseCsv)(extension === 'xlsx' ? await (0, workbook_1.workbookToCsv)(file.buffer) : file.buffer), headers = Object.keys(rows[0]);
-    if ((!headers.includes('name_en') && !headers.includes('first_name')) ||
-        !headers.includes('city') ||
-        !headers.includes('state') ||
-        (!headers.includes('source_key') &&
-            !headers.includes('id') &&
-            !headers.includes('doctor_id')) ||
-        headers.some((header) => ![
-            ...exports.doctorHeaders,
-            ...Object.keys(aliases),
-            'id',
-            'is_verified',
-            'first_name',
-            'last_name',
-            'department_id',
-            'department_name_en',
-            'hospital_id',
-            'hospital_name',
-            'hospital_city',
-            'department_name_hi',
-            'doctor_hospital_link_id',
-            'gender',
-        ].includes(header)))
-        throw new Error('Use the doctor template or supported SwasthyaSearch export headers. Name, city, state and source_key or legacy id are required.');
+    const rawRows = (0, csv_1.parseCsv)(extension === 'xlsx' ? await (0, workbook_1.workbookToCsv)(file.buffer) : file.buffer);
+    const rows = (0, directory_columns_1.selectDirectoryColumns)(rawRows, [...exports.doctorHeaders, ...Object.keys(aliases), 'id', 'is_verified', 'first_name', 'last_name', 'department_id', 'department_name_en', 'hospital_id', 'hospital_name', 'hospital_city', 'department_name_hi', 'doctor_hospital_link_id', 'gender'], { ...directory_columns_1.generalDirectoryAliases,
+        department_source_keys: 'department_record_keys',
+        hospital_source_keys: 'hospital_record_keys', doctor_name: 'name_en', doctor_full_name: 'name_en', full_address: 'address_line1', address: 'address_line1', mobile_number: 'phone_1', department: 'department_name_en' });
+    const headers = Object.keys(rows[0]);
+    if ((!headers.includes('name_en') && !headers.includes('first_name')) || !headers.includes('city') || !headers.includes('state') || !['record_key', 'id', 'doctor_id'].some(key => headers.includes(key)))
+        throw new Error('Supply a name, city, state and stable record ID or import key.');
     const valid = [], errors = [], keys = new Set();
     let ignoredVerificationFlags = 0;
     let ignoredMetadataFields = 0;
@@ -129,18 +112,18 @@ async function prepareDoctors(file, masters) {
                 throw new Error('Conflicting legacy doctor IDs.');
             const legacyId = legacyIds[0] || '';
             delete input.id;
-            if (row.source_key?.trim() && legacyId)
-                throw new Error('Supply source_key or legacy id, not both.');
-            input.source_key =
-                row.source_key?.trim() ||
-                    (/^\d{1,20}$/.test(legacyId) ? `swasthya:doctor:${legacyId}` : '');
+            if (row.record_key?.trim() && legacyId)
+                throw new Error('Supply record_key or legacy id, not both.');
+            input.record_key =
+                row.record_key?.trim() ||
+                    (0, directory_columns_1.directoryImportKey)(legacyId, 'doctor');
             const textValue = (key) => {
                 const value = input[key];
                 return typeof value === 'string' ? value : '';
             };
             for (const key of ['latitude', 'longitude', 'experience_years', 'consultation_fee'])
                 input[key] = textValue(key).trim() ? Number(textValue(key)) : null;
-            for (const key of ['phone_1', 'phone_2', 'email', 'website', 'source_url'])
+            for (const key of ['phone_1', 'phone_2', 'email', 'website'])
                 if (!input[key])
                     input[key] = null;
             if (typeof input.website === 'string' && !/^[a-z][a-z0-9+.-]*:/i.test(input.website))
@@ -160,7 +143,7 @@ async function prepareDoctors(file, masters) {
                 .split(';')
                 .map((v) => v.trim())
                 .filter(Boolean);
-            const departmentRefs = split(textValue('department_source_keys'));
+            const departmentRefs = split(textValue('department_record_keys'));
             if (row.department_id?.trim())
                 departmentRefs.push(/^\d+$/.test(row.department_id.trim())
                     ? 'swasthya:' + row.department_id.trim()
@@ -173,13 +156,13 @@ async function prepareDoctors(file, masters) {
             }
             input.department_ids = [
                 ...new Set(departmentRefs.map((ref) => {
-                    const found = masters.departments.find((v) => v.source_key === ref || v.id === ref);
+                    const found = masters.departments.find((v) => v.record_key === ref || v.id === ref);
                     if (!found)
                         throw new Error(`Unknown department reference: ${ref}. Create or import departments first.`);
                     return found.id;
                 })),
             ];
-            const hospitalRefs = split(textValue('hospital_source_keys'));
+            const hospitalRefs = split(textValue('hospital_record_keys'));
             if (row.hospital_id?.trim())
                 hospitalRefs.push(/^\d+$/.test(row.hospital_id.trim())
                     ? 'swasthya:hospital:' + row.hospital_id.trim()
@@ -191,20 +174,20 @@ async function prepareDoctors(file, masters) {
                 if (found.length !== 1)
                     throw new Error('Hospital name and city must identify one existing hospital.');
                 if (hospitalRefs.length &&
-                    !hospitalRefs.every((ref) => ref === found[0].id || ref === found[0].source_key))
+                    !hospitalRefs.every((ref) => ref === found[0].id || ref === found[0].record_key))
                     throw new Error('Hospital name and reference disagree.');
                 hospitalRefs.push(found[0].id);
             }
             const resolvedHospitals = [
                 ...new Set(hospitalRefs.map((ref) => {
-                    const h = masters.hospitals.find((v) => v.source_key === ref || v.id === ref);
+                    const h = masters.hospitals.find((v) => v.record_key === ref || v.id === ref);
                     if (!h)
                         throw new Error(`Unknown hospital reference: ${ref}.`);
                     return h.id;
                 })),
             ];
             input.affiliations = resolvedHospitals.map((ref) => {
-                const found = masters.hospitals.find((v) => v.source_key === ref || v.id === ref);
+                const found = masters.hospitals.find((v) => v.record_key === ref || v.id === ref);
                 if (!found)
                     throw new Error(`Unknown hospital reference: ${ref}. Create or import hospitals first.`);
                 return {
@@ -243,8 +226,8 @@ async function prepareDoctors(file, masters) {
                 ].some((key) => textValue(key)))
                 throw new Error('Schedule fields require a hospital reference.');
             for (const key of [
-                'department_source_keys',
-                'hospital_source_keys',
+                'department_record_keys',
+                'hospital_record_keys',
                 'schedule_days',
                 'schedule_start',
                 'schedule_end',
@@ -255,10 +238,10 @@ async function prepareDoctors(file, masters) {
             ])
                 delete input[key];
             const value = doctors_input_1.doctorInput.parse(input);
-            if (keys.has(value.source_key)) {
+            if (keys.has(value.record_key)) {
                 if (!row.doctor_id?.trim())
-                    throw new Error('Duplicate source_key in this file.');
-                const previous = valid.find((v) => v.value.source_key === value.source_key);
+                    throw new Error('Duplicate record_key in this file.');
+                const previous = valid.find((v) => v.value.record_key === value.record_key);
                 const profile = (v) => JSON.stringify({ ...v, affiliations: [], department_ids: [] });
                 if (profile(previous.value) !== profile(value))
                     throw new Error('Conflicting profiles for the same legacy doctor.');
@@ -273,7 +256,7 @@ async function prepareDoctors(file, masters) {
                 previous.value = doctors_input_1.doctorInput.parse(previous.value);
                 return;
             }
-            keys.add(value.source_key);
+            keys.add(value.record_key);
             valid.push({ row: index + 2, value });
         }
         catch (error) {

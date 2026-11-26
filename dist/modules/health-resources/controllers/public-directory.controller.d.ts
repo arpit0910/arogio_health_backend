@@ -1,3 +1,4 @@
+import type { Response } from 'express';
 import { HealthResourcesService } from '../services/health-resources.service';
 export declare class PublicHealthResourcesController {
     private readonly directory;
@@ -5,7 +6,6 @@ export declare class PublicHealthResourcesController {
     articles(query: unknown): Promise<{
         items: ({
             id: string;
-            source_id: string;
             title_en: string;
             title_hi: string;
             excerpt_en: string;
@@ -14,6 +14,7 @@ export declare class PublicHealthResourcesController {
             reading_minutes_hi: number;
             category: string;
             image_url: string;
+            thumbnailRevision: string | null;
             author_name: string;
             is_published: boolean;
             created_at: Date;
@@ -43,17 +44,20 @@ export declare class PublicHealthResourcesController {
         description: string;
         image_url: string;
     }[]>;
+    thumbnail(id: string, response: Response): Promise<void>;
     article(id: string): Promise<{
+        content_en: string;
+        content_hi: string;
         id: string;
-        source_id: string;
         title_en: string;
         title_hi: string;
         excerpt_en: string;
         excerpt_hi: string;
-        content_en: string;
-        content_hi: string;
+        reading_minutes_en: number;
+        reading_minutes_hi: number;
         category: string;
         image_url: string;
+        thumbnailRevision: string | null;
         author_name: string;
         is_published: boolean;
         created_at: Date;
@@ -73,7 +77,7 @@ export declare class PublicHealthResourcesController {
                 visibility: string;
             } | undefined;
             id: string;
-            source_id: string;
+            record_key: string;
             name_en: string;
             name_hi: string;
             city: string;
@@ -89,7 +93,6 @@ export declare class PublicHealthResourcesController {
             email: string | null;
             website: string | null;
             is_verified: boolean;
-            source_url: string | null;
             verified_at: Date | null;
             is_24_7: boolean;
             is_government: boolean;
@@ -114,7 +117,7 @@ export declare class PublicHealthResourcesController {
         items: {
             distanceKm: number;
             id: string;
-            source_id: string;
+            record_key: string;
             name_en: string;
             name_hi: string;
             city: string;
@@ -130,7 +133,6 @@ export declare class PublicHealthResourcesController {
             email: string | null;
             website: string | null;
             is_verified: boolean;
-            source_url: string | null;
             verified_at: Date | null;
             is_24_7: boolean;
             is_government: boolean;

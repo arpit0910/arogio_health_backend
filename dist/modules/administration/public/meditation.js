@@ -36,7 +36,7 @@ function meditationBody(row) {
       ]),
   );
 }
-async function meditationPage(current = 1, term = '', kind = '') {
+async function meditationPage(current = 1, term = '', kind = '', selectedSection = '') {
   reset('Meditation');
   const rev = requestRevision,
     section = panel('Your meditation library'),
@@ -59,15 +59,25 @@ async function meditationPage(current = 1, term = '', kind = '') {
     type.append(option);
   }
   type.value = kind;
+  const sectionFilter = el('select');
+  sectionFilter.setAttribute('aria-label', 'Content section');
+  for (const [value, label] of [['', 'All sections'], ...meditationSections]) {
+    const option = el('option', label);
+    option.value = value;
+    sectionFilter.append(option);
+  }
+  sectionFilter.value = selectedSection;
+  const reload = (page = current) => meditationPage(page, term, kind, selectedSection);
   const submit = el('button', 'Search');
   submit.type = 'submit';
   tools.addEventListener('submit', (event) => {
     event.preventDefault();
-    void safely(() => meditationPage(1, search.value.trim(), type.value));
+    void safely(() => meditationPage(1, search.value.trim(), type.value, sectionFilter.value));
   });
   tools.append(
     search,
     type,
+    sectionFilter,
     submit,
     button('Add video', () => meditationEditor(null, 'video')),
     button('Add guided practice', () => meditationEditor(null, 'practice')),
@@ -83,9 +93,10 @@ async function meditationPage(current = 1, term = '', kind = '') {
   section.setAttribute('aria-busy', 'true');
   let data;
   try {
-    data = await api(
-      `/admin/meditation?page=${current}&search=${encodeURIComponent(term)}${kind ? '&kind=' + kind : ''}`,
-    );
+    const params = new URLSearchParams({ page: String(current), search: term });
+    if (kind) params.set('kind', kind);
+    if (selectedSection) params.set('section', selectedSection);
+    data = await api(`/admin/meditation?${params}`);
   } finally {
     section.setAttribute('aria-busy', 'false');
   }
@@ -100,14 +111,14 @@ async function meditationPage(current = 1, term = '', kind = '') {
       data.items.map((row) => {
         const actions = el('div', null, 'actions');
         actions.append(
-          button('Edit', () => meditationEditor(row.id)),
+          button('Edit', () => meditationEditor(row.id, row.kind, reload)),
           button(row.published ? 'Unpublish' : 'Publish', async () => {
             await send(
               `/admin/meditation/${row.id}`,
               { ...meditationBody(row), published: !row.published },
               'PATCH',
             );
-            if (rev === requestRevision) await meditationPage(current, term, kind);
+            if (rev === requestRevision) await reload();
           }),
         );
         if (row.videoId) {
@@ -126,7 +137,7 @@ async function meditationPage(current = 1, term = '', kind = '') {
               )
                 return;
               await api(`/admin/meditation/${row.id}`, { method: 'DELETE' });
-              if (rev === requestRevision) await meditationPage(1, term, kind);
+              if (rev === requestRevision) await reload(1);
             },
             'danger',
           ),
@@ -143,9 +154,9 @@ async function meditationPage(current = 1, term = '', kind = '') {
   );
   if (!data.items.length)
     section.append(el('p', 'No content found. Add a video or guided practice to get started.'));
-  pager(section, current, data.hasNext, (next) => meditationPage(next, term, kind));
+  pager(section, current, data.hasNext, reload);
 }
-async function meditationEditor(id, initialKind = 'video') {
+async function meditationEditor(id, initialKind = 'video', onSaved = meditationPage) {
   const rev = requestRevision;
   const row = id
     ? await api(`/admin/meditation/${id}`)
@@ -295,7 +306,7 @@ async function meditationEditor(id, initialKind = 'video') {
         ...(id ? { expectedUpdatedAt: row.updatedAt } : {}),
       });
       await send(`/admin/meditation${id ? '/' + id : ''}`, body, id ? 'PATCH' : 'POST');
-      if (rev === requestRevision) await meditationPage();
+      if (rev === requestRevision) await onSaved();
     },
     'Use HTTPS YouTube links for videos. Guided practices need English step instructions and durations; Hindi is optional. Review the content before publishing.',
   );

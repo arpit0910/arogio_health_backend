@@ -1,3 +1,4 @@
+import type { Response } from 'express';
 import type { RequestUser } from '../../../common/authentication/request-user';
 import { HospitalsService } from '../../hospitals/services/hospitals.service';
 import { DoctorsService } from '../../doctors/services/doctors.service';
@@ -21,14 +22,5 @@ export declare class DirectoryApprovalsController {
             [x: string]: number;
         } | undefined;
     }>;
-    approve(actor: RequestUser, rawKind: string, body: unknown): Promise<{
-        approved: number;
-        failed: number;
-        results: {
-            id: string;
-            name: string;
-            status: "approved" | "failed";
-            message: string;
-        }[];
-    }>;
+    approve(actor: RequestUser, rawKind: string, body: unknown, accept: string | undefined, response: Response): Promise<void>;
 }

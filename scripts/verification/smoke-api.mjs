@@ -17,6 +17,8 @@ const checks = [
   { path: '/auth/google', method: 'POST', body: { idToken: 'invalid-deployment-smoke-test-token' }, status: 401 },
   { path: '/users/me/setup', method: 'PATCH', body: { step: 1 }, status: 401 },
   ...directoryPaths.map(path => ({ path: `${path}?page=1&limit=1`, status: 200, directoryPage: true })),
+  { path: '/public/meditation/content?page=1&limit=1&section=yoga', status: 200, directoryPage: true },
+  { path: '/public/meditation/content?page=1&limit=1&section=meditation', status: 200, directoryPage: true },
 ];
 
 for (const check of checks) {

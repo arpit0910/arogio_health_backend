@@ -21,7 +21,7 @@ export declare const careQuery: z.ZodObject<{
     limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
 }, z.core.$strict>;
 export declare const careInput: z.ZodObject<{
-    sourceKey: z.ZodString;
+    recordKey: z.ZodOptional<z.ZodString>;
     kind: z.ZodEnum<{
         doctor: "doctor";
         hospital: "hospital";
@@ -35,7 +35,6 @@ export declare const careInput: z.ZodObject<{
     address: z.ZodDefault<z.ZodString>;
     addressHi: z.ZodDefault<z.ZodString>;
     phone: z.ZodDefault<z.ZodNullable<z.ZodString>>;
-    sourceUrl: z.ZodURL;
     details: z.ZodObject<{
         specialties: z.ZodDefault<z.ZodArray<z.ZodString>>;
         qualifications: z.ZodDefault<z.ZodString>;
@@ -50,12 +49,12 @@ export declare const careInput: z.ZodObject<{
     expectedUpdatedAt: z.ZodOptional<z.ZodISODateTime>;
 }, z.core.$strict>;
 export declare const reviewInput: z.ZodObject<{
+    confirmedDetails: z.ZodOptional<z.ZodLiteral<true>>;
+    reviewerName: z.ZodOptional<z.ZodString>;
+    reviewerQualification: z.ZodOptional<z.ZodString>;
+    evidence: z.ZodOptional<z.ZodString>;
     expectedUpdatedAt: z.ZodISODateTime;
-    evidence: z.ZodString;
-    reviewerName: z.ZodString;
-    reviewerQualification: z.ZodString;
     publish: z.ZodBoolean;
-    confirmedSource: z.ZodLiteral<true>;
 }, z.core.$strict>;
 export declare const correctionInput: z.ZodObject<{
     message: z.ZodString;

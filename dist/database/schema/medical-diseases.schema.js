@@ -6,7 +6,7 @@ const pg_core_1 = require("drizzle-orm/pg-core");
 const medical_departments_schema_1 = require("./medical-departments.schema");
 exports.medicalDiseases = (0, pg_core_1.pgTable)('medical_diseases', {
     id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
-    source_key: (0, pg_core_1.text)('source_key').notNull().unique(),
+    record_key: (0, pg_core_1.text)('record_key').notNull().unique(),
     name_en: (0, pg_core_1.text)('name_en').notNull(),
     name_hi: (0, pg_core_1.text)('name_hi').notNull().default(''),
     description_en: (0, pg_core_1.text)('description_en').notNull().default(''),

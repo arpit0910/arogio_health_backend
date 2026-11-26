@@ -20,13 +20,14 @@ export declare class PublicHospitalsController {
                 reviewStatus: string;
                 visibility: string;
             } | undefined;
+            distanceKm: number | null;
             image_url: string | null;
             published: boolean;
             reviewedAt: Date | null;
             reviewedBy: string | null;
             reviewEvidence: string | null;
             id: string;
-            source_key: string;
+            record_key: string;
             listed: boolean;
             name_en: string;
             name_hi: string;
@@ -44,7 +45,68 @@ export declare class PublicHospitalsController {
             phone_2: string | null;
             email: string | null;
             website: string | null;
-            source_url: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            accepts_ayushman: boolean | null;
+            accepts_janaadhaar: boolean | null;
+            accepts_cghs: boolean | null;
+            accepts_esic: boolean | null;
+            rgahs_approved: boolean | null;
+            is_cashless: boolean | null;
+            nabh_accredited: boolean | null;
+            is_24_7: boolean | null;
+            cashless_schemes: string[];
+            specialties: string[];
+            summary_en: string;
+            summary_hi: string;
+            image_alt: string;
+            image_revision: string | null;
+            version: number;
+            created_at: Date;
+            updated_at: Date;
+        }[];
+    }>;
+    nearby(body: unknown): Promise<{
+        total: number;
+        page: number;
+        hasNext: boolean;
+        summary?: {
+            [x: string]: number;
+        } | undefined;
+        items: {
+            adminStatus?: {
+                active: boolean;
+                approved: boolean;
+                missingFields: string[];
+                complete: boolean;
+                reviewStatus: string;
+                visibility: string;
+            } | undefined;
+            distanceKm: number | null;
+            image_url: string | null;
+            published: boolean;
+            reviewedAt: Date | null;
+            reviewedBy: string | null;
+            reviewEvidence: string | null;
+            id: string;
+            record_key: string;
+            listed: boolean;
+            name_en: string;
+            name_hi: string;
+            hospital_type: string;
+            address_line1: string;
+            address_line2: string;
+            landmark: string;
+            address_hi: string;
+            city: string;
+            state: string;
+            pincode: string;
+            country_code_1: string;
+            phone_1: string | null;
+            country_code_2: string;
+            phone_2: string | null;
+            email: string | null;
+            website: string | null;
             latitude: number | null;
             longitude: number | null;
             accepts_ayushman: boolean | null;
@@ -74,7 +136,7 @@ export declare class PublicHospitalsController {
         reviewedBy: string | null;
         reviewEvidence: string | null;
         id: string;
-        source_key: string;
+        record_key: string;
         listed: boolean;
         name_en: string;
         name_hi: string;
@@ -92,7 +154,6 @@ export declare class PublicHospitalsController {
         phone_2: string | null;
         email: string | null;
         website: string | null;
-        source_url: string | null;
         latitude: number | null;
         longitude: number | null;
         accepts_ayushman: boolean | null;
@@ -147,13 +208,14 @@ export declare class HospitalsAdministrationController {
                 reviewStatus: string;
                 visibility: string;
             } | undefined;
+            distanceKm: number | null;
             image_url: string | null;
             published: boolean;
             reviewedAt: Date | null;
             reviewedBy: string | null;
             reviewEvidence: string | null;
             id: string;
-            source_key: string;
+            record_key: string;
             listed: boolean;
             name_en: string;
             name_hi: string;
@@ -171,7 +233,6 @@ export declare class HospitalsAdministrationController {
             phone_2: string | null;
             email: string | null;
             website: string | null;
-            source_url: string | null;
             latitude: number | null;
             longitude: number | null;
             accepts_ayushman: boolean | null;
@@ -208,7 +269,7 @@ export declare class HospitalsAdministrationController {
         }[];
         ignoredVerificationFlags: number;
         sample: {
-            source_key: string;
+            record_key: string;
             name_en: string;
             city: string;
             state: string;
@@ -222,7 +283,7 @@ export declare class HospitalsAdministrationController {
     }>;
     visibility(user: RequestUser, id: string, body: unknown): Promise<Omit<{
         id: string;
-        source_key: string;
+        record_key: string;
         listed: boolean;
         name_en: string;
         name_hi: string;
@@ -240,7 +301,6 @@ export declare class HospitalsAdministrationController {
         phone_2: string | null;
         email: string | null;
         website: string | null;
-        source_url: string | null;
         latitude: number | null;
         longitude: number | null;
         accepts_ayushman: boolean | null;
@@ -268,6 +328,7 @@ export declare class HospitalsAdministrationController {
         id: string;
         created_at: Date;
         updated_at: Date;
+        record_key: string;
         name_en: string;
         name_hi: string;
         city: string;
@@ -276,11 +337,9 @@ export declare class HospitalsAdministrationController {
         landmark: string;
         address_hi: string;
         website: string | null;
-        source_url: string | null;
         is_24_7: boolean | null;
         latitude: number | null;
         longitude: number | null;
-        source_key: string;
         image_alt: string;
         version: number;
         listed: boolean;
@@ -311,7 +370,7 @@ export declare class HospitalsAdministrationController {
         reviewedBy: string | null;
         reviewEvidence: string | null;
         id: string;
-        source_key: string;
+        record_key: string;
         listed: boolean;
         name_en: string;
         name_hi: string;
@@ -329,7 +388,6 @@ export declare class HospitalsAdministrationController {
         phone_2: string | null;
         email: string | null;
         website: string | null;
-        source_url: string | null;
         latitude: number | null;
         longitude: number | null;
         accepts_ayushman: boolean | null;
@@ -356,6 +414,7 @@ export declare class HospitalsAdministrationController {
         id: string;
         created_at: Date;
         updated_at: Date;
+        record_key: string;
         name_en: string;
         name_hi: string;
         city: string;
@@ -364,11 +423,9 @@ export declare class HospitalsAdministrationController {
         landmark: string;
         address_hi: string;
         website: string | null;
-        source_url: string | null;
         is_24_7: boolean | null;
         latitude: number | null;
         longitude: number | null;
-        source_key: string;
         image_alt: string;
         version: number;
         listed: boolean;
@@ -399,6 +456,7 @@ export declare class HospitalsAdministrationController {
         id: string;
         created_at: Date;
         updated_at: Date;
+        record_key: string;
         name_en: string;
         name_hi: string;
         city: string;
@@ -407,11 +465,9 @@ export declare class HospitalsAdministrationController {
         landmark: string;
         address_hi: string;
         website: string | null;
-        source_url: string | null;
         is_24_7: boolean | null;
         latitude: number | null;
         longitude: number | null;
-        source_key: string;
         image_alt: string;
         version: number;
         listed: boolean;

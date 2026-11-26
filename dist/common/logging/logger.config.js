@@ -21,6 +21,7 @@ function createLoggerConfig(config) {
                     'req.body.messages',
                     'req.body.latitude',
                     'req.body.longitude',
+                    'req.body.location',
                     'res.headers["set-cookie"]',
                 ],
                 censor: '[REDACTED]',

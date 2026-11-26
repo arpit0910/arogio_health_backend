@@ -10,6 +10,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DoctorsService = void 0;
+const review_input_1 = require("../../../common/directory/review-input");
+const nearby_1 = require("../../../common/directory/nearby");
 const admin_status_1 = require("../../../common/directory/admin-status");
 const provider_image_1 = require("../../../common/media/provider-image");
 const common_1 = require("@nestjs/common");
@@ -55,7 +57,11 @@ let DoctorsService = class DoctorsService {
     present(row, admin) {
         return admin ? row : { ...row, reviewedBy: undefined, reviewEvidence: undefined };
     }
-    async list(query, admin = false) {
+    async nearby(body) {
+        const { location, ...query } = this.parse(doctors_input_1.doctorQuery.extend({ location: nearby_1.nearbyLocationInput }), body);
+        return this.list(query, false, location);
+    }
+    async list(query, admin = false, location) {
         const q = this.parse(admin ? doctors_input_1.doctorAdminQuery : doctors_input_1.doctorQuery, query), conditions = [];
         if (!admin)
             conditions.push(this.visible());
@@ -76,13 +82,16 @@ let DoctorsService = class DoctorsService {
         if (admin && status !== 'all')
             conditions.push(status === 'published' ? (0, drizzle_orm_1.sql) `${schema_1.careDirectoryEntries.published}=true` : statusPredicates[status]);
         const summary = admin ? (await this.database.db.select((0, admin_status_1.directoryCountFields)(statusPredicates)).from(schema_1.doctors).innerJoin(schema_1.careDirectoryEntries, (0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.id, schema_1.doctors.id)).where(baseWhere))[0] : undefined;
+        const nearby = location ? (0, nearby_1.nearbyDirectory)(schema_1.doctors.latitude, schema_1.doctors.longitude, location) : null;
+        if (nearby)
+            conditions.push(nearby.withinRadius);
         const where = (0, drizzle_orm_1.and)(...conditions), [items, total] = await Promise.all([
             this.database.db
-                .select(fields)
+                .select({ ...fields, distanceKm: nearby?.distance ?? (0, drizzle_orm_1.sql) `null` })
                 .from(schema_1.doctors)
                 .innerJoin(schema_1.careDirectoryEntries, (0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.id, schema_1.doctors.id))
                 .where(where)
-                .orderBy((0, drizzle_orm_1.asc)(q.language === 'hi'
+                .orderBy(...(nearby ? [(0, drizzle_orm_1.asc)(nearby.distance)] : []), (0, drizzle_orm_1.asc)(q.language === 'hi'
                 ? (0, drizzle_orm_1.sql) `coalesce(nullif(${schema_1.doctors.name_hi},''),${schema_1.doctors.name_en})`
                 : (0, drizzle_orm_1.sql) `lower(${schema_1.doctors.name_en})`), (0, drizzle_orm_1.asc)(schema_1.doctors.id))
                 .limit(q.limit)
@@ -114,7 +123,7 @@ let DoctorsService = class DoctorsService {
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.doctors.id, id), admin ? undefined : this.visible()))
             .limit(1);
         if (!row)
-            throw new common_1.NotFoundException('Doctor not found or awaiting source review.');
+            throw new common_1.NotFoundException('Doctor not found or awaiting listing review.');
         return { ...this.present(row, admin), ...(await this.relations(this.database.db, id, admin)) };
     }
     async write(operation) {
@@ -128,7 +137,7 @@ let DoctorsService = class DoctorsService {
         }
         catch (error) {
             if ((0, database_error_1.isUniqueViolation)(error))
-                throw new common_1.ConflictException('This source key already exists. Use its existing record.');
+                throw new common_1.ConflictException('This record key already exists. Use its existing record.');
             if ((0, database_error_1.getDatabaseErrorCode)(error) === '23503')
                 throw new common_1.ConflictException('Doctor has linked records. Withdraw it instead of deleting.');
             throw error;
@@ -141,7 +150,7 @@ let DoctorsService = class DoctorsService {
     }
     projection(value) {
         return {
-            sourceKey: value.source_key,
+            recordKey: value.record_key,
             kind: 'doctor',
             name: value.name_en,
             nameHi: value.name_hi,
@@ -158,7 +167,6 @@ let DoctorsService = class DoctorsService {
                 .join(', '),
             addressHi: value.address_hi,
             phone: (0, hospitals_input_1.hospitalPhone)(value.country_code_1, value.phone_1),
-            sourceUrl: value.source_url ?? '',
             details: {
                 specialties: [],
                 qualifications: value.qualifications.join(', '),
@@ -181,7 +189,7 @@ let DoctorsService = class DoctorsService {
         const ds = await tx
             .select({
             id: schema_1.medicalDepartments.id,
-            source_key: schema_1.medicalDepartments.source_key,
+            record_key: schema_1.medicalDepartments.record_key,
             name_en: schema_1.medicalDepartments.name_en,
             name_hi: schema_1.medicalDepartments.name_hi,
             is_active: schema_1.medicalDepartments.is_active,
@@ -335,21 +343,20 @@ let DoctorsService = class DoctorsService {
                 .innerJoin(schema_1.medicalDepartments, (0, drizzle_orm_1.eq)(schema_1.medicalDepartments.id, schema_1.doctorDepartments.department_id))
                 .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.doctorDepartments.doctor_id, id), (0, drizzle_orm_1.eq)(schema_1.medicalDepartments.is_active, true)));
             if (value.publish &&
-                (!row.source_url ||
-                    !row.address_line1 ||
+                (!row.address_line1 ||
                     !row.phone_1 ||
                     !row.registration_number ||
                     !row.medical_council ||
                     !row.qualifications.length ||
                     !active.length))
-                throw new common_1.BadRequestException('A source URL, address, phone, registration, medical council, qualifications and active department are required before publication.');
+                throw new common_1.BadRequestException('An address, phone, registration, medical council, qualifications and active department are required before approval.');
             await tx
                 .update(schema_1.careDirectoryEntries)
                 .set({
                 published: value.publish,
                 reviewedAt: new Date(),
                 reviewedBy: actor,
-                reviewEvidence: `${value.reviewerName} (${value.reviewerQualification}): ${value.evidence}`,
+                reviewEvidence: (0, review_input_1.auditReviewSummary)(value),
                 updatedAt: new Date(),
             })
                 .where((0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.id, id));
@@ -387,7 +394,7 @@ let DoctorsService = class DoctorsService {
             hospitals: await tx
                 .select({
                 id: schema_1.hospitals.id,
-                source_key: schema_1.hospitals.source_key,
+                record_key: schema_1.hospitals.record_key,
                 name_en: schema_1.hospitals.name_en,
                 city: schema_1.hospitals.city,
                 version: schema_1.hospitals.version,
@@ -434,26 +441,26 @@ let DoctorsService = class DoctorsService {
         };
     }
     async plan(prepared, existing, tx) {
-        const keys = new Map(existing.profiles.map((row) => [row.source_key, row])), errors = [...prepared.errors];
-        const sourceKeys = prepared.rows.map((row) => row.value.source_key), collisions = sourceKeys.length
+        const keys = new Map(existing.profiles.map((row) => [row.record_key, row])), errors = [...prepared.errors];
+        const recordKeys = prepared.rows.map((row) => row.value.record_key), collisions = recordKeys.length
             ? await tx
-                .select({ key: schema_1.careDirectoryEntries.sourceKey })
+                .select({ key: schema_1.careDirectoryEntries.recordKey })
                 .from(schema_1.careDirectoryEntries)
-                .where((0, drizzle_orm_1.inArray)(schema_1.careDirectoryEntries.sourceKey, sourceKeys))
+                .where((0, drizzle_orm_1.inArray)(schema_1.careDirectoryEntries.recordKey, recordKeys))
             : [];
         const unavailable = new Set(collisions.filter((row) => !keys.has(row.key)).map((row) => row.key));
         for (const row of prepared.rows)
-            if (unavailable.has(row.value.source_key))
+            if (unavailable.has(row.value.record_key))
                 errors.push({
                     row: row.row,
-                    message: 'Source key belongs to a legacy or other care record. Resolve its identity before import.',
+                    message: 'Record key belongs to a legacy or other care record. Resolve its identity before import.',
                 });
-        const updates = prepared.rows.filter((row) => keys.has(row.value.source_key)).length;
+        const updates = prepared.rows.filter((row) => keys.has(row.value.record_key)).length;
         return {
             totalRows: prepared.totalRows,
             creates: prepared.rows.length - updates,
             updates,
-            returnsToDraft: prepared.rows.filter((row) => keys.get(row.value.source_key)?.published)
+            returnsToDraft: prepared.rows.filter((row) => keys.get(row.value.record_key)?.published)
                 .length,
             errorCount: errors.length,
             errors,
@@ -461,7 +468,7 @@ let DoctorsService = class DoctorsService {
             ignoredMetadataFields: prepared.ignoredMetadataFields,
             doctors: prepared.rows.length,
             sample: prepared.rows.slice(0, 10).map((row) => ({
-                source_key: row.value.source_key,
+                record_key: row.value.record_key,
                 name_en: row.value.name_en,
                 city: row.value.city,
                 state: row.value.state,
@@ -516,9 +523,9 @@ let DoctorsService = class DoctorsService {
                     message: 'Fix all import errors before applying.',
                     errors: plan.errors,
                 });
-            const keys = new Map(existing.profiles.map((row) => [row.source_key, row]));
+            const keys = new Map(existing.profiles.map((row) => [row.record_key, row]));
             for (const { value } of prepared.rows) {
-                const row = keys.get(value.source_key);
+                const row = keys.get(value.record_key);
                 if (row)
                     await this.change(tx, row, value);
                 else

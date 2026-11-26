@@ -13,7 +13,7 @@ export declare class PublicDiseasesController {
                 is_active: boolean;
             };
             id: string;
-            source_key: string;
+            record_key: string;
             name_en: string;
             name_hi: string;
             description_en: string;
@@ -36,7 +36,7 @@ export declare class PublicDiseasesController {
             is_active: boolean;
         };
         id: string;
-        source_key: string;
+        record_key: string;
         name_en: string;
         name_hi: string;
         description_en: string;
@@ -60,7 +60,7 @@ export declare class DiseasesAdministrationController {
                 is_active: boolean;
             };
             id: string;
-            source_key: string;
+            record_key: string;
             name_en: string;
             name_hi: string;
             description_en: string;
@@ -77,6 +77,16 @@ export declare class DiseasesAdministrationController {
     }>;
     template(format: string | undefined, response: Response): Promise<void>;
     preview(user: RequestUser, file?: Express.Multer.File): Promise<{
+        sample: {
+            department_name_en: string | undefined;
+            name_en: string;
+            department_id: string;
+            record_key: string;
+            name_hi: string;
+            description_en: string;
+            description_hi: string;
+            is_active: boolean;
+        }[];
         expiresAt: string;
         previewToken: string | null;
         totalRows: number;
@@ -87,15 +97,6 @@ export declare class DiseasesAdministrationController {
         errors: {
             row: number;
             message: string;
-        }[];
-        sample: {
-            name_en: string;
-            department_id: string;
-            source_key: string;
-            name_hi: string;
-            description_en: string;
-            description_hi: string;
-            is_active: boolean;
         }[];
     }>;
     apply(user: RequestUser, file: Express.Multer.File | undefined, token: unknown): Promise<{
@@ -111,7 +112,7 @@ export declare class DiseasesAdministrationController {
             is_active: boolean;
         };
         id: string;
-        source_key: string;
+        record_key: string;
         name_en: string;
         name_hi: string;
         description_en: string;
@@ -126,10 +127,10 @@ export declare class DiseasesAdministrationController {
         id: string;
         created_at: Date;
         updated_at: Date;
+        record_key: string;
         name_en: string;
         name_hi: string;
         is_active: boolean;
-        source_key: string;
         description_en: string;
         description_hi: string;
         version: number;
@@ -137,7 +138,7 @@ export declare class DiseasesAdministrationController {
     }>;
     update(user: RequestUser, id: string, body: unknown): Promise<{
         id: string;
-        source_key: string;
+        record_key: string;
         name_en: string;
         name_hi: string;
         description_en: string;

@@ -41,6 +41,12 @@ npm run db:migrate:production
 
 Run `npm run db:diagnose` from the deployed application root before and after migrating. It checks the compiled backend, the migration ledger, and the actual columns for the medical catalogs, blood banks, and other directories affected by `0032_remove_directory_sources`. If `releaseSchemaMismatch` contains entries, deploy compiled files built from the matching source revision. If `0032` appears under `pending`, apply the migrations with the matching release. If the diagnostic reports `missingFromHistory`, `hashMismatch`, or missing columns despite an applied migration, investigate the release and database history before retrying.
 
+### cPanel without a terminal
+
+Deploy the matching `package.json`, `dist/`, and `database/migrations/` to the Node application's root. In **Setup Node.js App → Edit → Run JS Script**, select `db:diagnose` with no arguments. If it reports pending migrations, run `db:migrate:production` after taking a database backup, then rerun `db:diagnose`. Once the diagnostic passes, restart the application and check the public catalogs.
+
+To load the starter Yoga and Meditation content, select `seed:wellness:production` with no arguments. It uses the app's production database connection and inserts drafts. Review and publish the entries in **Admin → Meditation** to make them visible on mobile.
+
 Start the compiled application with `npm start` (which runs `node dist/main.js`). For this project's shared-hosting configuration, use the existing **`app.js` startup file**, which sets the working directory and starts `dist/main.js`; set the application root to the backend directory containing `package.json` and `app.js`. See [SHARED_HOSTING.md](./SHARED_HOSTING.md). Restart the Node application after uploading/building; confirm its startup log has no missing environment variables, dependencies or assets. Production configuration checks `.env.production` and then `.env`; hosting environment variables can also supply the configuration.
 
 For cPanel/Passenger-style hosting, confirm the application URL is the **root of `backend.arogio.com`**, not an unintended subpath or a static document root. Replace the host's sample startup-file setting with this project's `app.js`; do not delete unrelated files. If the hosting service does not support a persistent Node HTTP application, it must proxy this domain to a supported Node service instead. Host-specific routing changes require access to that hosting configuration.
@@ -59,7 +65,7 @@ Run the existing deployment smoke checks from a trusted machine:
 node scripts/verification/smoke-api.mjs https://backend.arogio.com/api/v1
 ```
 
-These exercise health, readiness, authentication validation, and the first page of Care Directory, hospitals, doctors, medical departments, diseases, articles, and blood banks. The directory checks expose schema failures even when readiness passes. The script does not create accounts or alter data. Requests appear in the monitor with their request IDs.
+These exercise health, readiness, authentication validation, and the first page of Care Directory, hospitals, doctors, medical departments, diseases, articles, blood banks, Yoga, and Meditation. The catalog checks expose schema failures even when readiness passes. The script does not create accounts or alter data. Requests appear in the monitor with their request IDs.
 
 On 2026-10-26, direct checks returned hosting **HTML 404** responses for `/`, `/api/v1/health` and `/api/v1/ready`. Earlier checks returned a plain-text Node welcome page. Neither response satisfies the API contract; an APK rebuild cannot repair this server-side routing/startup problem.
 

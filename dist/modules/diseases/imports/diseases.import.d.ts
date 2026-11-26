@@ -2,7 +2,7 @@ import { type DiseaseInput } from '../requests/diseases.input';
 export declare const diseaseHeaders: string[];
 export type DepartmentReference = {
     id: string;
-    source_key: string;
+    record_key: string;
     name_en: string;
 };
 export declare function prepareDiseases(file: Express.Multer.File | undefined, departments: DepartmentReference[]): Promise<{

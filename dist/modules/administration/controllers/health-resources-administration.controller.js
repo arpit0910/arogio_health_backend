@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthResourcesAdministrationController = void 0;
+const provider_image_1 = require("../../../common/media/provider-image");
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const jwt_auth_guard_1 = require("../../../common/authentication/jwt-auth.guard");
@@ -58,13 +59,25 @@ let HealthResourcesAdministrationController = class HealthResourcesAdministratio
         response.setHeader('Cache-Control', 'private, no-store');
         response.send(Buffer.from(await workbook.xlsx.writeBuffer()));
     }
+    async thumbnail(id, response) {
+        (0, provider_image_1.sendProviderImage)(response, await this.directory.articleThumbnail(id, true));
+    }
+    articleVisibility(user, id, body) {
+        return this.directory.setArticleVisibility(id, body, user.userId);
+    }
+    bloodBankVisibility(user, id, body) {
+        return this.directory.setBloodBankVisibility(id, body, user.userId);
+    }
+    uploadThumbnail(user, id, file) {
+        return this.audit.audit(user.userId, 'articles.thumbnail.upload', id, () => this.directory.saveArticleThumbnail(id, file));
+    }
+    deleteThumbnail(user, id) {
+        return this.audit.audit(user.userId, 'articles.thumbnail.remove', id, () => this.directory.removeArticleThumbnail(id));
+    }
     get(kind, id) {
         return this.directory.kind(kind) === 'articles'
             ? this.directory.article(id, true)
             : this.directory.bank(id);
-    }
-    articleVisibility(user, id, body) {
-        return this.directory.setArticleVisibility(id, body, user.userId);
     }
     preview(kind, file) {
         return this.directory.preview(this.directory.kind(kind), file);
@@ -118,13 +131,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], HealthResourcesAdministrationController.prototype, "template", null);
 __decorate([
-    (0, common_1.Get)(':kind/:id'),
-    __param(0, (0, common_1.Param)('kind')),
-    __param(1, (0, common_1.Param)('id')),
+    (0, common_1.Get)('articles/:id/thumbnail'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
-    __metadata("design:returntype", void 0)
-], HealthResourcesAdministrationController.prototype, "get", null);
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], HealthResourcesAdministrationController.prototype, "thumbnail", null);
 __decorate([
     (0, common_1.Patch)('articles/:id/visibility'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
@@ -134,6 +147,41 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, Object]),
     __metadata("design:returntype", void 0)
 ], HealthResourcesAdministrationController.prototype, "articleVisibility", null);
+__decorate([
+    (0, common_1.Patch)('blood-banks/:id/visibility'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], HealthResourcesAdministrationController.prototype, "bloodBankVisibility", null);
+__decorate([
+    (0, common_1.Put)('articles/:id/thumbnail'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', { limits: { fileSize: 4 * 1024 * 1024, files: 1, fields: 0 } })),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], HealthResourcesAdministrationController.prototype, "uploadThumbnail", null);
+__decorate([
+    (0, common_1.Delete)('articles/:id/thumbnail'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], HealthResourcesAdministrationController.prototype, "deleteThumbnail", null);
+__decorate([
+    (0, common_1.Get)(':kind/:id'),
+    __param(0, (0, common_1.Param)('kind')),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], HealthResourcesAdministrationController.prototype, "get", null);
 __decorate([
     (0, common_1.Post)(':kind/import/preview'),
     (0, common_1.UseInterceptors)(upload),

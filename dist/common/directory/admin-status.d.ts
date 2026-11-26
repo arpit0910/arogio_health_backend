@@ -32,7 +32,6 @@ type StatusRow = {
     name_en: string;
     city: string;
     state: string;
-    source_url?: string | null;
     address_line1?: string;
     address_en?: string;
     phone_1?: string | null;

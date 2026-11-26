@@ -32,6 +32,7 @@
     "seed:super-admin": "node --env-file-if-exists=.env.local --import tsx src/database/seeds/seed-super-admin.ts",
     "seed:super-admin:production": "node --env-file-if-exists=.env.production dist/database/seeds/seed-super-admin.js",
     "seed:wellness": "node --env-file-if-exists=.env.local --import tsx src/database/seeds/seed-wellness.ts",
+    "seed:wellness:production": "node --env-file-if-exists=.env.production dist/database/seeds/seed-wellness.js --apply",
     "db:list": "node scripts/database/list-migrations.cjs",
     "test:migrations": "npm test -- --runTestsByPath src/database/migrations.spec.ts",
     "db:inspect": "node scripts/database/reset-application-data.cjs",

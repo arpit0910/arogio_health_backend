@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.hospitalDelete = exports.hospitalReview = exports.hospitalAdminQuery = exports.hospitalQuery = exports.hospitalUpdate = exports.hospitalInput = exports.hospitalFields = void 0;
 exports.hospitalPhone = hospitalPhone;
+const node_crypto_1 = require("node:crypto");
+const review_input_1 = require("../../../common/directory/review-input");
 const admin_status_1 = require("../../../common/directory/admin-status");
 const zod_1 = require("zod");
 const line = zod_1.z.string().trim().max(200);
@@ -42,7 +44,6 @@ exports.hospitalFields = zod_1.z
     phone_2: zod_1.z.string().trim().max(30).nullable().optional(),
     email: zod_1.z.email().max(254).nullable().optional(),
     website: https.nullable().optional(),
-    source_url: https.nullable().optional(),
     latitude: zod_1.z.number().min(-90).max(90).nullable().optional(),
     longitude: zod_1.z.number().min(-180).max(180).nullable().optional(),
     accepts_ayushman: flag,
@@ -72,12 +73,12 @@ function hospitalPhone(code, phone) {
 }
 exports.hospitalInput = exports.hospitalFields
     .extend({
-    source_key: zod_1.z
+    record_key: zod_1.z
         .string()
         .trim()
         .min(1)
         .max(100)
-        .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/),
+        .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/).default(node_crypto_1.randomUUID),
 })
     .transform((value) => ({
     name_hi: '',
@@ -93,7 +94,6 @@ exports.hospitalInput = exports.hospitalFields
     phone_2: null,
     email: null,
     website: null,
-    source_url: null,
     latitude: null,
     longitude: null,
     accepts_ayushman: null,
@@ -155,12 +155,9 @@ exports.hospitalReview = zod_1.z
     .object({
     expectedVersion: zod_1.z.number().int().positive(),
     publish: zod_1.z.boolean(),
-    confirmedSource: zod_1.z.literal(true),
-    reviewerName: line.min(3),
-    reviewerQualification: line.min(3),
-    evidence: paragraph.min(20),
+    ...review_input_1.directoryReviewFields,
 })
-    .strict();
+    .strict().refine(review_input_1.hasReviewConfirmation, 'Confirm the listing details before continuing.');
 exports.hospitalDelete = zod_1.z
     .object({ expected_version: zod_1.z.coerce.number().int().positive() })
     .strict();

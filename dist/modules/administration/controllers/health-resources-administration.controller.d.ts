@@ -20,7 +20,6 @@ export declare class HealthResourcesAdministrationController {
     list(kind: string, query: unknown): Promise<{
         items: ({
             id: string;
-            source_id: string;
             title_en: string;
             title_hi: string;
             excerpt_en: string;
@@ -29,6 +28,7 @@ export declare class HealthResourcesAdministrationController {
             reading_minutes_hi: number;
             category: string;
             image_url: string;
+            thumbnailRevision: string | null;
             author_name: string;
             is_published: boolean;
             created_at: Date;
@@ -60,7 +60,7 @@ export declare class HealthResourcesAdministrationController {
                 visibility: string;
             } | undefined;
             id: string;
-            source_id: string;
+            record_key: string;
             name_en: string;
             name_hi: string;
             city: string;
@@ -76,7 +76,6 @@ export declare class HealthResourcesAdministrationController {
             email: string | null;
             website: string | null;
             is_verified: boolean;
-            source_url: string | null;
             verified_at: Date | null;
             is_24_7: boolean;
             is_government: boolean;
@@ -98,9 +97,25 @@ export declare class HealthResourcesAdministrationController {
         total?: number | undefined;
     }>;
     template(kind: string, response: Response): Promise<void>;
+    thumbnail(id: string, response: Response): Promise<void>;
+    articleVisibility(user: RequestUser, id: string, body: unknown): Promise<{
+        title: string;
+        visible: boolean;
+        updatedAt: Date;
+    }>;
+    bloodBankVisibility(user: RequestUser, id: string, body: unknown): Promise<{
+        visible: boolean;
+        updatedAt: Date;
+    }>;
+    uploadThumbnail(user: RequestUser, id: string, file?: Express.Multer.File): Promise<{
+        revision: `${string}-${string}-${string}-${string}-${string}`;
+    }>;
+    deleteThumbnail(user: RequestUser, id: string): Promise<{
+        removed: boolean;
+    }>;
     get(kind: string, id: string): Promise<{
         id: string;
-        source_id: string;
+        record_key: string;
         name_en: string;
         name_hi: string;
         city: string;
@@ -116,7 +131,6 @@ export declare class HealthResourcesAdministrationController {
         email: string | null;
         website: string | null;
         is_verified: boolean;
-        source_url: string | null;
         verified_at: Date | null;
         is_24_7: boolean;
         is_government: boolean;
@@ -129,16 +143,18 @@ export declare class HealthResourcesAdministrationController {
         created_at: Date;
         updated_at: Date;
     }> | Promise<{
+        content_en: string;
+        content_hi: string;
         id: string;
-        source_id: string;
         title_en: string;
         title_hi: string;
         excerpt_en: string;
         excerpt_hi: string;
-        content_en: string;
-        content_hi: string;
+        reading_minutes_en: number;
+        reading_minutes_hi: number;
         category: string;
         image_url: string;
+        thumbnailRevision: string | null;
         author_name: string;
         is_published: boolean;
         created_at: Date;
@@ -162,7 +178,7 @@ export declare class HealthResourcesAdministrationController {
         thumbnailFallbacks: number;
         missingCoordinates: number;
         sample: {
-            source_id: string;
+            record_key: string;
             title: string;
         }[];
     }>;
@@ -173,7 +189,7 @@ export declare class HealthResourcesAdministrationController {
     }>;
     create(user: RequestUser, kind: string, body: unknown): Promise<{
         id: string;
-        source_id: string;
+        record_key: string;
         title_en: string;
         title_hi: string;
         excerpt_en: string;
@@ -188,7 +204,7 @@ export declare class HealthResourcesAdministrationController {
         updated_at: Date;
     } | {
         id: string;
-        source_id: string;
+        record_key: string;
         name_en: string;
         name_hi: string;
         city: string;
@@ -204,7 +220,6 @@ export declare class HealthResourcesAdministrationController {
         email: string | null;
         website: string | null;
         is_verified: boolean;
-        source_url: string | null;
         verified_at: Date | null;
         is_24_7: boolean;
         is_government: boolean;
@@ -219,7 +234,7 @@ export declare class HealthResourcesAdministrationController {
     }>;
     update(user: RequestUser, kind: string, id: string, body: unknown): Promise<{
         id: string;
-        source_id: string;
+        record_key: string;
         title_en: string;
         title_hi: string;
         excerpt_en: string;
@@ -234,7 +249,7 @@ export declare class HealthResourcesAdministrationController {
         updated_at: Date;
     } | {
         id: string;
-        source_id: string;
+        record_key: string;
         name_en: string;
         name_hi: string;
         city: string;
@@ -250,7 +265,6 @@ export declare class HealthResourcesAdministrationController {
         email: string | null;
         website: string | null;
         is_verified: boolean;
-        source_url: string | null;
         verified_at: Date | null;
         is_24_7: boolean;
         is_government: boolean;

@@ -19,8 +19,8 @@ export declare const doctors: import("drizzle-orm/pg-core").PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        source_key: import("drizzle-orm/pg-core").PgColumn<{
-            name: "source_key";
+        record_key: import("drizzle-orm/pg-core").PgColumn<{
+            name: "record_key";
             tableName: "doctors";
             dataType: "string";
             columnType: "PgText";
@@ -276,23 +276,6 @@ export declare const doctors: import("drizzle-orm/pg-core").PgTableWithColumns<{
         }, {}, {}>;
         website: import("drizzle-orm/pg-core").PgColumn<{
             name: "website";
-            tableName: "doctors";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        source_url: import("drizzle-orm/pg-core").PgColumn<{
-            name: "source_url";
             tableName: "doctors";
             dataType: "string";
             columnType: "PgText";

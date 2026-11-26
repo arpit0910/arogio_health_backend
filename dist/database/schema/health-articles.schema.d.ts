@@ -19,8 +19,8 @@ export declare const healthArticles: import("drizzle-orm/pg-core").PgTableWithCo
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        source_id: import("drizzle-orm/pg-core").PgColumn<{
-            name: "source_id";
+        record_key: import("drizzle-orm/pg-core").PgColumn<{
+            name: "record_key";
             tableName: "health_articles";
             dataType: "string";
             columnType: "PgText";
@@ -229,6 +229,66 @@ export declare const healthArticles: import("drizzle-orm/pg-core").PgTableWithCo
             dataType: "date";
             columnType: "PgTimestamp";
             data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export declare const healthArticleThumbnails: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "health_article_thumbnails";
+    schema: undefined;
+    columns: {
+        articleId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "article_id";
+            tableName: "health_article_thumbnails";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: true;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        imageData: import("drizzle-orm/pg-core").PgColumn<{
+            name: "image_data";
+            tableName: "health_article_thumbnails";
+            dataType: "custom";
+            columnType: "PgCustomColumn";
+            data: Buffer<ArrayBufferLike>;
+            driverParam: Buffer<ArrayBufferLike>;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            pgColumnBuilderBrand: "PgCustomColumnBuilderBrand";
+        }>;
+        revision: import("drizzle-orm/pg-core").PgColumn<{
+            name: "revision";
+            tableName: "health_article_thumbnails";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
             driverParam: string;
             notNull: true;
             hasDefault: true;

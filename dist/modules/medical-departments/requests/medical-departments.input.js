@@ -1,15 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.departmentDelete = exports.departmentAdminQuery = exports.departmentQuery = exports.departmentUpdate = exports.departmentInput = void 0;
+const node_crypto_1 = require("node:crypto");
 const zod_1 = require("zod");
 exports.departmentInput = zod_1.z
     .object({
-    source_key: zod_1.z
+    record_key: zod_1.z
         .string()
         .trim()
         .min(1)
         .max(100)
-        .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/),
+        .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/).default(node_crypto_1.randomUUID),
     name_en: zod_1.z.string().trim().min(1).max(160),
     name_hi: zod_1.z.string().trim().max(160).default(''),
     description_en: zod_1.z.string().trim().max(4000).default(''),

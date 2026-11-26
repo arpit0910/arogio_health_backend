@@ -18,11 +18,16 @@ Run `npm run seed:wellness` to validate the starter catalog without connecting
 to a database. To load it after applying the existing database migrations, run
 `npm run seed:wellness -- --apply` with `DATABASE_URL` pointing to the intended
 database. The command reads `.env.local` if present. The seed inserts drafts and
-skips existing IDs and matching titles within each section, preserving admin
-edits and publication history when rerun.
+skips existing IDs, matching titles within the same section and content type,
+and YouTube videos already in the library. Reruns preserve admin edits and
+publication history.
 
 For the embedded development database, stop the local API and run
 `npm run seed:wellness -- --local` to load `.local/database`.
+
+For cPanel, use **Setup Node.js App → Edit → Run JS Script** and select
+`seed:wellness:production` without arguments. This runs the deployed JavaScript
+with the app's configured `DATABASE_URL` and works with production dependencies.
 
 Open **Meditation** in the admin portal and choose **Yoga** or **Meditation**
 in the section filter. Review the instructions and publish the entries you
@@ -34,6 +39,12 @@ Yoga names and variations were cross-checked with the
 [Yoga Journal pose directory](https://www.yogajournal.com/pose-finder/pose-finder?scope=anon)
 and [Tummee pose directory](https://www.tummee.com/yoga-poses/dru-yoga-poses).
 The instructions and meditation prompts are original English text.
+
+The video drafts include 14 yoga videos and five guided meditations. The yoga
+selection covers individual postures, chair-based routines, and the Hindi
+Common Yoga Protocol. Videos use the publishers' original YouTube embeds.
+[Yoga With Adriene Foundations](https://yogawithadriene.com/free-yoga-videos/foundations-of-yoga/)
+· [MDNIY Common Yoga Protocol](https://www.youtube.com/watch?v=Td5L4gxhiQU)
 
 Entry point: [meditation-library.module.ts](meditation-library.module.ts).
 

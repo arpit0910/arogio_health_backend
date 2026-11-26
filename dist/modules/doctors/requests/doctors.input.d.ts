@@ -29,7 +29,6 @@ export declare const doctorFields: z.ZodObject<{
     phone_2: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     email: z.ZodOptional<z.ZodNullable<z.ZodEmail>>;
     website: z.ZodOptional<z.ZodNullable<z.ZodURL>>;
-    source_url: z.ZodOptional<z.ZodNullable<z.ZodURL>>;
     latitude: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     longitude: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     registration_number: z.ZodOptional<z.ZodString>;
@@ -72,7 +71,6 @@ export declare const doctorInput: z.ZodPipe<z.ZodObject<{
     phone_2: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     email: z.ZodOptional<z.ZodNullable<z.ZodEmail>>;
     website: z.ZodOptional<z.ZodNullable<z.ZodURL>>;
-    source_url: z.ZodOptional<z.ZodNullable<z.ZodURL>>;
     latitude: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     longitude: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     registration_number: z.ZodOptional<z.ZodString>;
@@ -98,12 +96,12 @@ export declare const doctorInput: z.ZodPipe<z.ZodObject<{
     }, z.core.$strict>>>;
     summary_en: z.ZodOptional<z.ZodString>;
     summary_hi: z.ZodOptional<z.ZodString>;
-    source_key: z.ZodString;
+    record_key: z.ZodDefault<z.ZodString>;
 }, z.core.$strict>, z.ZodTransform<{
     name_en: string;
     city: string;
     state: string;
-    source_key: string;
+    record_key: string;
     name_hi: string;
     address_line1: string;
     address_line2: string;
@@ -116,7 +114,6 @@ export declare const doctorInput: z.ZodPipe<z.ZodObject<{
     phone_2: string | null;
     email: string | null;
     website: string | null;
-    source_url: string | null;
     latitude: number | null;
     longitude: number | null;
     registration_number: string;
@@ -133,7 +130,7 @@ export declare const doctorInput: z.ZodPipe<z.ZodObject<{
     name_en: string;
     city: string;
     state: string;
-    source_key: string;
+    record_key: string;
     name_hi?: string | undefined;
     address_line1?: string | undefined;
     address_line2?: string | undefined;
@@ -146,7 +143,6 @@ export declare const doctorInput: z.ZodPipe<z.ZodObject<{
     phone_2?: string | null | undefined;
     email?: string | null | undefined;
     website?: string | null | undefined;
-    source_url?: string | null | undefined;
     latitude?: number | null | undefined;
     longitude?: number | null | undefined;
     registration_number?: string | undefined;
@@ -186,7 +182,6 @@ export declare const doctorUpdate: z.ZodObject<{
     phone_2: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
     email: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodEmail>>>;
     website: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodURL>>>;
-    source_url: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodURL>>>;
     latitude: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodNumber>>>;
     longitude: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodNumber>>>;
     registration_number: z.ZodOptional<z.ZodOptional<z.ZodString>>;
@@ -253,12 +248,12 @@ export declare const doctorAdminQuery: z.ZodObject<{
     limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
 }, z.core.$strict>;
 export declare const doctorReview: z.ZodObject<{
+    confirmedDetails: z.ZodOptional<z.ZodLiteral<true>>;
+    reviewerName: z.ZodOptional<z.ZodString>;
+    reviewerQualification: z.ZodOptional<z.ZodString>;
+    evidence: z.ZodOptional<z.ZodString>;
     expectedVersion: z.ZodNumber;
     publish: z.ZodBoolean;
-    confirmedSource: z.ZodLiteral<true>;
-    reviewerName: z.ZodString;
-    reviewerQualification: z.ZodString;
-    evidence: z.ZodString;
 }, z.core.$strict>;
 export declare const doctorDelete: z.ZodObject<{
     expected_version: z.ZodCoercedNumber<unknown>;

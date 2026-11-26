@@ -10,6 +10,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthResourcesService = void 0;
+const provider_image_1 = require("../../../common/media/provider-image");
+const nearby_1 = require("../../../common/directory/nearby");
 const admin_status_1 = require("../../../common/directory/admin-status");
 const common_1 = require("@nestjs/common");
 const node_crypto_1 = require("node:crypto");
@@ -22,10 +24,6 @@ const import_1 = require("../imports/import");
 const workbook_1 = require("../imports/workbook");
 const thumbnails_1 = require("../content/thumbnails");
 const article_topics_1 = require("../content/article-topics");
-const adminArticleListInput = health_resources_input_1.adminBankListInput.extend({
-    status: zod_1.z.enum(['all', 'draft', 'published']).default('all'),
-});
-const articleVisibilityInput = zod_1.z.object({ visible: zod_1.z.boolean(), expectedUpdatedAt: zod_1.z.iso.datetime() }).strict();
 const articleSummary = {
     id: schema_1.healthArticles.id,
     title_en: schema_1.healthArticles.title_en,
@@ -36,11 +34,18 @@ const articleSummary = {
     reading_minutes_hi: (0, drizzle_orm_1.sql) `greatest(1, ceil(array_length(regexp_split_to_array(btrim(coalesce(nullif(${schema_1.healthArticles.content_hi}, ''), ${schema_1.healthArticles.content_en})), '[[:space:]]+'), 1) / 200.0))::integer`,
     category: schema_1.healthArticles.category,
     image_url: schema_1.healthArticles.image_url,
+    thumbnailRevision: (0, drizzle_orm_1.sql) `(select t.revision from health_article_thumbnails t where t.article_id = ${schema_1.healthArticles.id})`,
     author_name: schema_1.healthArticles.author_name,
     is_published: schema_1.healthArticles.is_published,
     created_at: schema_1.healthArticles.created_at,
     updated_at: schema_1.healthArticles.updated_at,
 };
+function nextVisibilityTimestamp(current, expectedUpdatedAt) {
+    if (current.toISOString() !== expectedUpdatedAt) {
+        throw new common_1.ConflictException('This record changed. Refresh the list before changing visibility.');
+    }
+    return new Date(Math.max(Date.now(), current.getTime() + 1));
+}
 let HealthResourcesService = class HealthResourcesService {
     database;
     constructor(database) {
@@ -56,7 +61,7 @@ let HealthResourcesService = class HealthResourcesService {
         return this.parse(zod_1.z.enum(['articles', 'blood-banks']), value);
     }
     async listArticles(query, admin = false) {
-        const q = this.parse(admin ? adminArticleListInput : health_resources_input_1.listInput, query), conditions = admin ? [] : [(0, drizzle_orm_1.eq)(schema_1.healthArticles.is_published, true)];
+        const q = this.parse(admin ? health_resources_input_1.adminArticleListInput : health_resources_input_1.listInput, query), conditions = admin ? [] : [(0, drizzle_orm_1.eq)(schema_1.healthArticles.is_published, true)];
         if (admin && q.status !== 'all')
             conditions.push((0, drizzle_orm_1.eq)(schema_1.healthArticles.is_published, q.status === 'published'));
         if (q.search)
@@ -102,7 +107,9 @@ let HealthResourcesService = class HealthResourcesService {
         const category = categories.find((item) => item.name === row.category);
         return {
             ...row,
-            thumbnail_url: row.image_url || category?.image_url || (0, thumbnails_1.topicImage)(row.category),
+            thumbnail_url: row.thumbnailRevision
+                ? `/api/v1/public/articles/${row.id}/thumbnail?v=${row.thumbnailRevision}`
+                : row.image_url || category?.image_url || (0, thumbnails_1.topicImage)(row.category),
             category_hi: category?.name_hi || '',
         };
     }
@@ -152,9 +159,38 @@ let HealthResourcesService = class HealthResourcesService {
             throw new common_1.NotFoundException('Article not found.');
         return this.withThumbnail(row, await this.categories(admin));
     }
-    bankFilters(bloodGroup, only24h = false, admin = false, sourced = false) {
+    async articleThumbnail(id, admin = false) {
+        this.parse(zod_1.z.uuid(), id);
+        const [row] = await this.database.db.select({ image_data: schema_1.healthArticleThumbnails.imageData, image_revision: schema_1.healthArticleThumbnails.revision })
+            .from(schema_1.healthArticleThumbnails)
+            .innerJoin(schema_1.healthArticles, (0, drizzle_orm_1.eq)(schema_1.healthArticleThumbnails.articleId, schema_1.healthArticles.id))
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.healthArticles.id, id), admin ? undefined : (0, drizzle_orm_1.eq)(schema_1.healthArticles.is_published, true)));
+        if (!row)
+            throw new common_1.NotFoundException('Article thumbnail not found.');
+        return row;
+    }
+    async saveArticleThumbnail(id, file) {
+        this.parse(zod_1.z.uuid(), id);
+        const imageData = await (0, provider_image_1.decodeProviderImage)(file);
+        return this.database.db.transaction(async (tx) => {
+            const [article] = await tx.select({ id: schema_1.healthArticles.id }).from(schema_1.healthArticles)
+                .where((0, drizzle_orm_1.eq)(schema_1.healthArticles.id, id)).for('update');
+            if (!article)
+                throw new common_1.NotFoundException('Article not found.');
+            const revision = (0, node_crypto_1.randomUUID)();
+            await tx.insert(schema_1.healthArticleThumbnails).values({ articleId: id, imageData, revision })
+                .onConflictDoUpdate({ target: schema_1.healthArticleThumbnails.articleId, set: { imageData, revision } });
+            return { revision };
+        });
+    }
+    async removeArticleThumbnail(id) {
+        this.parse(zod_1.z.uuid(), id);
+        await this.database.db.delete(schema_1.healthArticleThumbnails).where((0, drizzle_orm_1.eq)(schema_1.healthArticleThumbnails.articleId, id));
+        return { removed: true };
+    }
+    bankFilters(bloodGroup, only24h = false, admin = false, reviewedOnly = false) {
         const filters = admin ? [] : [(0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.is_active, true)];
-        if (sourced)
+        if (reviewedOnly)
             filters.push((0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.city, 'Jaipur'), (0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.is_verified, true), (0, drizzle_orm_1.gte)(schema_1.bloodBankDirectoryEntries.verified_at, new Date(Date.now() - 180 * 86400000)));
         if (bloodGroup)
             filters.push((0, drizzle_orm_1.sql) `${schema_1.bloodBankDirectoryEntries.available_blood_groups} @> ARRAY[${bloodGroup}]::text[]`);
@@ -162,16 +198,12 @@ let HealthResourcesService = class HealthResourcesService {
             filters.push((0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.is_24_7, true));
         return filters;
     }
-    async listBanks(query, admin = false, sourced = false) {
-        const q = this.parse(admin ? health_resources_input_1.adminBankListInput : health_resources_input_1.listInput, query), filters = this.bankFilters(q.bloodGroup, q.only24h === 'true', admin, sourced);
+    async listBanks(query, admin = false, reviewedOnly = false) {
+        const q = this.parse(admin ? health_resources_input_1.adminBankListInput : health_resources_input_1.bankListInput, query), filters = this.bankFilters(q.bloodGroup, q.only24h === 'true', admin, reviewedOnly);
+        if (q.city)
+            filters.push((0, drizzle_orm_1.sql) `lower(btrim(${schema_1.bloodBankDirectoryEntries.city})) = ${q.city.toLowerCase()}`);
         if (q.search)
-            filters.push((0, drizzle_orm_1.or)(...[
-                schema_1.bloodBankDirectoryEntries.name_en,
-                schema_1.bloodBankDirectoryEntries.name_hi,
-                schema_1.bloodBankDirectoryEntries.city,
-                schema_1.bloodBankDirectoryEntries.state,
-                schema_1.bloodBankDirectoryEntries.pincode,
-            ].map((column) => (0, drizzle_orm_1.ilike)(column, `%${q.search}%`))));
+            filters.push(this.bankSearch(q.search));
         const baseWhere = (0, drizzle_orm_1.and)(...filters), statusPredicates = (0, admin_status_1.directoryPredicates)('blood-banks');
         const summary = admin ? (await this.database.db.select((0, admin_status_1.directoryCountFields)(statusPredicates)).from(schema_1.bloodBankDirectoryEntries).where(baseWhere))[0] : undefined;
         if (admin && q.status !== 'all')
@@ -198,16 +230,23 @@ let HealthResourcesService = class HealthResourcesService {
             missingCoordinates: missing[0].count,
         };
     }
-    async nearby(body, sourced = false) {
-        const q = this.parse(health_resources_input_1.nearbyInput, body), filters = this.bankFilters(q.bloodGroup, q.only24h, false, sourced);
-        const distance = (0, drizzle_orm_1.sql) `(6371.0 * 2 * asin(sqrt(least(1.0, greatest(0.0,
-      power(sin(radians(${schema_1.bloodBankDirectoryEntries.latitude} - ${q.latitude}) / 2), 2) + cos(radians(${q.latitude})) * cos(radians(${schema_1.bloodBankDirectoryEntries.latitude})) * power(sin(radians(${schema_1.bloodBankDirectoryEntries.longitude} - ${q.longitude}) / 2), 2)
-    )))))`.mapWith(Number);
+    bankSearch(search) {
+        const term = `%${search.replace(/[\\%_]/g, '\\$&')}%`;
+        return (0, drizzle_orm_1.or)(...[
+            schema_1.bloodBankDirectoryEntries.name_en, schema_1.bloodBankDirectoryEntries.name_hi,
+            schema_1.bloodBankDirectoryEntries.city, schema_1.bloodBankDirectoryEntries.state, schema_1.bloodBankDirectoryEntries.pincode,
+        ].map(column => (0, drizzle_orm_1.ilike)(column, term)));
+    }
+    async nearby(body, reviewedOnly = false) {
+        const q = this.parse(health_resources_input_1.nearbyInput, body), filters = this.bankFilters(q.bloodGroup, q.only24h, false, reviewedOnly);
+        if (q.search)
+            filters.push(this.bankSearch(q.search));
+        const { distance, withinRadius } = (0, nearby_1.nearbyDirectory)(schema_1.bloodBankDirectoryEntries.latitude, schema_1.bloodBankDirectoryEntries.longitude, q);
         const [items, missing] = await Promise.all([
             this.database.db
                 .select({ bank: schema_1.bloodBankDirectoryEntries, distanceKm: distance })
                 .from(schema_1.bloodBankDirectoryEntries)
-                .where((0, drizzle_orm_1.and)(...filters, (0, drizzle_orm_1.isNotNull)(schema_1.bloodBankDirectoryEntries.latitude), (0, drizzle_orm_1.isNotNull)(schema_1.bloodBankDirectoryEntries.longitude), (0, drizzle_orm_1.lte)(distance, q.radiusKm)))
+                .where((0, drizzle_orm_1.and)(...filters, withinRadius))
                 .orderBy((0, drizzle_orm_1.asc)(distance), (0, drizzle_orm_1.asc)(schema_1.bloodBankDirectoryEntries.id))
                 .limit(q.limit + 1)
                 .offset((q.page - 1) * q.limit),
@@ -256,14 +295,14 @@ let HealthResourcesService = class HealthResourcesService {
                     .returning()
                 : await this.database.db
                     .insert(schema_1.healthArticles)
-                    .values({ ...value, source_id: `manual-${(0, node_crypto_1.randomUUID)()}` })
+                    .values({ ...value, record_key: `manual-${(0, node_crypto_1.randomUUID)()}` })
                     .returning();
             if (!rows[0])
                 throw new common_1.NotFoundException();
             return rows[0];
         }
         const draft = this.parse(health_resources_input_1.bankInput, body);
-        const value = { ...draft, is_verified: false, source_url: draft.source_url || null, verified_at: null };
+        const value = { ...draft, is_verified: false, verified_at: null };
         const rows = id
             ? await this.database.db
                 .update(schema_1.bloodBankDirectoryEntries)
@@ -272,7 +311,7 @@ let HealthResourcesService = class HealthResourcesService {
                 .returning()
             : await this.database.db
                 .insert(schema_1.bloodBankDirectoryEntries)
-                .values({ ...value, source_id: `manual-${(0, node_crypto_1.randomUUID)()}` })
+                .values({ ...value, record_key: `manual-${(0, node_crypto_1.randomUUID)()}` })
                 .returning();
         if (!rows[0])
             throw new common_1.NotFoundException();
@@ -280,20 +319,34 @@ let HealthResourcesService = class HealthResourcesService {
     }
     async setArticleVisibility(id, body, actorId) {
         this.parse(zod_1.z.uuid(), id);
-        const { visible, expectedUpdatedAt } = this.parse(articleVisibilityInput, body);
+        const { visible, expectedUpdatedAt } = this.parse(health_resources_input_1.visibilityInput, body);
         return this.database.db.transaction(async (tx) => {
             const [row] = await tx.select({ title: schema_1.healthArticles.title_en, visible: schema_1.healthArticles.is_published, updatedAt: schema_1.healthArticles.updated_at })
                 .from(schema_1.healthArticles).where((0, drizzle_orm_1.eq)(schema_1.healthArticles.id, id)).for('update');
             if (!row)
                 throw new common_1.NotFoundException('Article not found.');
-            if (row.updatedAt.toISOString() !== expectedUpdatedAt)
-                throw new common_1.ConflictException('This article changed. Refresh the list before changing visibility.');
+            const updatedAt = nextVisibilityTimestamp(row.updatedAt, expectedUpdatedAt);
             if (row.visible === visible)
                 return row;
-            const updatedAt = new Date(Math.max(Date.now(), row.updatedAt.getTime() + 1));
             await tx.update(schema_1.healthArticles).set({ is_published: visible, updated_at: updatedAt }).where((0, drizzle_orm_1.eq)(schema_1.healthArticles.id, id));
             await tx.insert(schema_1.administrationAuditLogs).values({ actorId, targetId: id, action: visible ? 'articles.publish' : 'articles.unpublish', outcome: 'succeeded' });
             return { title: row.title, visible, updatedAt };
+        });
+    }
+    async setBloodBankVisibility(id, body, actorId) {
+        this.parse(zod_1.z.uuid(), id);
+        const { visible, expectedUpdatedAt } = this.parse(health_resources_input_1.visibilityInput, body);
+        return this.database.db.transaction(async (tx) => {
+            const [row] = await tx.select({ visible: schema_1.bloodBankDirectoryEntries.is_active, updatedAt: schema_1.bloodBankDirectoryEntries.updated_at })
+                .from(schema_1.bloodBankDirectoryEntries).where((0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.id, id)).for('update');
+            if (!row)
+                throw new common_1.NotFoundException('Blood bank not found.');
+            const updatedAt = nextVisibilityTimestamp(row.updatedAt, expectedUpdatedAt);
+            if (row.visible === visible)
+                return row;
+            await tx.update(schema_1.bloodBankDirectoryEntries).set({ is_active: visible, updated_at: updatedAt }).where((0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.id, id));
+            await tx.insert(schema_1.administrationAuditLogs).values({ actorId, targetId: id, action: visible ? 'blood-banks.show' : 'blood-banks.hide', outcome: 'succeeded' });
+            return { visible, updatedAt };
         });
     }
     async remove(kind, id) {
@@ -334,18 +387,18 @@ let HealthResourcesService = class HealthResourcesService {
         }
     }
     async preview(kind, file) {
-        const result = await this.prepared(kind, file), ids = [...result.articles, ...result.banks].map((row) => row.source_id);
+        const result = await this.prepared(kind, file), ids = [...result.articles, ...result.banks].map((row) => row.record_key);
         const existing = !ids.length
             ? []
             : kind === 'articles'
                 ? await this.database.db
                     .select({ id: schema_1.healthArticles.id })
                     .from(schema_1.healthArticles)
-                    .where((0, drizzle_orm_1.inArray)(schema_1.healthArticles.source_id, ids))
+                    .where((0, drizzle_orm_1.inArray)(schema_1.healthArticles.record_key, ids))
                 : await this.database.db
                     .select({ id: schema_1.bloodBankDirectoryEntries.id })
                     .from(schema_1.bloodBankDirectoryEntries)
-                    .where((0, drizzle_orm_1.inArray)(schema_1.bloodBankDirectoryEntries.source_id, ids));
+                    .where((0, drizzle_orm_1.inArray)(schema_1.bloodBankDirectoryEntries.record_key, ids));
         return {
             totalRows: result.totalRows,
             validRows: ids.length,
@@ -360,10 +413,10 @@ let HealthResourcesService = class HealthResourcesService {
             sample: kind === 'articles'
                 ? result.articles
                     .slice(0, 5)
-                    .map((row) => ({ source_id: row.source_id, title: row.title_en }))
+                    .map((row) => ({ record_key: row.record_key, title: row.title_en }))
                 : result.banks
                     .slice(0, 5)
-                    .map((row) => ({ source_id: row.source_id, title: row.name_en })),
+                    .map((row) => ({ record_key: row.record_key, title: row.name_en })),
         };
     }
     async import(kind, file) {
@@ -389,7 +442,7 @@ let HealthResourcesService = class HealthResourcesService {
                         .insert(schema_1.healthArticles)
                         .values(row)
                         .onConflictDoUpdate({
-                        target: schema_1.healthArticles.source_id,
+                        target: schema_1.healthArticles.record_key,
                         set: { ...row, ...(row.image_url ? {} : { image_url: (0, drizzle_orm_1.sql) `${schema_1.healthArticles.image_url}` }) },
                     });
             }
@@ -399,10 +452,10 @@ let HealthResourcesService = class HealthResourcesService {
                     void _active;
                     await tx
                         .insert(schema_1.bloodBankDirectoryEntries)
-                        .values({ ...row, is_verified: false, source_url: null, verified_at: null })
+                        .values({ ...row, is_verified: false, verified_at: null })
                         .onConflictDoUpdate({
-                        target: schema_1.bloodBankDirectoryEntries.source_id,
-                        set: { ...updates, is_verified: false, source_url: null, verified_at: null, updated_at: new Date() },
+                        target: schema_1.bloodBankDirectoryEntries.record_key,
+                        set: { ...updates, is_verified: false, verified_at: null, updated_at: new Date() },
                     });
                 }
         });

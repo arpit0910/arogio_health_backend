@@ -19,8 +19,8 @@ export declare const bloodBankDirectoryEntries: import("drizzle-orm/pg-core").Pg
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        source_id: import("drizzle-orm/pg-core").PgColumn<{
-            name: "source_id";
+        record_key: import("drizzle-orm/pg-core").PgColumn<{
+            name: "record_key";
             tableName: "blood_bank_directory_entries";
             dataType: "string";
             columnType: "PgText";
@@ -287,23 +287,6 @@ export declare const bloodBankDirectoryEntries: import("drizzle-orm/pg-core").Pg
             isAutoincrement: false;
             hasRuntimeDefault: false;
             enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        source_url: import("drizzle-orm/pg-core").PgColumn<{
-            name: "source_url";
-            tableName: "blood_bank_directory_entries";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;

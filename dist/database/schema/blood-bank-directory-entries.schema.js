@@ -5,7 +5,7 @@ const drizzle_orm_1 = require("drizzle-orm");
 const pg_core_1 = require("drizzle-orm/pg-core");
 exports.bloodBankDirectoryEntries = (0, pg_core_1.pgTable)('blood_bank_directory_entries', {
     id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
-    source_id: (0, pg_core_1.text)('source_id').notNull().unique(),
+    record_key: (0, pg_core_1.text)('record_key').notNull().unique(),
     name_en: (0, pg_core_1.text)('name_en').notNull(),
     name_hi: (0, pg_core_1.text)('name_hi').notNull().default(''),
     city: (0, pg_core_1.text)('city').notNull(),
@@ -21,7 +21,6 @@ exports.bloodBankDirectoryEntries = (0, pg_core_1.pgTable)('blood_bank_directory
     email: (0, pg_core_1.text)('email'),
     website: (0, pg_core_1.text)('website'),
     is_verified: (0, pg_core_1.boolean)('is_verified').notNull().default(false),
-    source_url: (0, pg_core_1.text)('source_url'),
     verified_at: (0, pg_core_1.timestamp)('verified_at', { withTimezone: true }),
     is_24_7: (0, pg_core_1.boolean)('is_24_7').notNull().default(false),
     is_government: (0, pg_core_1.boolean)('is_government').notNull().default(false),

@@ -2,12 +2,12 @@ import { type ArticleInput, type BankInput, type DirectoryKind } from '../reques
 export declare const articleHeaders: string[];
 export declare const bankHeaders: string[];
 type ImportedArticle = ArticleInput & {
-    source_id: string;
+    record_key: string;
     created_at: Date;
     updated_at: Date;
 };
 type ImportedBank = BankInput & {
-    source_id: string;
+    record_key: string;
 };
 export declare function prepareImport(kind: DirectoryKind, buffer: Buffer): {
     totalRows: number;

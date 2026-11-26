@@ -4,9 +4,13 @@ import { inArray, or, sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { meditationInput } from '../../modules/meditation-library/requests/meditation-library.input';
+import {
+  meditationInput,
+  youtubeVideoId,
+} from '../../modules/meditation-library/requests/meditation-library.input';
 import * as schema from '../schema';
 import { meditationSessions } from './meditation-sessions';
+import { wellnessVideos } from './wellness-videos';
 import { yogaPostureGroups } from './yoga-postures';
 
 const { meditationLibraryItems: items, wellnessPublicationVersions: versions } = schema;
@@ -27,10 +31,10 @@ const yogaPreparation: Record<keyof typeof yogaPostureGroups, string> = {
     'Review this posture with a qualified yoga instructor before you try it. Ask for a demonstration and an alternative that suits your experience.',
 };
 
-function seedId(section: string, title: string) {
+function seedId(section: string, key: string) {
   // A stable UUID allows concurrent runs to insert each entry at most once.
   const bytes = createHash('sha256')
-    .update(`arogio:wellness-starter:${section}:${title.toLowerCase()}`)
+    .update(`arogio:wellness-starter:${section}:${key}`)
     .digest()
     .subarray(0, 16);
   bytes[6] = (bytes[6]! & 0x0f) | 0x80;
@@ -40,18 +44,24 @@ function seedId(section: string, title: string) {
 
 function prepareRecord(section: 'meditation' | 'yoga', title: string, data: unknown) {
   const practice = meditationInput.parse(data);
+  const videoId = practice.kind === 'video' ? youtubeVideoId(practice.youtubeUrl) : null;
   return {
-    id: seedId(section, title),
+    id: videoId ? seedId('video', videoId) : seedId(section, title.toLowerCase()),
     kind: practice.kind,
     section,
     title_en: practice.title_en,
+    title_hi: practice.title_hi,
     description_en: practice.description_en,
     preparation_en: practice.preparation_en,
     steps: practice.steps,
+    author: practice.author,
+    videoId,
     published: practice.published,
     sortOrder: practice.sortOrder,
     durationSeconds:
-      practice.steps.reduce((total, step) => total + step.seconds, 0) * practice.repeat,
+      practice.kind === 'video'
+        ? practice.durationSeconds
+        : practice.steps.reduce((total, step) => total + step.seconds, 0) * practice.repeat,
   };
 }
 
@@ -126,14 +136,30 @@ export function prepareWellnessSeed() {
         });
       }),
   );
-  const catalog = [...meditation, ...yoga];
+  const videos = (['yoga', 'meditation'] as const).flatMap((section) =>
+    wellnessVideos[section].map(
+      ({ video: [id, title, description, durationSeconds], author, titleHi }, index) =>
+        prepareRecord(section, title, {
+          kind: 'video',
+          section,
+          title_en: title,
+          title_hi: titleHi,
+          description_en: description,
+          author,
+          youtubeUrl: `https://www.youtube.com/watch?v=${id}`,
+          durationSeconds,
+          sortOrder: (section === 'yoga' ? 1900 : 1050) + index,
+        }),
+    ),
+  );
+  const catalog = [...meditation, ...yoga, ...videos];
   if (new Set(catalog.map(({ id }) => id)).size !== catalog.length)
     throw new Error('Wellness seed contains duplicate entries.');
   return catalog;
 }
 
-function titleKey(section: string, title: string) {
-  return `${section}:${title.trim().toLowerCase()}`;
+function titleKey(kind: string, section: string, title: string) {
+  return `${kind}:${section}:${title.trim().toLowerCase()}`;
 }
 
 export async function seedWellness<
@@ -143,20 +169,38 @@ export async function seedWellness<
   const catalog = prepareWellnessSeed();
   const ids = catalog.map(({ id }) => id);
   const titles = catalog.map(({ title_en }) => title_en.toLowerCase());
+  const videoIds = catalog.flatMap(({ videoId }) => (videoId ? [videoId] : []));
   return db.transaction(async (tx) => {
     const existing = await tx
-      .select({ id: items.id, section: items.section, title: items.title_en })
+      .select({
+        id: items.id,
+        kind: items.kind,
+        section: items.section,
+        title: items.title_en,
+        videoId: items.videoId,
+      })
       .from(items)
-      .where(or(inArray(items.id, ids), inArray(sql`lower(trim(${items.title_en}))`, titles)));
+      .where(
+        or(
+          inArray(items.id, ids),
+          inArray(sql`lower(trim(${items.title_en}))`, titles),
+          inArray(items.videoId, videoIds),
+        ),
+      );
     const history = await tx
       .selectDistinct({ id: versions.itemId })
       .from(versions)
       .where(inArray(versions.itemId, ids));
     const knownIds = new Set([...existing, ...history].map(({ id }) => id));
-    const knownTitles = new Set(existing.map(({ section, title }) => titleKey(section, title)));
+    const knownTitles = new Set(
+      existing.map(({ kind, section, title }) => titleKey(kind, section, title)),
+    );
+    const knownVideos = new Set(existing.map(({ videoId }) => videoId));
     const inserts = catalog.filter(
-      ({ id, section, title_en }) =>
-        !knownIds.has(id) && !knownTitles.has(titleKey(section, title_en)),
+      ({ id, kind, section, title_en, videoId }) =>
+        !knownIds.has(id) &&
+        !knownTitles.has(titleKey(kind, section, title_en)) &&
+        (!videoId || !knownVideos.has(videoId)),
     );
     if (!inserts.length) return { inserted: 0, skipped: catalog.length };
 
@@ -174,9 +218,15 @@ async function main() {
   const options = process.argv.slice(2);
   if (!options.length) {
     const catalog = prepareWellnessSeed();
-    const yoga = catalog.filter(({ section }) => section === 'yoga').length;
+    const yoga = catalog.filter(
+      ({ kind, section }) => kind === 'practice' && section === 'yoga',
+    ).length;
+    const meditation = catalog.filter(
+      ({ kind, section }) => kind === 'practice' && section === 'meditation',
+    ).length;
+    const videos = catalog.length - yoga - meditation;
     console.log(
-      `Validated ${yoga} yoga postures and ${catalog.length - yoga} meditation sessions. Use --apply or --local to import drafts.`,
+      `Validated ${yoga} written yoga postures, ${meditation} timed meditation sessions, and ${videos} videos. Use --apply or --local to import drafts.`,
     );
     return;
   }

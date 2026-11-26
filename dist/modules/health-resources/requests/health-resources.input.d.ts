@@ -35,7 +35,6 @@ export declare const bankInput: z.ZodObject<{
     email: z.ZodDefault<z.ZodNullable<z.ZodEmail>>;
     website: z.ZodDefault<z.ZodNullable<z.ZodURL>>;
     is_verified: z.ZodDefault<z.ZodBoolean>;
-    source_url: z.ZodDefault<z.ZodNullable<z.ZodDefault<z.ZodString>>>;
     verified_at: z.ZodDefault<z.ZodNullable<z.ZodPipe<z.ZodISODateTime, z.ZodTransform<Date, string>>>>;
     is_24_7: z.ZodDefault<z.ZodBoolean>;
     is_government: z.ZodDefault<z.ZodBoolean>;
@@ -98,6 +97,50 @@ export declare const listInput: z.ZodObject<{
         ready: "ready";
     }>>;
 }, z.core.$strict>;
+export declare const bankListInput: z.ZodObject<{
+    page: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+    limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+    search: z.ZodDefault<z.ZodString>;
+    category: z.ZodOptional<z.ZodString>;
+    sort: z.ZodDefault<z.ZodEnum<{
+        newest: "newest";
+        oldest: "oldest";
+        title_asc: "title_asc";
+        title_desc: "title_desc";
+        random: "random";
+    }>>;
+    language: z.ZodDefault<z.ZodEnum<{
+        en: "en";
+        hi: "hi";
+    }>>;
+    bloodGroup: z.ZodOptional<z.ZodEnum<{
+        "A+": "A+";
+        "A-": "A-";
+        "B+": "B+";
+        "B-": "B-";
+        "O+": "O+";
+        "O-": "O-";
+        "AB+": "AB+";
+        "AB-": "AB-";
+    }>>;
+    only24h: z.ZodOptional<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>>;
+    status: z.ZodDefault<z.ZodEnum<{
+        active: "active";
+        published: "published";
+        expired: "expired";
+        all: "all";
+        inactive: "inactive";
+        draft: "draft";
+        incomplete: "incomplete";
+        approved: "approved";
+        withdrawn: "withdrawn";
+        ready: "ready";
+    }>>;
+    city: z.ZodOptional<z.ZodString>;
+}, z.core.$strict>;
 export declare const adminBankListInput: z.ZodObject<{
     page: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     search: z.ZodDefault<z.ZodString>;
@@ -139,7 +182,49 @@ export declare const adminBankListInput: z.ZodObject<{
         withdrawn: "withdrawn";
         ready: "ready";
     }>>;
+    city: z.ZodOptional<z.ZodString>;
     limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+}, z.core.$strict>;
+export declare const adminArticleListInput: z.ZodObject<{
+    page: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+    search: z.ZodDefault<z.ZodString>;
+    category: z.ZodOptional<z.ZodString>;
+    sort: z.ZodDefault<z.ZodEnum<{
+        newest: "newest";
+        oldest: "oldest";
+        title_asc: "title_asc";
+        title_desc: "title_desc";
+        random: "random";
+    }>>;
+    language: z.ZodDefault<z.ZodEnum<{
+        en: "en";
+        hi: "hi";
+    }>>;
+    bloodGroup: z.ZodOptional<z.ZodEnum<{
+        "A+": "A+";
+        "A-": "A-";
+        "B+": "B+";
+        "B-": "B-";
+        "O+": "O+";
+        "O-": "O-";
+        "AB+": "AB+";
+        "AB-": "AB-";
+    }>>;
+    only24h: z.ZodOptional<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>>;
+    city: z.ZodOptional<z.ZodString>;
+    limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+    status: z.ZodDefault<z.ZodEnum<{
+        published: "published";
+        all: "all";
+        draft: "draft";
+    }>>;
+}, z.core.$strict>;
+export declare const visibilityInput: z.ZodObject<{
+    visible: z.ZodBoolean;
+    expectedUpdatedAt: z.ZodISODateTime;
 }, z.core.$strict>;
 export declare const nearbyInput: z.ZodObject<{
     latitude: z.ZodNumber;
@@ -158,6 +243,7 @@ export declare const nearbyInput: z.ZodObject<{
         "AB-": "AB-";
     }>>;
     only24h: z.ZodDefault<z.ZodBoolean>;
+    search: z.ZodDefault<z.ZodString>;
 }, z.core.$strict>;
 export type DirectoryKind = 'articles' | 'blood-banks';
 export type ArticleInput = z.infer<typeof articleInput>;

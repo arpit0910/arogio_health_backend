@@ -28,8 +28,8 @@ const doctorGroups = [
     ],
   ],
   [
-    'Contacts and sources',
-    ['country_code_1', 'phone_1', 'country_code_2', 'phone_2', 'email', 'website', 'source_url'],
+    'Contacts',
+    ['country_code_1', 'phone_1', 'country_code_2', 'phone_2', 'email', 'website'],
   ],
   ['Profile', ['summary_en', 'summary_hi']],
 ];
@@ -48,7 +48,6 @@ const doctorLabel = (key) =>
     country_code_2: 'Secondary country code',
     phone_1: 'Primary phone',
     phone_2: 'Secondary phone',
-    source_url: 'Source evidence URL',
     summary_en: 'English summary',
     summary_hi: 'Hindi summary',
   })[key] || key.replace(/_/g, ' ').replace(/^./, (letter) => letter.toUpperCase());
@@ -63,11 +62,11 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
   const search = el('input');
   search.type = 'search';
   search.value = term;
-  search.placeholder = 'Search English or Hindi name, area or city';
-  search.setAttribute('aria-label', search.placeholder);
+  search.placeholder = 'Name or area';
+  search.setAttribute('aria-label', 'Search English or Hindi doctor names, areas or cities');
   const location = el('input');
   location.value = city;
-  location.placeholder = 'City (all locations if empty)';
+  location.placeholder = 'Any city';
   location.setAttribute('aria-label', 'Filter doctor city');
   const filter = directoryStatusFilter('doctors', status, next => doctorsPage(1, search.value.trim(), location.value.trim(), next));
   const searchButton = el('button', 'Search');
@@ -129,7 +128,7 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
         ),
         el(
           'p',
-          `All imported doctors require source review. ${data.returnsToDraft} currently published records would return to draft. ${data.ignoredVerificationFlags} legacy verification flags will not be used to publish records. ${data.ignoredMetadataFields} legacy metadata fields (gender, link IDs and department Hindi labels) are excluded from this import.`,
+          `All imported doctors require listing review. ${data.returnsToDraft} currently published records would return to draft. ${data.ignoredVerificationFlags} legacy verification flags will not be used to publish records. ${data.ignoredMetadataFields} legacy metadata fields (gender, link IDs and department Hindi labels) are excluded from this import.`,
         ),
       );
       for (const error of data.errors)
@@ -137,8 +136,8 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
       if (data.sample.length)
         review.append(
           table(
-            ['Source key', 'Name', 'City', 'State'],
-            data.sample.map((row) => [row.source_key, row.name_en, row.city, row.state]),
+            ['Record key', 'Name', 'City', 'State'],
+            data.sample.map((row) => [row.record_key, row.name_en, row.city, row.state]),
           ),
         );
       if (data.previewToken) {
@@ -177,7 +176,7 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
   importer.append(
     el(
       'p',
-      'Match records by source_key. Supported SwasthyaSearch CSV IDs become swasthya:doctor:<id>. City and state are required. Departments and hospitals must already exist. Separate multiple references with semicolons. Weekdays use 0 (Sunday) to 6 (Saturday). A schedule applies to all hospital references in that row; edit individual schedules after import.',
+      'Match records by record_key. Supported SwasthyaSearch CSV IDs become swasthya:doctor:<id>. City and state are required. Departments and hospitals must already exist. Separate multiple references with semicolons. Weekdays use 0 (Sunday) to 6 (Saturday). A schedule applies to all hospital references in that row; edit individual schedules after import.',
     ),
     file,
     preview,
@@ -199,7 +198,7 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
         actions.append(
           button('Edit', () => doctorEditor(row.id)),
           button('Image', () => providerImageEditor('doctors', row.id)),
-          button('Source review', () => doctorReviewEditor(row.id)),
+          button('Review / approve', () => doctorReviewEditor(row.id)),
           button('Delete', () =>
             openEditor(
               'Delete doctor?',
@@ -230,7 +229,7 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
   section.append(
     el(
       'p',
-      `${data.total} matching doctors. Only published doctors with current source review appear publicly.`,
+      `${data.total} matching doctors. Only published doctors with current listing review appear publicly.`,
     ),
   );
   pager(section, current, data.hasNext, (next) => doctorsPage(next, term, city, status));
@@ -241,7 +240,6 @@ async function doctorEditor(id) {
     row = id ? await api(`/admin/doctors/${id}`) : {};
   if (rev !== requestRevision) return;
   const fields = [];
-  if (!id) fields.push(field('source_key', 'Permanent source key'));
   for (const [title, keys] of doctorGroups) {
     fields.push(el('h3', title));
     const group = el('div', null, 'field-row');
@@ -374,6 +372,7 @@ async function doctorEditor(id) {
     scheduleList,
     button('Add hospital affiliation', () => addSchedule()),
   );
+  fields.push(field('reviewAfterSave', 'Review this listing after saving', false, 'checkbox'));
   openEditor(
     id ? 'Edit doctor' : 'Add doctor',
     fields,
@@ -393,7 +392,7 @@ async function doctorEditor(id) {
                   .split(';')
                   .map((value) => value.trim())
                   .filter(Boolean)
-              : ['phone_1', 'phone_2', 'email', 'website', 'source_url'].includes(key)
+              : ['phone_1', 'phone_2', 'email', 'website'].includes(key)
                 ? text || null
                 : text;
         }
@@ -411,13 +410,16 @@ async function doctorEditor(id) {
           : null,
       }));
       if (id) body.expectedVersion = row.version;
-      else body.source_key = String(data.get('source_key') ?? '').trim();
-      await send(id ? `/admin/doctors/${id}` : '/admin/doctors', body, id ? 'PATCH' : 'POST');
+      const saved = await send(id ? `/admin/doctors/${id}` : '/admin/doctors', body, id ? 'PATCH' : 'POST');
+      if (data.has('reviewAfterSave')) return async () => {
+        await doctorsPage();
+        await doctorReviewEditor(saved.id);
+      };
       await doctorsPage();
     },
-    `Every save returns this doctor to draft for source review. Supply a country code unless the phone number already starts with +.${id ? ' Source key: ' + row.source_key : ''}`,
+    `Every save returns this doctor to draft for listing review. Supply a country code unless the phone number already starts with +.${id ? ' Import key: ' + row.record_key : ''}`,
   );
-  for (const key of ['source_key', 'name_en', 'city', 'state']) {
+  for (const key of ['name_en', 'city', 'state']) {
     const input = $('editor-fields').querySelector(`[name=${key}]`);
     if (input) input.required = true;
   }
@@ -428,30 +430,20 @@ async function doctorReviewEditor(id) {
     row = await api(`/admin/doctors/${id}`);
   if (rev !== requestRevision) return;
   openEditor(
-    'Doctor source review',
+    'Doctor listing review',
     [
-      field('reviewerName', 'Reviewer name'),
-      field('reviewerQualification', 'Reviewer role / qualification'),
-      field('evidence', 'Source review evidence', '', 'textarea'),
-      field(
-        'confirmedSource',
-        'I checked registration, qualifications, sources and contacts',
-        false,
-        'checkbox',
-      ),
-      field('publish', 'Publish after review', true, 'checkbox'),
+      field('confirmedDetails', 'I checked the listing details shown here', false, 'checkbox'),
+      field('publish', 'Approve for publication', true, 'checkbox'),
     ],
     async (data) => {
       await send(`/admin/doctors/${id}/review`, {
         expectedVersion: row.version,
-        reviewerName: data.get('reviewerName'),
-        reviewerQualification: data.get('reviewerQualification'),
-        evidence: data.get('evidence'),
-        confirmedSource: data.has('confirmedSource'),
+        confirmedDetails: data.has('confirmedDetails'),
         publish: data.has('publish'),
       });
       await doctorsPage();
     },
-    `${row.name_en} · ${row.city}, ${row.state}. Source: ${row.source_url || 'Missing — edit before publishing'}. Review includes registration, qualifications, active departments, contacts and recorded hospital schedules. It does not establish appointment availability.`,
+    [row.name_en, row.address_line1, row.city, row.state, row.phone_1, row.registration_number, row.medical_council, ...(row.qualifications || [])].filter(Boolean).join(' · '),
   );
+  $('save-editor').textContent = 'Save review';
 }

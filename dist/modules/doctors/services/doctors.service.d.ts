@@ -1,3 +1,4 @@
+import { type NearbyLocation } from '../../../common/directory/nearby';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../../../database/database.service';
 export declare class DoctorsService {
@@ -7,7 +8,7 @@ export declare class DoctorsService {
     private parse;
     private visible;
     private present;
-    list(query: unknown, admin?: boolean): Promise<{
+    nearby(body: unknown): Promise<{
         total: number;
         page: number;
         hasNext: boolean;
@@ -18,7 +19,7 @@ export declare class DoctorsService {
             department_ids: string[];
             departments: {
                 id: string;
-                source_key: string;
+                record_key: string;
                 name_en: string;
                 name_hi: string;
                 is_active: boolean;
@@ -44,6 +45,7 @@ export declare class DoctorsService {
                 reviewStatus: string;
                 visibility: string;
             } | undefined;
+            distanceKm: number | null;
             activeDepartment: boolean;
             image_url: string | null;
             published: boolean;
@@ -51,7 +53,7 @@ export declare class DoctorsService {
             reviewedBy: string | null;
             reviewEvidence: string | null;
             id: string;
-            source_key: string;
+            record_key: string;
             name_en: string;
             name_hi: string;
             address_line1: string;
@@ -67,7 +69,84 @@ export declare class DoctorsService {
             phone_2: string | null;
             email: string | null;
             website: string | null;
-            source_url: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            registration_number: string;
+            medical_council: string;
+            qualifications: string[];
+            languages: string[];
+            experience_years: number | null;
+            consultation_fee: number | null;
+            summary_en: string;
+            summary_hi: string;
+            image_alt: string;
+            image_revision: string | null;
+            version: number;
+            created_at: Date;
+            updated_at: Date;
+        }[];
+    }>;
+    list(query: unknown, admin?: boolean, location?: NearbyLocation): Promise<{
+        total: number;
+        page: number;
+        hasNext: boolean;
+        summary?: {
+            [x: string]: number;
+        } | undefined;
+        items: {
+            department_ids: string[];
+            departments: {
+                id: string;
+                record_key: string;
+                name_en: string;
+                name_hi: string;
+                is_active: boolean;
+            }[];
+            affiliations: {
+                name_en: string;
+                name_hi: string;
+                city: string;
+                hospital_id: string;
+                role: string;
+                consultation_mode: string;
+                availability: string;
+                days_of_week: number[];
+                start_time: string | null;
+                end_time: string | null;
+                consultation_fee: number | null;
+            }[];
+            adminStatus?: {
+                active: boolean;
+                approved: boolean;
+                missingFields: string[];
+                complete: boolean;
+                reviewStatus: string;
+                visibility: string;
+            } | undefined;
+            distanceKm: number | null;
+            activeDepartment: boolean;
+            image_url: string | null;
+            published: boolean;
+            reviewedAt: Date | null;
+            reviewedBy: string | null;
+            reviewEvidence: string | null;
+            id: string;
+            record_key: string;
+            name_en: string;
+            name_hi: string;
+            address_line1: string;
+            address_line2: string;
+            landmark: string;
+            address_hi: string;
+            city: string;
+            state: string;
+            pincode: string;
+            country_code_1: string;
+            phone_1: string | null;
+            country_code_2: string;
+            phone_2: string | null;
+            email: string | null;
+            website: string | null;
             latitude: number | null;
             longitude: number | null;
             registration_number: string;
@@ -89,7 +168,7 @@ export declare class DoctorsService {
         department_ids: string[];
         departments: {
             id: string;
-            source_key: string;
+            record_key: string;
             name_en: string;
             name_hi: string;
             is_active: boolean;
@@ -114,7 +193,7 @@ export declare class DoctorsService {
         reviewedBy: string | null;
         reviewEvidence: string | null;
         id: string;
-        source_key: string;
+        record_key: string;
         name_en: string;
         name_hi: string;
         address_line1: string;
@@ -130,7 +209,6 @@ export declare class DoctorsService {
         phone_2: string | null;
         email: string | null;
         website: string | null;
-        source_url: string | null;
         latitude: number | null;
         longitude: number | null;
         registration_number: string;
@@ -162,6 +240,7 @@ export declare class DoctorsService {
         id: string;
         created_at: Date;
         updated_at: Date;
+        record_key: string;
         name_en: string;
         name_hi: string;
         city: string;
@@ -170,10 +249,8 @@ export declare class DoctorsService {
         landmark: string;
         address_hi: string;
         website: string | null;
-        source_url: string | null;
         latitude: number | null;
         longitude: number | null;
-        source_key: string;
         image_alt: string;
         version: number;
         address_line1: string;
@@ -199,6 +276,7 @@ export declare class DoctorsService {
         id: string;
         created_at: Date;
         updated_at: Date;
+        record_key: string;
         name_en: string;
         name_hi: string;
         city: string;
@@ -207,10 +285,8 @@ export declare class DoctorsService {
         landmark: string;
         address_hi: string;
         website: string | null;
-        source_url: string | null;
         latitude: number | null;
         longitude: number | null;
-        source_key: string;
         image_alt: string;
         version: number;
         address_line1: string;
@@ -235,6 +311,7 @@ export declare class DoctorsService {
         id: string;
         created_at: Date;
         updated_at: Date;
+        record_key: string;
         name_en: string;
         name_hi: string;
         city: string;
@@ -243,10 +320,8 @@ export declare class DoctorsService {
         landmark: string;
         address_hi: string;
         website: string | null;
-        source_url: string | null;
         latitude: number | null;
         longitude: number | null;
-        source_key: string;
         image_alt: string;
         version: number;
         address_line1: string;
@@ -290,7 +365,7 @@ export declare class DoctorsService {
         ignoredMetadataFields: number;
         doctors: number;
         sample: {
-            source_key: string;
+            record_key: string;
             name_en: string;
             city: string;
             state: string;

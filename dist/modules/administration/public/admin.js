@@ -163,9 +163,20 @@ function reset(title) {
   $('message').textContent = '';
   $('message').className = '';
   content.setAttribute('aria-busy', 'false');
-  document
-    .querySelectorAll('nav button')
-    .forEach((n) => n.classList.toggle('active', n.dataset.page === page));
+  document.querySelectorAll('nav button').forEach((n) => {
+    const active = n.dataset.page === page;
+    n.classList.toggle('active', active);
+    if (active) {
+      n.setAttribute('aria-current', 'page');
+      const nav = n.closest('nav');
+      if (nav.scrollWidth > nav.clientWidth) {
+        const item = n.getBoundingClientRect(), bounds = nav.getBoundingClientRect();
+        if (item.right > bounds.right || item.left < bounds.left) {
+          nav.scrollLeft += item.left - bounds.left + (item.width - nav.clientWidth) / 2;
+        }
+      }
+    } else n.removeAttribute('aria-current');
+  });
 }
 function panel(title) {
   const p = el('section', null, 'panel');
@@ -249,8 +260,9 @@ $('editor-form').addEventListener('submit', async (e) => {
   $('save-editor').disabled = true;
   $('editor-error').textContent = '';
   try {
-    await dialogSave(new FormData(e.target));
+    const afterSave = await dialogSave(new FormData(e.target));
     $('editor').close();
+    if (typeof afterSave === 'function') await safely(afterSave);
   } catch (error) {
     $('editor-error').textContent = error.message;
   } finally {
@@ -262,7 +274,7 @@ async function signOut(revoke = true) {
   const previous = tokens;
   savePortalSession(null);
   try {
-    for (const kind of ['hospitals', 'doctors', 'blood-banks', 'articles']) {
+    for (const kind of ['hospitals', 'doctors', 'blood-banks', 'articles', 'departments', 'diseases']) {
       sessionStorage.removeItem(`arogio.admin.directory.${kind}`);
     }
   } catch {}
@@ -375,7 +387,7 @@ $('create-user').onclick = () =>
 async function show() {
   syncPortalUrl();
   $('create-user').hidden = page !== 'overview' && page !== 'people';
-  const { current, term, city, status, size } = readDirectoryView(page);
+  const { current, term, city, status, size, departmentId } = readDirectoryView(page);
   if (['hospitals', 'doctors', 'blood-banks', 'articles'].includes(page) && [20, 25, 50, 100, 250, 500].includes(size)) {
     directoryPageSizes[page] = size;
   }
@@ -384,10 +396,10 @@ async function show() {
   if (page === 'people') return people();
   if (page === 'banners') return homeBanners();
   if (page === 'meditation') return meditationPage();
-  if (page === 'departments') return departmentsPage();
+  if (page === 'departments') return departmentsPage(current, term, status);
   if (page === 'hospitals') return hospitalsPage(current, term, city, status);
   if (page === 'doctors') return doctorsPage(current, term, city, status);
-  if (page === 'diseases') return diseasesPage();
+  if (page === 'diseases') return diseasesPage(current, term, status, departmentId);
   if (page === 'care') return carePage();
   if (page === 'articles' || page === 'blood-banks') return directoryPage(page, current, term, status);
   return audit();
@@ -398,7 +410,6 @@ async function overview() {
   const rev = requestRevision,
     data = await api('/admin/analytics');
   if (rev !== requestRevision) return;
-  void directoryOverviewStatus(rev);
   const metrics = el('div', null, 'metrics');
   for (const [label, value, detail] of [
     ['People', data.accounts.total, `${number(data.accounts.new30)} joined in 30 days`],
@@ -419,6 +430,7 @@ async function overview() {
     metrics.append(m);
   }
   content.append(metrics);
+  void directoryOverviewStatus(rev);
   const split = el('div', null, 'split'),
     growth = panel('Your community is growing'),
     chart = el('div', null, 'chart');

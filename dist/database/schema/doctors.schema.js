@@ -9,7 +9,7 @@ exports.doctors = (0, pg_core_1.pgTable)('doctors', {
     id: (0, pg_core_1.uuid)('id')
         .primaryKey()
         .references(() => care_directory_entries_schema_1.careDirectoryEntries.id, { onDelete: 'cascade' }),
-    source_key: (0, pg_core_1.text)('source_key').notNull().unique(),
+    record_key: (0, pg_core_1.text)('record_key').notNull().unique(),
     name_en: (0, pg_core_1.text)('name_en').notNull(),
     name_hi: (0, pg_core_1.text)('name_hi').notNull().default(''),
     address_line1: (0, pg_core_1.text)('address_line1').notNull().default(''),
@@ -25,7 +25,6 @@ exports.doctors = (0, pg_core_1.pgTable)('doctors', {
     phone_2: (0, pg_core_1.text)('phone_2'),
     email: (0, pg_core_1.text)('email'),
     website: (0, pg_core_1.text)('website'),
-    source_url: (0, pg_core_1.text)('source_url'),
     latitude: (0, pg_core_1.doublePrecision)('latitude'),
     longitude: (0, pg_core_1.doublePrecision)('longitude'),
     registration_number: (0, pg_core_1.text)('registration_number').notNull().default(''),

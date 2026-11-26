@@ -1,5 +1,5 @@
 import { ProfileSetupDto } from './profile-setup.dto';
-declare const UpdateProfileDto_base: import("@nestjs/common").Type<Pick<ProfileSetupDto, "bloodGroup" | "gender" | "complete" | "flowVersion" | "contactNumber" | "setupDeferred" | "dateOfBirth" | "activityLevel" | "healthGoals" | "location" | "referralSource" | "healthReminders" | "tipsAndInsights" | "productUpdates" | "step">>;
+declare const UpdateProfileDto_base: import("@nestjs/common").Type<Pick<ProfileSetupDto, "bloodGroup" | "gender" | "location" | "complete" | "flowVersion" | "contactNumber" | "setupDeferred" | "dateOfBirth" | "activityLevel" | "healthGoals" | "referralSource" | "healthReminders" | "tipsAndInsights" | "productUpdates" | "step">>;
 export declare class UpdateProfileDto extends UpdateProfileDto_base {
     photo?: string;
     fullName?: string;

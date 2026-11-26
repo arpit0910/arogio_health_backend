@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.nearbyInput = exports.adminBankListInput = exports.listInput = exports.bankInput = exports.articleInput = exports.categoryInput = exports.thumbnailInput = exports.bloodGroups = void 0;
+exports.nearbyInput = exports.visibilityInput = exports.adminArticleListInput = exports.adminBankListInput = exports.bankListInput = exports.listInput = exports.bankInput = exports.articleInput = exports.categoryInput = exports.thumbnailInput = exports.bloodGroups = void 0;
 const admin_status_1 = require("../../../common/directory/admin-status");
 const zod_1 = require("zod");
 exports.bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
@@ -71,7 +71,6 @@ exports.bankInput = zod_1.z
         .nullable()
         .default(null),
     is_verified: zod_1.z.boolean().default(false),
-    source_url: exports.thumbnailInput.nullable().default(null),
     verified_at: zod_1.z.iso.datetime().transform(value => new Date(value)).nullable().default(null),
     is_24_7: zod_1.z.boolean().default(false),
     is_government: zod_1.z.boolean().default(false),
@@ -97,7 +96,12 @@ exports.listInput = zod_1.z
     status: admin_status_1.directoryStatusInput,
 })
     .strict();
-exports.adminBankListInput = exports.listInput.extend({ limit: admin_status_1.adminDirectoryPageSize.default(25) });
+exports.bankListInput = exports.listInput.extend({ city: zod_1.z.string().trim().max(80).optional() });
+exports.adminBankListInput = exports.bankListInput.extend({ limit: admin_status_1.adminDirectoryPageSize.default(25) });
+exports.adminArticleListInput = exports.adminBankListInput.extend({
+    status: zod_1.z.enum(['all', 'draft', 'published']).default('all'),
+});
+exports.visibilityInput = zod_1.z.object({ visible: zod_1.z.boolean(), expectedUpdatedAt: zod_1.z.iso.datetime() }).strict();
 exports.nearbyInput = zod_1.z
     .object({
     latitude: zod_1.z.number().finite().min(-90).max(90),
@@ -107,6 +111,7 @@ exports.nearbyInput = zod_1.z
     limit: zod_1.z.number().int().min(1).max(100).default(25),
     bloodGroup: zod_1.z.enum(exports.bloodGroups).optional(),
     only24h: zod_1.z.boolean().default(false),
+    search: zod_1.z.string().trim().max(150).default(''),
 })
     .strict();
 //# sourceMappingURL=health-resources.input.js.map

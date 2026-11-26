@@ -30,8 +30,8 @@ export declare const careDirectoryEntries: import("drizzle-orm/pg-core").PgTable
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        sourceKey: import("drizzle-orm/pg-core").PgColumn<{
-            name: "source_key";
+        recordKey: import("drizzle-orm/pg-core").PgColumn<{
+            name: "record_key";
             tableName: "care_directory_entries";
             dataType: "string";
             columnType: "PgText";
@@ -192,23 +192,6 @@ export declare const careDirectoryEntries: import("drizzle-orm/pg-core").PgTable
             driverParam: string;
             notNull: true;
             hasDefault: true;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        sourceUrl: import("drizzle-orm/pg-core").PgColumn<{
-            name: "source_url";
-            tableName: "care_directory_entries";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: true;
-            hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;

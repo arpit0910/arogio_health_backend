@@ -29,8 +29,7 @@ const items = zod_1.z.array(zod_1.z.object({ id: zod_1.z.uuid(), expectedVersion
 const detailedBatchInput = zod_1.z.object({
     items,
     reviewerName: zod_1.z.string().trim().min(3).max(160), reviewerQualification: zod_1.z.string().trim().min(3).max(160),
-    evidence: zod_1.z.string().trim().min(20).max(4000), confirmedSource: zod_1.z.literal(true),
-    sourceUrl: zod_1.z.url().max(2000).refine(value => { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password; }).optional(),
+    evidence: zod_1.z.string().trim().min(20).max(4000), confirmedDetails: zod_1.z.literal(true),
 }).strict();
 const batchInput = zod_1.z.union([zod_1.z.object({ items }).strict(), detailedBatchInput])
     .refine(value => new Set(value.items.map(item => item.id)).size === value.items.length, 'Select each record only once.');
@@ -51,26 +50,20 @@ let DirectoryApprovalsController = DirectoryApprovalsController_1 = class Direct
         return { hospitals: hospitals.summary, doctors: doctors.summary, 'blood-banks': banks.summary };
     }
     async approve(actor, rawKind, body, accept, response) {
-        // Keep the legacy shared-hosting artifact compatible with source-free bank reviews.
-        if (rawKind === 'blood-banks' && body && typeof body === 'object' && !Array.isArray(body)) {
-            const { sourceUrl, confirmedDetails, ...bankRequest } = body;
-            body = confirmedDetails === true ? { ...bankRequest, confirmedSource: true } : bankRequest;
-        }
         const parsed = batchInput.safeParse(body), kind = zod_1.z.enum(['hospitals', 'doctors', 'blood-banks', 'articles']).safeParse(rawKind);
         if (!parsed.success || !kind.success)
             throw new common_1.BadRequestException(parsed.success ? 'Choose articles, hospitals, doctors or blood banks.' : parsed.error.issues.map(issue => issue.message).join('; '));
-        const { items, sourceUrl, ...review } = 'reviewerName' in parsed.data ? parsed.data : {
+        const { items, ...review } = 'reviewerName' in parsed.data ? parsed.data : {
             items: parsed.data.items,
-            sourceUrl: undefined,
             reviewerName: 'Signed-in administrator',
             reviewerQualification: 'Super administrator',
-            evidence: rawKind === 'blood-banks' ? 'Listing details approved by the signed-in administrator.' : 'Approved using the directory record and its saved source.',
-            confirmedSource: true,
+            evidence: 'Listing details approved by the signed-in administrator.',
+            confirmedDetails: true,
         };
         const timestamped = kind.data === 'blood-banks' || kind.data === 'articles';
         if (items.some(item => timestamped ? !item.expectedUpdatedAt || item.expectedVersion !== undefined : !item.expectedVersion || item.expectedUpdatedAt !== undefined))
             throw new common_1.BadRequestException('Refresh the list and select records with their current version.');
-        const stream = accept?.split(',').some(type => type.trim() === 'application/x-ndjson');
+        const stream = accept?.split(',').some((type) => type.trim() === 'application/x-ndjson');
         if (stream) {
             response.status(201).set({
                 'Content-Type': 'application/x-ndjson; charset=utf-8',
@@ -80,8 +73,9 @@ let DirectoryApprovalsController = DirectoryApprovalsController_1 = class Direct
             response.flushHeaders();
         }
         const writeProgress = (event) => {
-            if (stream && !response.destroyed && !response.writableEnded)
+            if (stream && !response.destroyed && !response.writableEnded) {
                 response.write(`${JSON.stringify(event)}\n`);
+            }
         };
         const results = [];
         let approved = 0;
@@ -155,7 +149,7 @@ __decorate([
     __param(3, (0, common_1.Headers)('accept')),
     __param(4, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, Object, String, Object]),
+    __metadata("design:paramtypes", [Object, String, Object, Object, Object]),
     __metadata("design:returntype", Promise)
 ], DirectoryApprovalsController.prototype, "approve", null);
 exports.DirectoryApprovalsController = DirectoryApprovalsController = DirectoryApprovalsController_1 = __decorate([

@@ -96,7 +96,7 @@ let MedicalDepartmentsService = class MedicalDepartmentsService {
         }
         catch (error) {
             if ((0, database_error_1.isUniqueViolation)(error))
-                throw new common_1.ConflictException('A department already uses this source key or English name.');
+                throw new common_1.ConflictException('A department already uses this record key or English name.');
             if ((0, database_error_1.getDatabaseErrorCode)(error) === '23503')
                 throw new common_1.ConflictException('This department is still referenced. Deactivate it instead.');
             throw error;
@@ -148,16 +148,16 @@ let MedicalDepartmentsService = class MedicalDepartmentsService {
         }
     }
     plan(prepared, existing) {
-        const errors = [...prepared.errors], keys = new Map(existing.map((row) => [row.source_key, row])), names = new Map(existing.map((row) => [row.name_en.trim().toLowerCase(), row.source_key]));
+        const errors = [...prepared.errors], keys = new Map(existing.map((row) => [row.record_key, row])), names = new Map(existing.map((row) => [row.name_en.trim().toLowerCase(), row.record_key]));
         let creates = 0, updates = 0;
         for (const { row, value } of prepared.rows) {
             const owner = names.get(value.name_en.toLowerCase());
-            if (owner && owner !== value.source_key)
+            if (owner && owner !== value.record_key)
                 errors.push({
                     row,
-                    message: 'English name belongs to a different source key. Correct the identity before importing.',
+                    message: 'English name belongs to a different record key. Correct the identity before importing.',
                 });
-            if (keys.has(value.source_key))
+            if (keys.has(value.record_key))
                 updates++;
             else
                 creates++;
@@ -225,7 +225,7 @@ let MedicalDepartmentsService = class MedicalDepartmentsService {
                     .insert(schema_1.medicalDepartments)
                     .values(value)
                     .onConflictDoUpdate({
-                    target: schema_1.medicalDepartments.source_key,
+                    target: schema_1.medicalDepartments.record_key,
                     set: { ...value, version: (0, drizzle_orm_1.sql) `${schema_1.medicalDepartments.version} + 1`, updated_at: new Date() },
                 });
             await this.audit(tx, actorId, 'import', null, {

@@ -12,14 +12,13 @@ export declare class CareDirectoryService {
             updatedAt: Date;
             city: string;
             phone: string | null;
-            sourceKey: string;
+            recordKey: string;
             kind: string;
             nameHi: string;
             address: string;
             addressHi: string;
             imageUrl: string | null;
             imageAlt: string;
-            sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
             reviewedAt: Date | null;
@@ -28,6 +27,7 @@ export declare class CareDirectoryService {
         } | {
             verification: string;
             freshnessDays: number;
+            recordKey: undefined;
             reviewedBy: undefined;
             reviewEvidence: undefined;
             name: string;
@@ -35,14 +35,12 @@ export declare class CareDirectoryService {
             updatedAt: Date;
             city: string;
             phone: string | null;
-            sourceKey: string;
             kind: string;
             nameHi: string;
             address: string;
             addressHi: string;
             imageUrl: string | null;
             imageAlt: string;
-            sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
             reviewedAt: Date | null;
@@ -58,14 +56,13 @@ export declare class CareDirectoryService {
             updatedAt: Date;
             city: string;
             phone: string | null;
-            sourceKey: string;
+            recordKey: string;
             kind: string;
             nameHi: string;
             address: string;
             addressHi: string;
             imageUrl: string | null;
             imageAlt: string;
-            sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
             reviewedAt: Date | null;
@@ -74,6 +71,7 @@ export declare class CareDirectoryService {
         } | {
             verification: string;
             freshnessDays: number;
+            recordKey: undefined;
             reviewedBy: undefined;
             reviewEvidence: undefined;
             name: string;
@@ -81,14 +79,12 @@ export declare class CareDirectoryService {
             updatedAt: Date;
             city: string;
             phone: string | null;
-            sourceKey: string;
             kind: string;
             nameHi: string;
             address: string;
             addressHi: string;
             imageUrl: string | null;
             imageAlt: string;
-            sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
             reviewedAt: Date | null;
@@ -98,14 +94,13 @@ export declare class CareDirectoryService {
         updatedAt: Date;
         city: string;
         phone: string | null;
-        sourceKey: string;
+        recordKey: string;
         kind: string;
         nameHi: string;
         address: string;
         addressHi: string;
         imageUrl: string | null;
         imageAlt: string;
-        sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;
         reviewedAt: Date | null;
@@ -118,14 +113,13 @@ export declare class CareDirectoryService {
             updatedAt: Date;
             city: string;
             phone: string | null;
-            sourceKey: string;
+            recordKey: string;
             kind: string;
             nameHi: string;
             address: string;
             addressHi: string;
             imageUrl: string | null;
             imageAlt: string;
-            sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
             reviewedAt: Date | null;
@@ -134,6 +128,7 @@ export declare class CareDirectoryService {
         } | {
             verification: string;
             freshnessDays: number;
+            recordKey: undefined;
             reviewedBy: undefined;
             reviewEvidence: undefined;
             name: string;
@@ -141,20 +136,19 @@ export declare class CareDirectoryService {
             updatedAt: Date;
             city: string;
             phone: string | null;
-            sourceKey: string;
             kind: string;
             nameHi: string;
             address: string;
             addressHi: string;
             imageUrl: string | null;
             imageAlt: string;
-            sourceUrl: string;
             details: import("../../../database/schema").CareDetails;
             published: boolean;
             reviewedAt: Date | null;
         })[];
         verification: string;
         freshnessDays: number;
+        recordKey: undefined;
         reviewedBy: undefined;
         reviewEvidence: undefined;
         name: string;
@@ -162,14 +156,12 @@ export declare class CareDirectoryService {
         updatedAt: Date;
         city: string;
         phone: string | null;
-        sourceKey: string;
         kind: string;
         nameHi: string;
         address: string;
         addressHi: string;
         imageUrl: string | null;
         imageAlt: string;
-        sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;
         reviewedAt: Date | null;
@@ -180,14 +172,13 @@ export declare class CareDirectoryService {
         updatedAt: Date;
         city: string;
         phone: string | null;
-        sourceKey: string;
+        recordKey: string;
         kind: string;
         nameHi: string;
         address: string;
         addressHi: string;
         imageUrl: string | null;
         imageAlt: string;
-        sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;
         reviewedAt: Date | null;
@@ -196,7 +187,7 @@ export declare class CareDirectoryService {
     }>;
     review(id: string, actor: string, body: unknown): Promise<{
         id: string;
-        sourceKey: string;
+        recordKey: string;
         kind: string;
         name: string;
         nameHi: string;
@@ -206,7 +197,6 @@ export declare class CareDirectoryService {
         phone: string | null;
         imageUrl: string | null;
         imageAlt: string;
-        sourceUrl: string;
         details: import("../../../database/schema").CareDetails;
         published: boolean;
         reviewedAt: Date | null;
@@ -235,7 +225,7 @@ export declare class CareDirectoryService {
     }>;
     reviewBank(id: string, actor: string, body: unknown, requireActive?: boolean): Promise<{
         id: string;
-        source_id: string;
+        record_key: string;
         name_en: string;
         name_hi: string;
         city: string;
@@ -251,7 +241,6 @@ export declare class CareDirectoryService {
         email: string | null;
         website: string | null;
         is_verified: boolean;
-        source_url: string | null;
         verified_at: Date | null;
         is_24_7: boolean;
         is_government: boolean;

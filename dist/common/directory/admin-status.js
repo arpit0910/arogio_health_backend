@@ -22,8 +22,8 @@ function directoryPredicates(kind) {
     const approved = (0, drizzle_orm_1.sql) `coalesce((${approvedFlag}=true and ${reviewed} >= ${fresh}), false)`;
     const expired = (0, drizzle_orm_1.sql) `(${approvedFlag}=true and (${reviewed} is null or ${reviewed} < ${fresh}))`;
     const incomplete = kind === 'blood-banks'
-        ? (0, drizzle_orm_1.sql) `(${blank(schema_1.bloodBankDirectoryEntries.name_en)} or ${blank(schema_1.bloodBankDirectoryEntries.city)} or ${blank(schema_1.bloodBankDirectoryEntries.state)} or ${blank(schema_1.bloodBankDirectoryEntries.address_en)} or ${blank(schema_1.bloodBankDirectoryEntries.phone)} or ${blank(schema_1.bloodBankDirectoryEntries.source_url)})`
-        : (0, drizzle_orm_1.sql) `(${blank(provider.name_en)} or ${blank(provider.city)} or ${blank(provider.state)} or ${blank(provider.address_line1)} or ${blank(provider.phone_1)} or ${blank(provider.source_url)} ${kind === 'doctors' ? (0, drizzle_orm_1.sql) `or ${blank(schema_1.doctors.registration_number)} or ${blank(schema_1.doctors.medical_council)} or jsonb_array_length(${schema_1.doctors.qualifications})=0 or not (${exports.activeDoctorDepartment})` : (0, drizzle_orm_1.sql) ``})`;
+        ? (0, drizzle_orm_1.sql) `(${blank(schema_1.bloodBankDirectoryEntries.name_en)} or ${blank(schema_1.bloodBankDirectoryEntries.city)} or ${blank(schema_1.bloodBankDirectoryEntries.state)} or ${blank(schema_1.bloodBankDirectoryEntries.address_en)} or ${blank(schema_1.bloodBankDirectoryEntries.phone)})`
+        : (0, drizzle_orm_1.sql) `(${blank(provider.name_en)} or ${blank(provider.city)} or ${blank(provider.state)} or ${blank(provider.address_line1)} or ${blank(provider.phone_1)} ${kind === 'doctors' ? (0, drizzle_orm_1.sql) `or ${blank(schema_1.doctors.registration_number)} or ${blank(schema_1.doctors.medical_council)} or jsonb_array_length(${schema_1.doctors.qualifications})=0 or not (${exports.activeDoctorDepartment})` : (0, drizzle_orm_1.sql) ``})`;
     return { active, inactive: (0, drizzle_orm_1.sql) `not (${active})`, draft: (0, drizzle_orm_1.sql) `${approvedFlag}=false and ${reviewed} is null`, withdrawn: (0, drizzle_orm_1.sql) `${approvedFlag}=false and ${reviewed} is not null`, incomplete, approved, expired, ready: (0, drizzle_orm_1.sql) `(${active}) and not (${incomplete}) and not (${approved})` };
 }
 function directoryCountFields(predicates) {
@@ -38,7 +38,6 @@ function directoryRowStatus(kind, row) {
     require('State', row.state);
     require('Address', kind === 'blood-banks' ? row.address_en : row.address_line1);
     require('Phone', kind === 'blood-banks' ? row.phone : row.phone_1);
-    require('Source URL', row.source_url);
     if (kind === 'doctors') {
         require('Registration number', row.registration_number);
         require('Medical council', row.medical_council);

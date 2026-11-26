@@ -19,8 +19,8 @@ export declare const medicalDiseases: import("drizzle-orm/pg-core").PgTableWithC
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        source_key: import("drizzle-orm/pg-core").PgColumn<{
-            name: "source_key";
+        record_key: import("drizzle-orm/pg-core").PgColumn<{
+            name: "record_key";
             tableName: "medical_diseases";
             dataType: "string";
             columnType: "PgText";

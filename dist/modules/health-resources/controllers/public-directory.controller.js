@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PublicHealthResourcesController = void 0;
+const provider_image_1 = require("../../../common/media/provider-image");
 const common_1 = require("@nestjs/common");
 const health_resources_service_1 = require("../services/health-resources.service");
 let PublicHealthResourcesController = class PublicHealthResourcesController {
@@ -25,6 +26,9 @@ let PublicHealthResourcesController = class PublicHealthResourcesController {
     }
     categories() {
         return this.directory.categories();
+    }
+    async thumbnail(id, response) {
+        (0, provider_image_1.sendProviderImage)(response, await this.directory.articleThumbnail(id));
     }
     article(id) {
         return this.directory.article(id);
@@ -50,6 +54,14 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], PublicHealthResourcesController.prototype, "categories", null);
+__decorate([
+    (0, common_1.Get)('articles/:id/thumbnail'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], PublicHealthResourcesController.prototype, "thumbnail", null);
 __decorate([
     (0, common_1.Get)('articles/:id'),
     __param(0, (0, common_1.Param)('id')),

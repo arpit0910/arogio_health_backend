@@ -1,18 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.correctionInput = exports.reviewInput = exports.careInput = exports.careQuery = exports.careKind = void 0;
+const review_input_1 = require("../../../common/directory/review-input");
 const zod_1 = require("zod");
 exports.careKind = zod_1.z.enum(['hospital', 'doctor', 'medicine', 'lab', 'pharmacy']);
 const line = zod_1.z.string().trim().max(300);
-const https = zod_1.z
-    .url()
-    .max(2000)
-    .refine((value) => {
-    if (!URL.canParse(value))
-        return false;
-    const url = new URL(value);
-    return url.protocol === 'https:' && !url.username && !url.password;
-}, 'Use an HTTPS source without credentials.');
 exports.careQuery = zod_1.z
     .object({
     search: zod_1.z.string().trim().max(150).default(''),
@@ -25,7 +17,7 @@ exports.careQuery = zod_1.z
     .strict();
 exports.careInput = zod_1.z
     .object({
-    sourceKey: line.min(1),
+    recordKey: line.min(1).optional(),
     kind: exports.careKind,
     name: line.min(1),
     nameHi: line.default(''),
@@ -38,7 +30,6 @@ exports.careInput = zod_1.z
         .refine((value) => /^\+?\d{6,15}$/.test(value.replace(/[ ()-]/g, '')), 'Use 6 to 15 actual telephone digits.')
         .nullable()
         .default(null),
-    sourceUrl: https,
     details: zod_1.z
         .object({
         specialties: zod_1.z.array(line.min(1)).max(30).default([]),
@@ -59,12 +50,10 @@ exports.careInput = zod_1.z
 exports.reviewInput = zod_1.z
     .object({
     expectedUpdatedAt: zod_1.z.iso.datetime(),
-    evidence: zod_1.z.string().trim().min(20).max(4000),
-    reviewerName: line.min(3),
-    reviewerQualification: line.min(3),
     publish: zod_1.z.boolean(),
-    confirmedSource: zod_1.z.literal(true),
+    ...review_input_1.directoryReviewFields,
 })
-    .strict();
+    .strict()
+    .refine(review_input_1.hasReviewConfirmation, 'Confirm the listing details before continuing.');
 exports.correctionInput = zod_1.z.object({ message: zod_1.z.string().trim().min(10).max(1000) }).strict();
 //# sourceMappingURL=care-directory.input.js.map

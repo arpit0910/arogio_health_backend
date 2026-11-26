@@ -33,6 +33,9 @@ let PublicHospitalsController = class PublicHospitalsController {
     list(query) {
         return this.service.list(query);
     }
+    nearby(body) {
+        return this.service.nearby(body);
+    }
     async image(id, response) {
         (0, provider_image_1.sendProviderImage)(response, await this.service.image(id));
     }
@@ -48,6 +51,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], PublicHospitalsController.prototype, "list", null);
+__decorate([
+    (0, common_1.Post)('nearby'),
+    (0, common_1.HttpCode)(200),
+    (0, common_1.Header)('Cache-Control', 'private, no-store'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PublicHospitalsController.prototype, "nearby", null);
 __decorate([
     (0, common_1.Get)(':id/image'),
     __param(0, (0, common_1.Param)('id')),

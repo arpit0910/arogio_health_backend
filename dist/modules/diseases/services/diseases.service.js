@@ -42,7 +42,7 @@ let DiseasesService = class DiseasesService {
             conditions.push((0, drizzle_orm_1.eq)(schema_1.medicalDiseases.is_active, true), (0, drizzle_orm_1.eq)(schema_1.medicalDepartments.is_active, true));
         if (q.department_id)
             conditions.push((0, drizzle_orm_1.eq)(schema_1.medicalDiseases.department_id, q.department_id));
-        else if ('status' in q && q.status !== 'all')
+        if (admin && 'status' in q && q.status !== 'all')
             conditions.push((0, drizzle_orm_1.eq)(schema_1.medicalDiseases.is_active, q.status === 'active'));
         if (q.search) {
             const term = `%${q.search.replace(/[\\%_]/g, '\\$&')}%`;
@@ -120,7 +120,7 @@ let DiseasesService = class DiseasesService {
         }
         catch (error) {
             if ((0, database_error_1.isUniqueViolation)(error))
-                throw new common_1.ConflictException('A disease already uses this source key or English name.');
+                throw new common_1.ConflictException('A disease already uses this record key or English name.');
             if ((0, database_error_1.getDatabaseErrorCode)(error) === '23503')
                 throw new common_1.ConflictException('This disease is still referenced. Deactivate it instead.');
             throw error;
@@ -186,16 +186,16 @@ let DiseasesService = class DiseasesService {
         }
     }
     plan(prepared, existing) {
-        const errors = [...prepared.errors], keys = new Map(existing.map((row) => [row.source_key, row])), names = new Map(existing.map((row) => [row.name_en.trim().toLowerCase(), row.source_key]));
+        const errors = [...prepared.errors], keys = new Map(existing.map((row) => [row.record_key, row])), names = new Map(existing.map((row) => [row.name_en.trim().toLowerCase(), row.record_key]));
         let creates = 0, updates = 0;
         for (const { row, value } of prepared.rows) {
             const owner = names.get(value.name_en.toLowerCase());
-            if (owner && owner !== value.source_key)
+            if (owner && owner !== value.record_key)
                 errors.push({
                     row,
-                    message: 'English name belongs to a different source key. Correct the identity before importing.',
+                    message: 'English name belongs to a different record key. Correct the identity before importing.',
                 });
-            if (keys.has(value.source_key))
+            if (keys.has(value.record_key))
                 updates++;
             else
                 creates++;
@@ -220,6 +220,7 @@ let DiseasesService = class DiseasesService {
         const prepared = await this.prepared(file, masters);
         const existing = await this.database.db.select().from(schema_1.medicalDiseases).orderBy((0, drizzle_orm_1.asc)(schema_1.medicalDiseases.id));
         const plan = this.plan(prepared, existing);
+        const namesById = new Map(masters.map(item => [item.id, item.name_en]));
         const expiresAt = Date.now() + 10 * 60 * 1000;
         const payload = Buffer.from(JSON.stringify({
             actorId,
@@ -229,6 +230,7 @@ let DiseasesService = class DiseasesService {
         })).toString('base64url');
         return {
             ...plan,
+            sample: plan.sample.map(row => ({ ...row, department_name_en: namesById.get(row.department_id) })),
             expiresAt: new Date(expiresAt).toISOString(),
             previewToken: plan.errorCount ? null : payload + '.' + this.sign(payload),
         };
@@ -271,7 +273,7 @@ let DiseasesService = class DiseasesService {
                     .insert(schema_1.medicalDiseases)
                     .values(value)
                     .onConflictDoUpdate({
-                    target: schema_1.medicalDiseases.source_key,
+                    target: schema_1.medicalDiseases.record_key,
                     set: { ...value, version: (0, drizzle_orm_1.sql) `${schema_1.medicalDiseases.version} + 1`, updated_at: new Date() },
                 });
             await this.audit(tx, actorId, 'import', null, {

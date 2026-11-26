@@ -2,11 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.hospitalHeaders = void 0;
 exports.prepareHospitals = prepareHospitals;
+const directory_columns_1 = require("../../health-resources/imports/directory-columns");
 const csv_1 = require("../../health-resources/imports/csv");
 const workbook_1 = require("../../health-resources/imports/workbook");
 const hospitals_input_1 = require("../requests/hospitals.input");
 exports.hospitalHeaders = [
-    'source_key',
+    'record_key',
     'name_en',
     'name_hi',
     'hospital_type',
@@ -23,7 +24,6 @@ exports.hospitalHeaders = [
     'phone_2',
     'email',
     'website',
-    'source_url',
     'latitude',
     'longitude',
     'accepts_ayushman',
@@ -78,13 +78,11 @@ async function prepareHospitals(file) {
     const extension = file.originalname.toLowerCase().split('.').pop();
     if (!['csv', 'xlsx'].includes(extension ?? ''))
         throw new Error('Use a .csv or .xlsx file.');
-    const rows = (0, csv_1.parseCsv)(extension === 'xlsx' ? await (0, workbook_1.workbookToCsv)(file.buffer) : file.buffer), headers = Object.keys(rows[0]);
-    if (!headers.includes('name_en') ||
-        !headers.includes('city') ||
-        !headers.includes('state') ||
-        (!headers.includes('source_key') && !headers.includes('id')) ||
-        headers.some((header) => ![...exports.hospitalHeaders, ...Object.keys(aliases), 'id', 'is_verified'].includes(header)))
-        throw new Error('Use the hospital template or supported SwasthyaSearch export headers. Name, city, state and source_key or legacy id are required.');
+    const rawRows = (0, csv_1.parseCsv)(extension === 'xlsx' ? await (0, workbook_1.workbookToCsv)(file.buffer) : file.buffer);
+    const rows = (0, directory_columns_1.selectDirectoryColumns)(rawRows, [...exports.hospitalHeaders, ...Object.keys(aliases), 'id', 'is_verified'], { ...directory_columns_1.generalDirectoryAliases, hospital_id: 'id', hospital_name: 'name_en', full_address: 'address_line1', address: 'address_line1', phone: 'phone_1', telephone: 'phone_1' });
+    const headers = Object.keys(rows[0]);
+    if (!['name_en', 'city', 'state'].every(key => headers.includes(key)) || !['record_key', 'id'].some(key => headers.includes(key)))
+        throw new Error('Supply a name, city, state and stable record ID or import key.');
     const valid = [], errors = [], keys = new Set();
     let ignoredVerificationFlags = 0;
     rows.forEach((row, index) => {
@@ -99,11 +97,11 @@ async function prepareHospitals(file) {
                 if (!(key in input) || text)
                     input[key] = text;
             }
-            if (row.source_key?.trim() && row.id?.trim())
-                throw new Error('Supply source_key or legacy id, not both.');
-            input.source_key =
-                row.source_key?.trim() ||
-                    (/^\d{1,20}$/.test(row.id?.trim() ?? '') ? `swasthya:hospital:${row.id.trim()}` : '');
+            if (row.record_key?.trim() && row.id?.trim())
+                throw new Error('Supply record_key or legacy id, not both.');
+            input.record_key =
+                row.record_key?.trim() ||
+                    (0, directory_columns_1.directoryImportKey)(row.id?.trim() ?? '', 'hospital');
             const textValue = (key) => {
                 const value = input[key];
                 return typeof value === 'string' ? value : '';
@@ -112,7 +110,7 @@ async function prepareHospitals(file) {
                 input[key] = boolean(textValue(key));
             for (const key of ['latitude', 'longitude'])
                 input[key] = textValue(key).trim() ? Number(textValue(key)) : null;
-            for (const key of ['phone_1', 'phone_2', 'email', 'website', 'source_url'])
+            for (const key of ['phone_1', 'phone_2', 'email', 'website'])
                 if (!input[key])
                     input[key] = null;
             if (typeof input.website === 'string' && !/^[a-z][a-z0-9+.-]*:/i.test(input.website))
@@ -127,9 +125,9 @@ async function prepareHospitals(file) {
                 ignoredVerificationFlags++;
             }
             const value = hospitals_input_1.hospitalInput.parse(input);
-            if (keys.has(value.source_key))
-                throw new Error('Duplicate source_key in this file.');
-            keys.add(value.source_key);
+            if (keys.has(value.record_key))
+                throw new Error('Duplicate record_key in this file.');
+            keys.add(value.record_key);
             valid.push({ row: index + 2, value });
         }
         catch (error) {

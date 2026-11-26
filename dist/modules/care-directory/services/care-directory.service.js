@@ -10,6 +10,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CareDirectoryService = void 0;
+const node_crypto_1 = require("node:crypto");
+const review_input_1 = require("../../../common/directory/review-input");
 const common_1 = require("@nestjs/common");
 const drizzle_orm_1 = require("drizzle-orm");
 const zod_1 = require("zod");
@@ -38,7 +40,7 @@ let CareDirectoryService = class CareDirectoryService {
     present(row, admin) {
         if (admin)
             return row;
-        const publicRow = { ...row, reviewedBy: undefined, reviewEvidence: undefined };
+        const publicRow = { ...row, recordKey: undefined, reviewedBy: undefined, reviewEvidence: undefined };
         return { ...publicRow, verification: 'source-reviewed', freshnessDays: 180 };
     }
     async list(query, admin = false) {
@@ -81,7 +83,7 @@ let CareDirectoryService = class CareDirectoryService {
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.id, id), ...(admin ? [] : this.publicFilter())))
             .limit(1);
         if (!row)
-            throw new common_1.NotFoundException('This care entry is unavailable or awaiting source review.');
+            throw new common_1.NotFoundException('This care entry is unavailable or awaiting listing review.');
         const relations = await this.database.db
             .select()
             .from(schema_1.careProviderAffiliations)
@@ -127,8 +129,8 @@ let CareDirectoryService = class CareDirectoryService {
                 const current = await tx.select().from(schema_1.careDirectoryEntries).where((0, drizzle_orm_1.eq)(schema_1.careDirectoryEntries.id, id)).limit(1);
                 if (!current[0])
                     throw new common_1.NotFoundException();
-                if (current[0].sourceKey !== data.sourceKey || current[0].kind !== data.kind)
-                    throw new common_1.BadRequestException('Source key and kind are immutable.');
+                if ((data.recordKey && current[0].recordKey !== data.recordKey) || current[0].kind !== data.kind)
+                    throw new common_1.BadRequestException('Record key and kind are immutable.');
                 [result] = await tx
                     .update(schema_1.careDirectoryEntries)
                     .set({
@@ -147,11 +149,11 @@ let CareDirectoryService = class CareDirectoryService {
             else {
                 [result] = await tx
                     .insert(schema_1.careDirectoryEntries)
-                    .values({ ...data, updatedAt: new Date() })
-                    .onConflictDoNothing({ target: schema_1.careDirectoryEntries.sourceKey })
+                    .values({ ...data, recordKey: data.recordKey ?? (0, node_crypto_1.randomUUID)(), updatedAt: new Date() })
+                    .onConflictDoNothing({ target: schema_1.careDirectoryEntries.recordKey })
                     .returning();
                 if (!result)
-                    throw new common_1.ConflictException('This source identifier already exists. Edit the existing entry.');
+                    throw new common_1.ConflictException('This record identifier already exists. Edit the existing entry.');
             }
             await tx.insert(schema_1.administrationAuditLogs).values({
                 actorId: actor,
@@ -177,12 +179,10 @@ let CareDirectoryService = class CareDirectoryService {
             const [profile] = row.kind === 'hospital'
                 ? await tx.select().from(schema_1.hospitals).where((0, drizzle_orm_1.eq)(schema_1.hospitals.id, id))
                 : [];
-            if (profile && review.publish && !profile.source_url)
-                throw new common_1.BadRequestException('A hospital source URL is required before publication.');
             if (row.updatedAt.toISOString() !== review.expectedUpdatedAt)
                 throw new common_1.ConflictException('Entry changed. Reload before reviewing.');
             if (review.publish && row.kind !== 'medicine' && (!row.address || !row.phone))
-                throw new common_1.BadRequestException('A sourced address and contact number are required before publication.');
+                throw new common_1.BadRequestException('An address and contact number are required before publication.');
             if (review.publish &&
                 row.kind === 'doctor' &&
                 (!row.details.registration || !row.details.qualifications))
@@ -191,7 +191,12 @@ let CareDirectoryService = class CareDirectoryService {
                 row.kind === 'medicine' &&
                 (!row.details.summary || !row.details.precautions))
                 throw new common_1.BadRequestException('Clinically reviewed education and precautions are required.');
-            const evidence = `${review.reviewerName} (${review.reviewerQualification}): ${review.evidence}`;
+            if (row.kind === 'medicine' && review.publish
+                && ((review.evidence?.length ?? 0) < 20 || (review.reviewerName?.length ?? 0) < 3
+                    || (review.reviewerQualification?.length ?? 0) < 3)) {
+                throw new common_1.BadRequestException('Medicine publication requires a named reviewer and clinical review notes.');
+            }
+            const evidence = (0, review_input_1.auditReviewSummary)(review);
             const [saved] = await tx
                 .update(schema_1.careDirectoryEntries)
                 .set({
@@ -213,7 +218,7 @@ let CareDirectoryService = class CareDirectoryService {
                 action: review.publish ? 'care.review.publish' : 'care.withdraw',
                 targetId: id,
                 outcome: 'succeeded',
-                metadata: { evidence, sourceUrl: row.sourceUrl },
+                metadata: { evidence },
             });
             return saved;
         });
@@ -294,16 +299,7 @@ let CareDirectoryService = class CareDirectoryService {
     }
     async reviewBank(id, actor, body, requireActive = false) {
         this.parse(zod_1.z.uuid(), id);
-        const review = this.parse(zod_1.z.object({
-            expectedUpdatedAt: zod_1.z.iso.datetime(),
-            publish: zod_1.z.boolean(),
-            confirmedDetails: zod_1.z.literal(true).optional(),
-            confirmedSource: zod_1.z.literal(true).optional(),
-            reviewerName: zod_1.z.string().trim().max(200).optional(),
-            reviewerQualification: zod_1.z.string().trim().max(200).optional(),
-            evidence: zod_1.z.string().trim().max(4000).optional(),
-            sourceUrl: zod_1.z.unknown().optional(),
-        }).strict().refine((value) => value.confirmedDetails === true || value.confirmedSource === true, 'Confirm the listing details before continuing.'), body);
+        const review = this.parse(care_directory_input_1.reviewInput, body);
         return this.database.db.transaction(async (tx) => {
             const [bank] = await tx
                 .select()
@@ -335,9 +331,7 @@ let CareDirectoryService = class CareDirectoryService {
                 targetId: id,
                 outcome: 'succeeded',
                 metadata: {
-                    reviewer: review.reviewerName,
-                    qualification: review.reviewerQualification,
-                    evidence: review.evidence || 'Listing details approved by the signed-in administrator.',
+                    evidence: (0, review_input_1.auditReviewSummary)(review),
                 },
             });
             return saved;

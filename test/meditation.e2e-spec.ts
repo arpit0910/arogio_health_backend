@@ -308,10 +308,31 @@ describe('Admin-managed meditation library', () => {
   it('imports the starter catalog as editable drafts and preserves edits and publication history on rerun', async () => {
     const db = app.get(DatabaseService).db;
     const catalog = prepareWellnessSeed();
-    expect(catalog.filter(({ section }) => section === 'yoga').length).toBeGreaterThanOrEqual(150);
-    expect(catalog.filter(({ section }) => section === 'meditation')).toHaveLength(12);
-    expect(await seedWellness(db)).toEqual({ inserted: catalog.length, skipped: 0 });
+    expect(catalog.filter(({ section, kind }) => section === 'yoga' && kind === 'practice')).toHaveLength(186);
+    expect(catalog.filter(({ section, kind }) => section === 'meditation' && kind === 'practice')).toHaveLength(12);
+    expect(catalog.filter(({ section, kind }) => section === 'yoga' && kind === 'video')).toHaveLength(14);
+    expect(catalog.filter(({ section, kind }) => section === 'meditation' && kind === 'video')).toHaveLength(5);
     const server = app.getHttpServer();
+    await request(server).post('/api/v1/admin/meditation').set(auth()).send({
+      section: 'yoga',
+      kind: 'video',
+      title_en: 'Existing chair session',
+      youtubeUrl: 'https://youtu.be/-Ts01MC2mIo',
+    }).expect(201);
+    expect(await seedWellness(db)).toEqual({ inserted: catalog.length - 1, skipped: 1 });
+    const videos = await request(server)
+      .get('/api/v1/admin/meditation?section=yoga&kind=video&search=Tree%20Pose')
+      .set(auth())
+      .expect(200);
+    expect(videos.body.items).toMatchObject([{
+      published: false,
+      author: 'Yoga With Adriene',
+      videoId: 'yVE4XXFFO70',
+      durationSeconds: 728,
+      steps: [],
+    }]);
+    const duplicate = catalog.find(({ videoId }) => videoId === '-Ts01MC2mIo')!;
+    await request(server).get(`/api/v1/admin/meditation/${duplicate.id}`).set(auth()).expect(404);
     const page = await request(server)
       .get('/api/v1/admin/meditation?section=yoga&limit=24&page=2')
       .set(auth())
@@ -320,7 +341,8 @@ describe('Admin-managed meditation library', () => {
     expect(page.body.items).toHaveLength(24);
     expect(page.body.items).toEqual(expect.arrayContaining([expect.objectContaining({ section: 'yoga', published: false })]));
 
-    const { id, ...practice } = catalog.find(({ section }) => section === 'yoga')!;
+    const { id, videoId, ...practice } = catalog.find(({ section, kind }) => section === 'yoga' && kind === 'practice')!;
+    expect(videoId).toBeNull();
     const seeded = await request(server).get(`/api/v1/admin/meditation/${id}`).set(auth()).expect(200);
     await request(server).get(`/api/v1/public/meditation/content/${id}`).expect(404);
     await request(server).patch(`/api/v1/admin/meditation/${id}`).set(auth()).send({

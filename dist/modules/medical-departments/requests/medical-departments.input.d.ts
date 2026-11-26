@@ -1,6 +1,6 @@
 import { z } from 'zod';
 export declare const departmentInput: z.ZodObject<{
-    source_key: z.ZodString;
+    record_key: z.ZodDefault<z.ZodString>;
     name_en: z.ZodString;
     name_hi: z.ZodDefault<z.ZodString>;
     description_en: z.ZodDefault<z.ZodString>;

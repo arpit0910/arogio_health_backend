@@ -42,7 +42,7 @@ function configureApplication(app) {
         maxAge: 0,
     });
     app.use((request, response, next) => {
-        if ((request.method !== 'GET' && request.method !== 'HEAD') || !['/status', '/status/'].includes(request.path)) {
+        if (request.method !== 'GET' || !['/status', '/status/'].includes(request.path)) {
             next();
             return;
         }

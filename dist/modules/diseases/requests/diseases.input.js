@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.diseaseDelete = exports.diseaseAdminQuery = exports.diseaseQuery = exports.diseaseUpdate = exports.diseaseInput = void 0;
+const node_crypto_1 = require("node:crypto");
 const zod_1 = require("zod");
 const editable = zod_1.z
     .object({
@@ -13,12 +14,12 @@ const editable = zod_1.z
 })
     .strict();
 exports.diseaseInput = editable.extend({
-    source_key: zod_1.z
+    record_key: zod_1.z
         .string()
         .trim()
         .min(1)
         .max(100)
-        .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/),
+        .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/).default(node_crypto_1.randomUUID),
     name_hi: editable.shape.name_hi.default(''),
     description_en: editable.shape.description_en.default(''),
     description_hi: editable.shape.description_hi.default(''),

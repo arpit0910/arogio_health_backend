@@ -8,7 +8,7 @@ export declare class MedicalDepartmentsService {
     list(query: unknown, admin?: boolean): Promise<{
         items: {
             id: string;
-            source_key: string;
+            record_key: string;
             name_en: string;
             name_hi: string;
             description_en: string;
@@ -24,7 +24,7 @@ export declare class MedicalDepartmentsService {
     }>;
     detail(id: string, admin?: boolean): Promise<{
         id: string;
-        source_key: string;
+        record_key: string;
         name_en: string;
         name_hi: string;
         description_en: string;
@@ -40,17 +40,17 @@ export declare class MedicalDepartmentsService {
         id: string;
         created_at: Date;
         updated_at: Date;
+        record_key: string;
         name_en: string;
         name_hi: string;
         is_active: boolean;
-        source_key: string;
         description_en: string;
         description_hi: string;
         version: number;
     }>;
     update(actorId: string, id: string, body: unknown): Promise<{
         id: string;
-        source_key: string;
+        record_key: string;
         name_en: string;
         name_hi: string;
         description_en: string;
@@ -79,7 +79,7 @@ export declare class MedicalDepartmentsService {
             message: string;
         }[];
         sample: {
-            source_key: string;
+            record_key: string;
             name_en: string;
             name_hi: string;
             description_en: string;
