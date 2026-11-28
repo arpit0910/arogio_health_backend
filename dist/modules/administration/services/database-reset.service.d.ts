@@ -12,6 +12,7 @@ export declare class DatabaseResetService {
     private inventory;
     private identifier;
     private signature;
+    private targetUrl;
     private fingerprint;
     preview(actor: string, body: unknown): Promise<{
         host: string;

@@ -87,9 +87,12 @@ export class DatabaseResetService {
       .update('database-reset-v1:' + value)
       .digest('hex');
   }
+  private targetUrl() {
+    return this.config.get<string>('DATABASE_URL') || 'local';
+  }
   private fingerprint(inventory: Inventory) {
     return this.signature(
-      JSON.stringify({ target: this.config.getOrThrow<string>('DATABASE_URL'), inventory }),
+      JSON.stringify({ target: this.targetUrl(), inventory }),
     );
   }
 
@@ -101,9 +104,18 @@ export class DatabaseResetService {
     const payload = Buffer.from(
       JSON.stringify({ actor, expiresAt, fingerprint: this.fingerprint(inventory) }),
     ).toString('base64url');
+    const rawUrl = this.config.get<string>('DATABASE_URL');
+    let host = 'localhost';
+    if (rawUrl) {
+      try {
+        host = new URL(rawUrl).hostname;
+      } catch {
+        host = 'localhost';
+      }
+    }
     return {
       ...inventory,
-      host: new URL(this.config.getOrThrow<string>('DATABASE_URL')).hostname,
+      host,
       environment: this.config.get<string>('NODE_ENV'),
       confirmation: phrase,
       expiresAt,

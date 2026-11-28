@@ -74,8 +74,11 @@ let DatabaseResetService = DatabaseResetService_1 = class DatabaseResetService {
             .update('database-reset-v1:' + value)
             .digest('hex');
     }
+    targetUrl() {
+        return this.config.get('DATABASE_URL') || 'local';
+    }
     fingerprint(inventory) {
-        return this.signature(JSON.stringify({ target: this.config.getOrThrow('DATABASE_URL'), inventory }));
+        return this.signature(JSON.stringify({ target: this.targetUrl(), inventory }));
     }
     async preview(actor, body) {
         const { password } = this.parse(passwordInput, body);
@@ -83,9 +86,19 @@ let DatabaseResetService = DatabaseResetService_1 = class DatabaseResetService {
         const inventory = await this.inventory(this.database.db);
         const expiresAt = Date.now() + 10 * 60 * 1000;
         const payload = Buffer.from(JSON.stringify({ actor, expiresAt, fingerprint: this.fingerprint(inventory) })).toString('base64url');
+        const rawUrl = this.config.get('DATABASE_URL');
+        let host = 'localhost';
+        if (rawUrl) {
+            try {
+                host = new URL(rawUrl).hostname;
+            }
+            catch {
+                host = 'localhost';
+            }
+        }
         return {
             ...inventory,
-            host: new URL(this.config.getOrThrow('DATABASE_URL')).hostname,
+            host,
             environment: this.config.get('NODE_ENV'),
             confirmation: phrase,
             expiresAt,

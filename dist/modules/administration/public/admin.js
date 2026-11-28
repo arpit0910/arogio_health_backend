@@ -436,6 +436,7 @@ async function show() {
   if (page === 'diseases') return diseasesPage(current, term, status, departmentId);
   if (page === 'care') return carePage();
   if (page === 'articles' || page === 'blood-banks') return directoryPage(page, current, term, status);
+  if (page === 'database-reset') return databaseResetPage();
   return audit();
 }
 async function overview() {
