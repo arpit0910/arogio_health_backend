@@ -247,12 +247,46 @@ function field(name, label, value = '', type = 'text', options) {
   return wrap;
 }
 function openEditor(title, fields, onSave, description = '') {
+  $('save-editor').hidden = false;
   $('save-editor').textContent = 'Save changes';
   $('editor-title').textContent = title;
   $('editor-description').textContent = description;
   $('editor-fields').replaceChildren(...fields);
   $('editor-error').textContent = '';
   dialogSave = onSave;
+  $('editor').showModal();
+}
+function quickView(title, subtitle, imageUrl, pairs, actions = []) {
+  $('save-editor').hidden = true;
+  $('editor-title').textContent = title;
+  $('editor-description').textContent = subtitle || '';
+  $('editor-error').textContent = '';
+  const body = el('div');
+  if (imageUrl) {
+    const head = el('div', null, 'quick-view-head');
+    const img = el('img', null, 'quick-view-thumb');
+    img.src = imageUrl;
+    img.alt = title;
+    const meta = el('div');
+    meta.append(el('strong', title), el('p', subtitle || 'Directory record preview'));
+    head.append(img, meta);
+    body.append(head);
+  }
+  const grid = el('div', null, 'quick-view-grid');
+  for (const [labelText, val] of pairs) {
+    if (val == null || val === '') continue;
+    const item = el('div', null, 'quick-view-item');
+    item.append(el('span', labelText), el('strong', String(val)));
+    grid.append(item);
+  }
+  body.append(grid);
+  if (actions.length) {
+    const bar = el('div', null, 'quick-view-actions');
+    bar.append(...actions);
+    body.append(bar);
+  }
+  $('editor-fields').replaceChildren(body);
+  dialogSave = null;
   $('editor').showModal();
 }
 $('editor-form').addEventListener('submit', async (e) => {

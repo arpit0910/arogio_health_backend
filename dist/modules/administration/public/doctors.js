@@ -196,9 +196,11 @@ async function doctorsPage(current = 1, term = '', city = '', status = 'all') {
       data.items.map((row) => {
         const actions = el('div', null, 'actions');
         actions.append(
+          button('View', () => openDirectoryQuickView('doctors', row, () => doctorEditor(row.id), () => doctorsPage(current, term, city, status))),
+          ...(!row.adminStatus?.approved && row.adminStatus?.active !== false ? [button('Approve', () => quickApproveRecord('doctors', row, () => doctorsPage(current, term, city, status)), 'primary')] : []),
           button('Edit', () => doctorEditor(row.id)),
           button('Image', () => providerImageEditor('doctors', row.id)),
-          button('Review / approve', () => doctorReviewEditor(row.id)),
+          button('Review', () => doctorReviewEditor(row.id)),
           button('Delete', () =>
             openEditor(
               'Delete doctor?',

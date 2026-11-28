@@ -185,6 +185,12 @@ async function directoryPage(kind, current = 1, term = '', status = 'all') {
         : ['Select', 'Name', 'City', 'Coordinates', 'Status', 'Completeness', 'Review date', 'Actions'],
       data.items.map((row) => {
         const actions = el('div', null, 'actions');
+        if (!articles) {
+          actions.append(
+            button('View', () => openDirectoryQuickView(kind, row, () => directoryEditor(kind, row.id), reload)),
+            ...(!row.adminStatus?.approved && row.adminStatus?.active !== false ? [button('Approve', () => quickApproveRecord(kind, row, reload), 'primary')] : []),
+          );
+        }
         actions.append(
           button('Edit', () => directoryEditor(kind, row.id)),
           button('Delete', () =>

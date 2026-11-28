@@ -222,3 +222,38 @@ function openDirectoryStatus(kind, status) {
   $('create-user').hidden = true;
   return kind === 'hospitals' ? hospitalsPage(1, '', '', status) : kind === 'doctors' ? doctorsPage(1, '', '', status) : directoryPage(kind, 1, '', status);
 }
+
+async function quickApproveRecord(kind, row, onReload) {
+  await api(`/admin/directory-approvals/${kind}`, {
+    method: 'POST',
+    body: JSON.stringify({ items: [{ id: row.id, expectedUpdatedAt: row.updated_at || row.updatedAt }] }),
+  });
+  $('message').className = 'notice';
+  $('message').textContent = `${row.name_en || row.title_en || 'Record'} approved.`;
+  if (onReload) await onReload();
+}
+
+function openDirectoryQuickView(kind, row, onEdit, onReload) {
+  const title = row.name_en || row.title_en || 'Record';
+  const subtitle = [row.name_hi || row.title_hi, row.city, row.state].filter(Boolean).join(' · ');
+  const imageUrl = row.image_url || (row.image_revision ? `/api/v1/public/${kind}/${row.id}/image?v=${row.image_revision}` : '');
+  const pairs = [
+    ['Status', `${row.adminStatus?.visibility ?? ''} · ${row.adminStatus?.reviewStatus ?? ''}`],
+    ['Phone', row.phone_1 || row.phone || 'Not listed'],
+    ['Address', [row.address_line1 || row.address_en, row.address_line2, row.pincode].filter(Boolean).join(', ')],
+    ['Specialties / Groups', Array.isArray(row.specialties) ? row.specialties.join(', ') : Array.isArray(row.available_blood_groups) ? row.available_blood_groups.join(', ') : ''],
+    ['Website', row.website || 'Not listed'],
+    ['Last reviewed', date(row.reviewedAt || row.verified_at)],
+  ];
+  const actions = [];
+  if (onEdit) {
+    actions.push(button('Edit details', () => { $('editor').close(); onEdit(); }, 'secondary'));
+  }
+  if (!row.adminStatus?.approved && row.adminStatus?.active !== false) {
+    actions.push(button('Approve & publish', async () => {
+      await quickApproveRecord(kind, row, onReload);
+      $('editor').close();
+    }, 'primary'));
+  }
+  quickView(title, subtitle, imageUrl, pairs, actions);
+}

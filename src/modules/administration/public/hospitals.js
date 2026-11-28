@@ -200,9 +200,11 @@ async function hospitalsPage(current = 1, term = '', city = '', status = 'all') 
       data.items.map((row) => {
         const actions = el('div', null, 'actions');
         actions.append(
+          button('View', () => openDirectoryQuickView('hospitals', row, () => hospitalEditor(row.id), () => hospitalsPage(current, term, city, status))),
+          ...(!row.adminStatus?.approved && row.listed ? [button('Approve', () => quickApproveRecord('hospitals', row, () => hospitalsPage(current, term, city, status)), 'primary')] : []),
           button('Edit', () => hospitalEditor(row.id)),
           button('Image', () => providerImageEditor('hospitals', row.id)),
-          button('Review / approve', () => hospitalReviewEditor(row.id)),
+          button('Review', () => hospitalReviewEditor(row.id)),
           button(row.listed ? 'Hide from app' : 'Show in app', async () => { await api(`/admin/hospitals/${row.id}/visibility`, { method: 'POST', body: { listed: !row.listed, expectedVersion: row.version } }); await hospitalsPage(current, term, city, status); }),
           button('Delete', () =>
             openEditor(
