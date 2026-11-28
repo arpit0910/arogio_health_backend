@@ -1,0 +1,61 @@
+import { binaryColumn } from '../types/binary-column';
+import { sql } from 'drizzle-orm';
+import {
+  boolean,
+  check,
+  doublePrecision,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
+
+export const bloodBankDirectoryEntries = pgTable(
+  'blood_bank_directory_entries',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    record_key: text('record_key').notNull().unique(),
+    name_en: text('name_en').notNull(),
+    name_hi: text('name_hi').notNull().default(''),
+    city: text('city').notNull(),
+    state: text('state').notNull(),
+    pincode: text('pincode'),
+    landmark: text('landmark'),
+    address_en: text('address_en').notNull(),
+    address_hi: text('address_hi').notNull().default(''),
+    country_code: text('country_code').notNull().default('+91'),
+    phone: text('phone'),
+    emergency_country_code: text('emergency_country_code').notNull().default('+91'),
+    emergency_phone: text('emergency_phone'),
+    email: text('email'),
+    website: text('website'),
+    image_url: text('image_url').notNull().default(''),
+    image_data: binaryColumn('image_data'),
+    image_revision: uuid('image_revision'),
+    is_verified: boolean('is_verified').notNull().default(false),
+    verified_at: timestamp('verified_at', { withTimezone: true }),
+    is_24_7: boolean('is_24_7').notNull().default(false),
+    is_government: boolean('is_government').notNull().default(false),
+    component_facility: boolean('component_facility').notNull().default(false),
+    apheresis_facility: boolean('apheresis_facility').notNull().default(false),
+    available_blood_groups: text('available_blood_groups').array().notNull().default([]),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
+    is_active: boolean('is_active').notNull().default(true),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('blood_bank_directory_entries_city').on(table.city),
+    index('blood_bank_directory_entries_active_geo').on(
+      table.is_active,
+      table.latitude,
+      table.longitude,
+    ),
+    check(
+      'blood_bank_coordinates',
+      sql`(${table.latitude} is null and ${table.longitude} is null) or (${table.latitude} is not null and ${table.longitude} is not null and ${table.latitude} between -90 and 90 and ${table.longitude} between -180 and 180)`,
+    ),
+  ],
+);

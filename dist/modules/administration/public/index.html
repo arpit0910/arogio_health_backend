@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Arogio - Super admin</title>
+    <link rel="stylesheet" href="/admin-assets/admin.css" />
+    <script src="/admin-assets/admin.js" defer></script>
+    <script src="/admin-assets/directory-admin.js" defer></script>
+    <script src="/admin-assets/directory.js" defer></script>
+    <script src="/admin-assets/medical-departments.js" defer></script>
+    <script src="/admin-assets/hospitals.js" defer></script>
+    <script src="/admin-assets/doctors.js" defer></script>
+    <script src="/admin-assets/provider-images.js" defer></script>
+    <script src="/admin-assets/diseases.js" defer></script>
+    <script src="/admin-assets/meditation.js" defer></script>
+    <script src="/admin-assets/care.js" defer></script>
+    <script src="/admin-assets/bank-review.js" defer></script>
+    <script src="/admin-assets/database-reset.js" defer></script>
+  </head>
+  <body>
+    <section id="login" class="login" hidden>
+      <div class="login-story">
+        <div class="wordmark">Arogio<span>Super admin</span></div>
+        <h1>A clear view.<br />A little more care.</h1>
+        <p>Manage your community, daily care and the stories on Home.</p>
+        <div class="leaf-mark" aria-hidden="true"></div>
+      </div>
+      <form id="login-form" class="login-form">
+        <span class="brand-small">Arogio</span>
+        <h2>Welcome back</h2>
+        <p>Sign in with your seeded super-admin account.</p>
+        <label>Email<input name="email" type="email" autocomplete="username" required /></label
+        ><label
+          >Password<input name="password" type="password" autocomplete="current-password" required
+        /></label>
+        <p id="login-error" role="alert" class="error"></p>
+        <button type="submit">Sign in</button
+        ><small>Access is restricted and administrative actions are audited.</small>
+      </form>
+    </section>
+    <div id="portal" hidden>
+      <aside>
+        <a class="wordmark" href="/">Arogio<span>Super admin</span></a>
+        <nav aria-label="Administration">
+          <div class="nav-group">
+            <button type="button" data-page="overview" class="active" aria-current="page">Overview</button>
+            <button type="button" data-page="people">People</button>
+          </div>
+          <div class="nav-group">
+            <span>Content</span>
+            <button type="button" data-page="banners">Home banners</button>
+            <button type="button" data-page="articles">Articles</button>
+            <button type="button" data-page="meditation">Meditation</button>
+          </div>
+          <div class="nav-group">
+            <span>Directory</span>
+            <button type="button" data-page="hospitals">Hospitals</button>
+            <button type="button" data-page="doctors">Doctors</button>
+            <button type="button" data-page="blood-banks">Blood banks</button>
+            <button type="button" data-page="departments">Departments</button>
+            <button type="button" data-page="diseases">Diseases</button>
+            <button type="button" data-page="care">Care directory</button>
+          </div>
+          <div class="nav-group">
+            <span>Administration</span>
+            <button type="button" data-page="feedback">Support feedback</button>
+            <button type="button" data-page="audit">Audit trail</button>
+            <button type="button" data-page="database-reset">Database reset</button>
+          </div>
+        </nav>
+        <div class="aside-bottom">
+          <button id="logout" class="ghost">Sign out</button>
+        </div>
+      </aside>
+      <main>
+        <header>
+          <div>
+            <h1 id="page-title">Overview</h1>
+            <p id="today"></p>
+          </div>
+          <button id="create-user" class="secondary">Create account</button>
+        </header>
+        <div id="message" role="status" aria-live="polite"></div>
+        <section id="approval-activity" class="approval-activity" aria-labelledby="approval-title" hidden>
+          <div class="approval-heading">
+            <h2 id="approval-title"></h2>
+            <span id="approval-count"></span>
+            <button id="dismiss-approval" type="button" class="secondary" hidden>Dismiss</button>
+          </div>
+          <progress id="approval-progress" aria-labelledby="approval-title" aria-describedby="approval-count" value="0"></progress>
+          <p id="approval-outcome"></p>
+          <span id="approval-announcement" class="screen-reader-only" role="status" aria-atomic="true"></span>
+        </section>
+        <section id="content" aria-busy="false"></section>
+      </main>
+    </div>
+    <dialog id="editor">
+      <form id="editor-form">
+        <div class="dialog-head">
+          <h2 id="editor-title"></h2>
+          <button type="button" id="close-editor" class="icon-button" aria-label="Close dialog">
+            &#215;
+          </button>
+        </div>
+        <p id="editor-description"></p>
+        <div id="editor-fields"></div>
+        <p id="editor-error" role="alert" class="error"></p>
+        <div class="dialog-actions">
+          <button type="button" id="cancel-editor" class="secondary">Cancel</button
+          ><button type="submit" id="save-editor">Save changes</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>

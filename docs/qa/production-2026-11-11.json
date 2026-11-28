@@ -1,0 +1,56 @@
+{
+  "date": "2026-11-11",
+  "target": "https://backend.arogio.com/api/v1",
+  "functionalChecks": {
+    "baseSmoke": 6,
+    "mobileContractsAndGuards": 22,
+    "authenticatedFlows": 9,
+    "nativeGuest": 10,
+    "allPassed": true
+  },
+  "testAccounts": {
+    "count": 2,
+    "softDeleted": 2,
+    "sessionsRevoked": true,
+    "retentionDays": 30
+  },
+  "content": {
+    "articles": 284,
+    "meditationItems": 6,
+    "videos": 2,
+    "publishedPractices": 4,
+    "reviewedHospitals": 0,
+    "reviewedDoctors": 0,
+    "medicineEntries": 0,
+    "reviewedBloodBanks": 0
+  },
+  "openFinding": {
+    "path": "/dist/main.js",
+    "status": 200,
+    "matchesCompiledServerFile": true,
+    "fixDeployed": false
+  },
+  "localFixValidation": {
+    "hostingRulePatternTests": 2,
+    "lint": "passed",
+    "apacheHostSyntax": "not verified"
+  },
+  "limitations": [
+    "Physical Health Connect/sensors/GPS and notification delivery not verified",
+    "Real Google-account login not verified",
+    "Jeeva/provider-backed flows not covered by live authenticated suite",
+    "Audible playback not verified",
+    "No production capacity/load test",
+    "Admin publication workflow not exercised against real public records"
+  ],
+  "hostingBoundary": {
+    "passed": 7,
+    "failed": 1,
+    "failure": "/dist/main.js returns 200 instead of 403/404",
+    "fixDeployed": false
+  },
+  "videoVisualPlayback": {
+    "observed": true,
+    "audibleVerified": false
+  }
+}

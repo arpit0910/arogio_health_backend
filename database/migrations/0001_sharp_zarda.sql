@@ -1,0 +1,1 @@
+ALTER TABLE "auth_sessions" ADD CONSTRAINT "auth_sessions_replaced_by_session_id_auth_sessions_id_fk" FOREIGN KEY ("replaced_by_session_id") REFERENCES "public"."auth_sessions"("id") ON DELETE set null ON UPDATE no action;

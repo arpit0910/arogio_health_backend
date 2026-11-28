@@ -1,0 +1,173 @@
+[
+  {
+    "table": "authentication_identities",
+    "previousTable": "auth_identities",
+    "schemaFile": "src/database/schema/authentication-identities.schema.ts",
+    "export": "authenticationIdentities"
+  },
+  {
+    "table": "authentication_sessions",
+    "previousTable": "auth_sessions",
+    "schemaFile": "src/database/schema/authentication-sessions.schema.ts",
+    "export": "authenticationSessions"
+  },
+  {
+    "table": "care_directory_entries",
+    "previousTable": "care_entries",
+    "schemaFile": "src/database/schema/care-directory-entries.schema.ts",
+    "export": "careDirectoryEntries"
+  },
+  {
+    "table": "care_provider_affiliations",
+    "previousTable": "care_affiliations",
+    "schemaFile": "src/database/schema/care-provider-affiliations.schema.ts",
+    "export": "careProviderAffiliations"
+  },
+  {
+    "table": "care_directory_corrections",
+    "previousTable": "care_corrections",
+    "schemaFile": "src/database/schema/care-directory-corrections.schema.ts",
+    "export": "careDirectoryCorrections"
+  },
+  {
+    "table": "blood_bank_corrections",
+    "previousTable": "bank_corrections",
+    "schemaFile": "src/database/schema/blood-bank-corrections.schema.ts",
+    "export": "bloodBankCorrections"
+  },
+  {
+    "table": "home_banners",
+    "previousTable": "home_banners",
+    "schemaFile": "src/database/schema/home-banners.schema.ts",
+    "export": "homeBanners"
+  },
+  {
+    "table": "administration_audit_logs",
+    "previousTable": "admin_audit",
+    "schemaFile": "src/database/schema/administration-audit-logs.schema.ts",
+    "export": "administrationAuditLogs"
+  },
+  {
+    "table": "health_article_categories",
+    "previousTable": "article_categories",
+    "schemaFile": "src/database/schema/health-article-categories.schema.ts",
+    "export": "healthArticleCategories"
+  },
+  {
+    "table": "health_articles",
+    "previousTable": "articles",
+    "schemaFile": "src/database/schema/health-articles.schema.ts",
+    "export": "healthArticles"
+  },
+  {
+    "table": "health_article_thumbnails",
+    "schemaFile": "src/database/schema/health-articles.schema.ts",
+    "export": "healthArticleThumbnails"
+  },
+  {
+    "table": "blood_bank_directory_entries",
+    "previousTable": "blood_banks",
+    "schemaFile": "src/database/schema/blood-bank-directory-entries.schema.ts",
+    "export": "bloodBankDirectoryEntries"
+  },
+  {
+    "table": "meditation_library_items",
+    "previousTable": "meditation_content",
+    "schemaFile": "src/database/schema/meditation-library-items.schema.ts",
+    "export": "meditationLibraryItems"
+  },
+  {
+    "table": "wellness_publication_versions",
+    "schemaFile": "src/database/schema/meditation-library-items.schema.ts",
+    "export": "wellnessPublicationVersions"
+  },
+  {
+    "table": "wellness_practice_history",
+    "schemaFile": "src/database/schema/meditation-library-items.schema.ts",
+    "export": "wellnessPracticeHistory"
+  },
+  {
+    "table": "user_accounts",
+    "previousTable": "users",
+    "schemaFile": "src/database/schema/user-accounts.schema.ts",
+    "export": "userAccounts"
+  },
+  {
+    "table": "personal_wellness_settings",
+    "previousTable": "wellness_settings",
+    "schemaFile": "src/database/schema/personal-wellness-settings.schema.ts",
+    "export": "personalWellnessSettings"
+  },
+  {
+    "table": "water_intake_logs",
+    "previousTable": "water_logs",
+    "schemaFile": "src/database/schema/water-intake-logs.schema.ts",
+    "export": "waterIntakeLogs"
+  },
+  {
+    "table": "medicine_dose_logs",
+    "previousTable": "medicine_doses",
+    "schemaFile": "src/database/schema/medicine-dose-logs.schema.ts",
+    "export": "medicineDoseLogs"
+  },
+  {
+    "table": "water_reminder_states",
+    "previousTable": "water_task_states",
+    "schemaFile": "src/database/schema/water-reminder-states.schema.ts",
+    "export": "waterReminderStates"
+  },
+  {
+    "table": "menstrual_periods",
+    "previousTable": "cycle_periods",
+    "schemaFile": "src/database/schema/menstrual-periods.schema.ts",
+    "export": "menstrualPeriods"
+  },
+  {
+    "table": "menstrual_daily_logs",
+    "previousTable": "cycle_entries",
+    "schemaFile": "src/database/schema/menstrual-daily-logs.schema.ts",
+    "export": "menstrualDailyLogs"
+  },
+  {
+    "table": "medical_departments",
+    "previousTable": "medical_departments",
+    "schemaFile": "src/database/schema/medical-departments.schema.ts",
+    "export": "medicalDepartments"
+  },
+  {
+    "table": "hospitals",
+    "previousTable": "hospitals",
+    "schemaFile": "src/database/schema/hospitals.schema.ts",
+    "export": "hospitals"
+  },
+  {
+    "table": "medical_diseases",
+    "previousTable": "medical_diseases",
+    "schemaFile": "src/database/schema/medical-diseases.schema.ts",
+    "export": "medicalDiseases"
+  },
+  {
+    "table": "doctors",
+    "previousTable": "doctors",
+    "schemaFile": "src/database/schema/doctors.schema.ts",
+    "export": "doctors"
+  },
+  {
+    "table": "doctor_departments",
+    "previousTable": "doctor_departments",
+    "schemaFile": "src/database/schema/doctor-departments.schema.ts",
+    "export": "doctorDepartments"
+  },
+  {
+    "table": "doctor_hospital_affiliations",
+    "previousTable": "doctor_hospital_affiliations",
+    "schemaFile": "src/database/schema/doctor-hospital-affiliations.schema.ts",
+    "export": "doctorHospitalAffiliations"
+  },
+  {
+    "table": "support_feedback",
+    "previousTable": "support_feedback",
+    "schemaFile": "src/database/schema/support-feedback.schema.ts",
+    "export": "supportFeedback"
+  }
+]

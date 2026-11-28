@@ -1,0 +1,188 @@
+import { randomUUID } from 'node:crypto';
+import { directoryReviewFields, hasReviewConfirmation } from '../../../common/directory/review-input';
+import { adminDirectoryPageSize, directoryStatusInput } from '../../../common/directory/admin-status';
+import { z } from 'zod';
+
+const line = z.string().trim().max(200);
+const paragraph = z.string().trim().max(4000);
+const https = z
+  .url()
+  .max(2000)
+  .refine((value) => {
+    if (!URL.canParse(value)) return false;
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password;
+  }, 'Use an HTTPS URL without credentials.');
+export const doctorAffiliation = z
+  .object({
+    hospital_id: z.uuid(),
+    role: line.optional().default(''),
+    consultation_mode: z.enum(['in_person', 'online', 'hybrid']).default('in_person'),
+    availability: line.optional().default(''),
+    days_of_week: z
+      .array(z.number().int().min(0).max(6))
+      .max(7)
+      .default([])
+      .refine((v) => new Set(v).size === v.length, 'Duplicate weekdays.'),
+    start_time: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+      .nullable()
+      .default(null),
+    end_time: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+      .nullable()
+      .default(null),
+    consultation_fee: z.number().min(0).max(10000000).nullable().default(null),
+  })
+  .strict()
+  .refine(
+    (v) =>
+      (v.start_time === null && v.end_time === null) ||
+      (v.start_time !== null &&
+        v.end_time !== null &&
+        v.start_time < v.end_time &&
+        v.days_of_week.length > 0),
+    'Supply weekdays and a valid start/end time together.',
+  );
+export const doctorFields = z
+  .object({
+    name_en: line.min(1),
+    name_hi: line.optional(),
+    address_line1: paragraph.optional(),
+    address_line2: paragraph.optional(),
+    landmark: line.optional(),
+    address_hi: paragraph.optional(),
+    city: line.min(1),
+    state: line.min(1),
+    pincode: z.string().trim().max(20).optional(),
+    country_code_1: z
+      .string()
+      .trim()
+      .regex(/^(\+\d{1,4})?$/)
+      .optional(),
+    phone_1: z.string().trim().max(30).nullable().optional(),
+    country_code_2: z
+      .string()
+      .trim()
+      .regex(/^(\+\d{1,4})?$/)
+      .optional(),
+    phone_2: z.string().trim().max(30).nullable().optional(),
+    email: z.email().max(254).nullable().optional(),
+    website: https.nullable().optional(),
+    latitude: z.number().min(-90).max(90).nullable().optional(),
+    longitude: z.number().min(-180).max(180).nullable().optional(),
+    registration_number: line.optional(),
+    medical_council: line.optional(),
+    qualifications: z.array(line.min(1)).max(30).optional(),
+    languages: z.array(line.min(1)).max(30).optional(),
+    experience_years: z.number().int().min(0).max(100).nullable().optional(),
+    consultation_fee: z.number().min(0).max(10000000).nullable().optional(),
+    department_ids: z
+      .array(z.uuid())
+      .max(30)
+      .refine((v) => new Set(v).size === v.length, 'Duplicate departments.')
+      .optional(),
+    affiliations: z
+      .array(doctorAffiliation)
+      .max(30)
+      .refine(
+        (v) => new Set(v.map((a) => a.hospital_id)).size === v.length,
+        'Duplicate hospital affiliations.',
+      )
+      .optional(),
+    summary_en: paragraph.optional(),
+    summary_hi: paragraph.optional(),
+  })
+  .strict();
+
+import { hospitalPhone } from '../../hospitals/requests/hospitals.input';
+export const doctorInput = doctorFields
+  .extend({
+    record_key: z
+      .string()
+      .trim()
+      .min(1)
+      .max(100)
+      .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/).default(randomUUID),
+  })
+  .transform((value) => ({
+    name_hi: '',
+    address_line1: '',
+    address_line2: '',
+    landmark: '',
+    address_hi: '',
+    pincode: '',
+    country_code_1: '',
+    phone_1: null,
+    country_code_2: '',
+    phone_2: null,
+    email: null,
+    website: null,
+    latitude: null,
+    longitude: null,
+    registration_number: '',
+    medical_council: '',
+    qualifications: [] as string[],
+    languages: [] as string[],
+    experience_years: null,
+    consultation_fee: null,
+    department_ids: [] as string[],
+    affiliations: [] as z.infer<typeof doctorAffiliation>[],
+    summary_en: '',
+    summary_hi: '',
+    ...value,
+  }))
+  .superRefine((value, context) => {
+    if ((value.latitude == null) !== (value.longitude == null))
+      context.addIssue({
+        code: 'custom',
+        message: 'Supply both coordinates or neither.',
+        path: ['latitude'],
+      });
+    for (const n of [1, 2] as const)
+      try {
+        hospitalPhone(value[`country_code_${n}`], value[`phone_${n}`]);
+      } catch (error) {
+        context.addIssue({
+          code: 'custom',
+          message: (error as Error).message,
+          path: [`phone_${n}`],
+        });
+      }
+  });
+export type DoctorInput = z.infer<typeof doctorInput>;
+export const doctorUpdate = doctorFields
+  .partial()
+  .extend({ expectedVersion: z.number().int().positive() })
+  .refine(
+    (value) => Object.keys(value).some((key) => key !== 'expectedVersion'),
+    'Supply a field to update.',
+  );
+export const doctorQuery = z
+  .object({
+    search: z.string().trim().max(150).default(''),
+    city: line.default(''),
+    state: line.default(''),
+    department_id: z.uuid().optional(),
+    hospital_id: z.uuid().optional(),
+    language: z.enum(['en', 'hi']).default('en'),
+    page: z.coerce.number().int().min(1).max(10000).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+  })
+  .strict();
+export const doctorAdminQuery = doctorQuery.extend({
+  status: directoryStatusInput,
+  limit: adminDirectoryPageSize.default(20),
+});
+export const doctorReview = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    publish: z.boolean(),
+    ...directoryReviewFields,
+  })
+  .strict().refine(hasReviewConfirmation, 'Confirm the listing details before continuing.');
+export const doctorDelete = z
+  .object({ expected_version: z.coerce.number().int().positive() })
+  .strict();

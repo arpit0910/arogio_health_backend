@@ -1,0 +1,75 @@
+import { z } from 'zod';
+export declare function youtubeVideoId(value: string): string | null;
+export declare const meditationInput: z.ZodObject<{
+    kind: z.ZodEnum<{
+        video: "video";
+        practice: "practice";
+    }>;
+    section: z.ZodEnum<{
+        affirmations: "affirmations";
+        meditation: "meditation";
+        breathing: "breathing";
+        grounding: "grounding";
+        yoga: "yoga";
+        focus: "focus";
+        rest: "rest";
+    }>;
+    title_en: z.ZodString;
+    title_hi: z.ZodDefault<z.ZodString>;
+    description_en: z.ZodDefault<z.ZodString>;
+    description_hi: z.ZodDefault<z.ZodString>;
+    preparation_en: z.ZodDefault<z.ZodString>;
+    preparation_hi: z.ZodDefault<z.ZodString>;
+    impact_en: z.ZodDefault<z.ZodString>;
+    impact_hi: z.ZodDefault<z.ZodString>;
+    sanskritName: z.ZodDefault<z.ZodString>;
+    difficulty: z.ZodDefault<z.ZodEnum<{
+        gentle: "gentle";
+        beginner: "beginner";
+        intermediate: "intermediate";
+    }>>;
+    imageUrl: z.ZodDefault<z.ZodString>;
+    audioUrl: z.ZodDefault<z.ZodString>;
+    author: z.ZodDefault<z.ZodString>;
+    youtubeUrl: z.ZodDefault<z.ZodString>;
+    durationSeconds: z.ZodDefault<z.ZodNullable<z.ZodNumber>>;
+    steps: z.ZodDefault<z.ZodArray<z.ZodObject<{
+        title_en: z.ZodString;
+        title_hi: z.ZodDefault<z.ZodString>;
+        instruction_en: z.ZodString;
+        instruction_hi: z.ZodDefault<z.ZodString>;
+        seconds: z.ZodNumber;
+        sanskritName: z.ZodOptional<z.ZodString>;
+        imageUrl: z.ZodOptional<z.ZodString>;
+        impact_en: z.ZodOptional<z.ZodString>;
+        impact_hi: z.ZodOptional<z.ZodString>;
+        videoId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        phase: z.ZodOptional<z.ZodEnum<{
+            warmup: "warmup";
+            main: "main";
+            cooldown: "cooldown";
+        }>>;
+    }, z.core.$strict>>>;
+    repeat: z.ZodDefault<z.ZodNumber>;
+    published: z.ZodDefault<z.ZodBoolean>;
+    sortOrder: z.ZodDefault<z.ZodNumber>;
+    expectedUpdatedAt: z.ZodOptional<z.ZodISODateTime>;
+}, z.core.$strict>;
+export declare const meditationListInput: z.ZodObject<{
+    page: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+    limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
+    search: z.ZodDefault<z.ZodString>;
+    section: z.ZodOptional<z.ZodEnum<{
+        affirmations: "affirmations";
+        meditation: "meditation";
+        breathing: "breathing";
+        grounding: "grounding";
+        yoga: "yoga";
+        focus: "focus";
+        rest: "rest";
+    }>>;
+    kind: z.ZodOptional<z.ZodEnum<{
+        video: "video";
+        practice: "practice";
+    }>>;
+}, z.core.$strip>;

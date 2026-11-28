@@ -1,0 +1,504 @@
+import { decodeProviderImage, omitProviderImage } from '../../../common/media/provider-image';
+import { nearbyDirectory } from '../../../common/directory/nearby';
+import { directoryCountFields, directoryPredicates, directoryRowStatus } from '../../../common/directory/admin-status';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNull,
+  or,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
+import { z } from 'zod';
+import { DatabaseService } from '../../../database/database.service';
+import { administrationAuditLogs, healthArticles, healthArticleCategories, healthArticleThumbnails, bloodBankDirectoryEntries } from '../../../database/schema';
+import {
+  articleInput,
+  categoryInput,
+  bankInput,
+  adminBankListInput,
+  adminArticleListInput,
+  bankListInput,
+  listInput,
+  nearbyInput,
+  visibilityInput,
+  type DirectoryKind,
+} from '../requests/health-resources.input';
+import { prepareImport } from '../imports/import';
+import { readDirectoryWorkbook } from '../imports/workbook';
+import { topicImage } from '../content/thumbnails';
+import { articleTopics } from '../content/article-topics';
+
+const articleSummary = {
+  id: healthArticles.id,
+  title_en: healthArticles.title_en,
+  title_hi: healthArticles.title_hi,
+  excerpt_en: healthArticles.excerpt_en,
+  excerpt_hi: healthArticles.excerpt_hi,
+  reading_minutes_en: sql<number>`greatest(1, ceil(array_length(regexp_split_to_array(btrim(${healthArticles.content_en}), '[[:space:]]+'), 1) / 200.0))::integer`,
+  reading_minutes_hi: sql<number>`greatest(1, ceil(array_length(regexp_split_to_array(btrim(coalesce(nullif(${healthArticles.content_hi}, ''), ${healthArticles.content_en})), '[[:space:]]+'), 1) / 200.0))::integer`,
+  category: healthArticles.category,
+  image_url: healthArticles.image_url,
+  thumbnailRevision: sql<string | null>`(select t.revision from health_article_thumbnails t where t.article_id = ${healthArticles.id})`,
+  author_name: healthArticles.author_name,
+  is_published: healthArticles.is_published,
+  created_at: healthArticles.created_at,
+  updated_at: healthArticles.updated_at,
+};
+
+function nextVisibilityTimestamp(current: Date, expectedUpdatedAt: string) {
+  if (current.toISOString() !== expectedUpdatedAt) {
+    throw new ConflictException('This record changed. Refresh the list before changing visibility.');
+  }
+  return new Date(Math.max(Date.now(), current.getTime() + 1));
+}
+@Injectable()
+export class HealthResourcesService {
+  constructor(private readonly database: DatabaseService) {}
+  private parse<T>(schema: z.ZodType<T>, value: unknown): T {
+    const parsed = schema.safeParse(value);
+    if (!parsed.success)
+      throw new BadRequestException(
+        parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('; '),
+      );
+    return parsed.data;
+  }
+  kind(value: string): DirectoryKind {
+    return this.parse(z.enum(['articles', 'blood-banks']), value);
+  }
+  async listArticles(query: unknown, admin = false) {
+    const q = this.parse(admin ? adminArticleListInput : listInput, query),
+      conditions: SQL[] = admin ? [] : [eq(healthArticles.is_published, true)];
+    if (admin && q.status !== 'all') conditions.push(eq(healthArticles.is_published, q.status === 'published'));
+    if (q.search)
+      conditions.push(
+        or(
+          ilike(healthArticles.title_en, `%${q.search}%`),
+          ilike(healthArticles.title_hi, `%${q.search}%`),
+          ilike(healthArticles.category, `%${q.search}%`),
+          sql`exists (select 1 from ${healthArticleCategories} where ${healthArticleCategories.name} = ${healthArticles.category} and ${healthArticleCategories.name_hi} ilike ${`%${q.search}%`})`,
+        )!,
+      );
+    if (q.category) conditions.push(eq(healthArticles.category, q.category));
+    const title =
+      q.language === 'hi'
+        ? sql`coalesce(nullif(${healthArticles.title_hi}, ''), ${healthArticles.title_en})`
+        : healthArticles.title_en;
+    const order =
+      q.sort === 'random'
+        ? sql`random()`
+        : q.sort === 'oldest'
+          ? asc(healthArticles.created_at)
+          : q.sort === 'title_asc'
+            ? asc(title)
+            : q.sort === 'title_desc'
+              ? desc(title)
+              : desc(healthArticles.created_at);
+    const [items, categories, total] = await Promise.all([
+      this.database.db
+        .select(articleSummary)
+        .from(healthArticles)
+        .where(and(...conditions))
+        .orderBy(order, asc(healthArticles.id))
+        .limit(q.limit + 1)
+        .offset((q.page - 1) * q.limit),
+      this.categories(admin),
+      this.database.db
+        .select({ count: count() })
+        .from(healthArticles)
+        .where(and(...conditions)),
+    ]);
+    return {
+      items: items.slice(0, q.limit).map((item) => this.withThumbnail(item, categories)),
+      page: q.page,
+      hasNext: items.length > q.limit,
+      categories: categories.map((item) => item.name),
+      categoryDetails: categories,
+      total: total[0]!.count,
+    };
+  }
+  private withThumbnail<T extends { id: string; category: string; image_url: string; thumbnailRevision: string | null }>(
+    row: T,
+    categories: { name: string; name_hi: string }[],
+  ) {
+    const category = categories.find((item) => item.name === row.category);
+    return {
+      ...row,
+      thumbnail_url: row.thumbnailRevision
+        ? `/api/v1/public/articles/${row.id}/thumbnail?v=${row.thumbnailRevision}`
+        : row.image_url,
+      category_hi: category?.name_hi || '',
+    };
+  }
+  async categories(admin = false) {
+    const [metadata, counts] = await Promise.all([
+      this.database.db.select().from(healthArticleCategories).orderBy(asc(healthArticleCategories.name)),
+      this.database.db
+        .select({ name: healthArticles.category, count: count() })
+        .from(healthArticles)
+        .where(admin ? undefined : eq(healthArticles.is_published, true))
+        .groupBy(healthArticles.category),
+    ]);
+    const names = new Set(
+      admin
+        ? [...metadata.map((row) => row.name), ...counts.map((row) => row.name)]
+        : counts.map((row) => row.name),
+    );
+    return [...names].sort().map((name) => {
+      const stored = metadata.find((row) => row.name === name),
+        fallback = articleTopics.find((row) => row.name === name);
+      return {
+        name,
+        name_hi: stored?.name_hi || fallback?.name_hi || '',
+        description: stored?.description || fallback?.description || '',
+        image_url: stored?.image_url || topicImage(name),
+        ...(admin ? { custom_image_url: stored?.image_url || '' } : {}),
+        count: counts.find((row) => row.name === name)?.count ?? 0,
+      };
+    });
+  }
+  async saveCategory(body: unknown) {
+    const value = this.parse(categoryInput, body);
+    await this.database.db
+      .insert(healthArticleCategories)
+      .values(value)
+      .onConflictDoUpdate({
+        target: healthArticleCategories.name,
+        set: { ...value, updated_at: new Date() },
+      });
+    return { saved: true };
+  }
+  async article(id: string, admin = false) {
+    this.parse(z.uuid(), id);
+    const [row] = await this.database.db
+      .select({ ...articleSummary, content_en: healthArticles.content_en, content_hi: healthArticles.content_hi })
+      .from(healthArticles)
+      .where(and(eq(healthArticles.id, id), admin ? undefined : eq(healthArticles.is_published, true)))
+      .limit(1);
+    if (!row) throw new NotFoundException('Article not found.');
+    return this.withThumbnail(row, await this.categories(admin));
+  }
+  async articleThumbnail(id: string, admin = false) {
+    this.parse(z.uuid(), id);
+    const [row] = await this.database.db.select({ image_data: healthArticleThumbnails.imageData, image_revision: healthArticleThumbnails.revision })
+      .from(healthArticleThumbnails)
+      .innerJoin(healthArticles, eq(healthArticleThumbnails.articleId, healthArticles.id))
+      .where(and(eq(healthArticles.id, id), admin ? undefined : eq(healthArticles.is_published, true)));
+    if (!row) throw new NotFoundException('Article thumbnail not found.');
+    return row;
+  }
+  async saveArticleThumbnail(id: string, file?: Express.Multer.File) {
+    this.parse(z.uuid(), id);
+    const imageData = await decodeProviderImage(file);
+    return this.database.db.transaction(async tx => {
+      const [article] = await tx.select({ id: healthArticles.id }).from(healthArticles)
+        .where(eq(healthArticles.id, id)).for('update');
+      if (!article) throw new NotFoundException('Article not found.');
+      const revision = randomUUID();
+      await tx.insert(healthArticleThumbnails).values({ articleId: id, imageData, revision })
+        .onConflictDoUpdate({ target: healthArticleThumbnails.articleId, set: { imageData, revision } });
+      return { revision };
+    });
+  }
+  async removeArticleThumbnail(id: string) {
+    this.parse(z.uuid(), id);
+    await this.database.db.delete(healthArticleThumbnails).where(eq(healthArticleThumbnails.articleId, id));
+    return { removed: true };
+  }
+  private bankFilters(bloodGroup?: string, only24h = false, admin = false, reviewedOnly = false): SQL[] {
+    const filters = admin ? [] : [eq(bloodBankDirectoryEntries.is_active, true)];
+    if (reviewedOnly)
+      filters.push(
+        eq(bloodBankDirectoryEntries.city, 'Jaipur'),
+        eq(bloodBankDirectoryEntries.is_verified, true),
+        gte(bloodBankDirectoryEntries.verified_at, new Date(Date.now() - 180 * 86400000)),
+      );
+    if (bloodGroup)
+      filters.push(sql`${bloodBankDirectoryEntries.available_blood_groups} @> ARRAY[${bloodGroup}]::text[]`);
+    if (only24h) filters.push(eq(bloodBankDirectoryEntries.is_24_7, true));
+    return filters;
+  }
+  async listBanks(query: unknown, admin = false, reviewedOnly = false) {
+    const q = this.parse(admin ? adminBankListInput : bankListInput, query),
+      filters = this.bankFilters(q.bloodGroup, q.only24h === 'true', admin, reviewedOnly);
+    if (q.city) filters.push(sql`lower(btrim(${bloodBankDirectoryEntries.city})) = ${q.city.toLowerCase()}`);
+    if (q.search) filters.push(this.bankSearch(q.search));
+    const baseWhere = and(...filters), statusPredicates = directoryPredicates('blood-banks');
+    const summary = admin ? (await this.database.db.select(directoryCountFields(statusPredicates)).from(bloodBankDirectoryEntries).where(baseWhere))[0] : undefined;
+    if (admin && q.status !== 'all') filters.push(q.status === 'published' ? statusPredicates.approved : statusPredicates[q.status]);
+    const matchingTotal = admin ? (await this.database.db.select({ count: count() }).from(bloodBankDirectoryEntries).where(and(...filters)))[0]?.count : undefined;
+    const [items, missing] = await Promise.all([
+      this.database.db
+        .select()
+        .from(bloodBankDirectoryEntries)
+        .where(and(...filters))
+        .orderBy(asc(bloodBankDirectoryEntries.city), asc(bloodBankDirectoryEntries.name_en), asc(bloodBankDirectoryEntries.id))
+        .limit(q.limit + 1)
+        .offset((q.page - 1) * q.limit),
+      this.database.db
+        .select({ count: count() })
+        .from(bloodBankDirectoryEntries)
+        .where(and(...filters, or(isNull(bloodBankDirectoryEntries.latitude), isNull(bloodBankDirectoryEntries.longitude)))),
+    ]);
+    return {
+      ...(admin ? { summary, total: matchingTotal ?? 0 } : {}),
+      items: items.slice(0, q.limit).map(row => ({ ...omitProviderImage(row), ...(admin ? { adminStatus: directoryRowStatus('blood-banks', row) } : {}) })),
+      page: q.page,
+      hasNext: items.length > q.limit,
+      missingCoordinates: missing[0]!.count,
+    };
+  }
+  private bankSearch(search: string) {
+    const term = `%${search.replace(/[\\%_]/g, '\\$&')}%`;
+    return or(...[
+      bloodBankDirectoryEntries.name_en, bloodBankDirectoryEntries.name_hi,
+      bloodBankDirectoryEntries.city, bloodBankDirectoryEntries.state, bloodBankDirectoryEntries.pincode,
+    ].map(column => ilike(column, term)))!;
+  }
+  async nearby(body: unknown, reviewedOnly = false) {
+    const q = this.parse(nearbyInput, body),
+      filters = this.bankFilters(q.bloodGroup, q.only24h, false, reviewedOnly);
+    if (q.search) filters.push(this.bankSearch(q.search));
+    const { distance, withinRadius } = nearbyDirectory(bloodBankDirectoryEntries.latitude, bloodBankDirectoryEntries.longitude, q);
+    const [items, missing] = await Promise.all([
+      this.database.db
+        .select({ bank: bloodBankDirectoryEntries, distanceKm: distance })
+        .from(bloodBankDirectoryEntries)
+        .where(
+          and(...filters, withinRadius),
+        )
+        .orderBy(asc(distance), asc(bloodBankDirectoryEntries.id))
+        .limit(q.limit + 1)
+        .offset((q.page - 1) * q.limit),
+      this.database.db
+        .select({ count: count() })
+        .from(bloodBankDirectoryEntries)
+        .where(and(...filters, or(isNull(bloodBankDirectoryEntries.latitude), isNull(bloodBankDirectoryEntries.longitude)))),
+    ]);
+    return {
+      items: items.slice(0, q.limit).map((item) => ({ ...omitProviderImage(item.bank), distanceKm: item.distanceKm })),
+      page: q.page,
+      hasNext: items.length > q.limit,
+      missingCoordinates: missing[0]!.count,
+      radiusKm: q.radiusKm,
+      distanceType: 'straight-line',
+    };
+  }
+  async adminList(kind: DirectoryKind, query: unknown) {
+    return kind === 'articles' ? this.listArticles(query, true) : this.listBanks(query, true);
+  }
+  async bank(id: string) {
+    this.parse(z.uuid(), id);
+    const [row] = await this.database.db
+      .select()
+      .from(bloodBankDirectoryEntries)
+      .where(eq(bloodBankDirectoryEntries.id, id))
+      .limit(1);
+    if (!row) throw new NotFoundException('Blood bank not found.');
+    return omitProviderImage(row);
+  }
+  async bankImage(id: string) {
+    this.parse(z.uuid(), id);
+    const [row] = await this.database.db
+      .select({
+        image_data: bloodBankDirectoryEntries.image_data,
+        image_revision: bloodBankDirectoryEntries.image_revision,
+      })
+      .from(bloodBankDirectoryEntries)
+      .where(and(eq(bloodBankDirectoryEntries.id, id), eq(bloodBankDirectoryEntries.is_active, true)))
+      .limit(1);
+    if (!row?.image_data) throw new NotFoundException('Blood bank image not found.');
+    return row;
+  }
+  async save(kind: DirectoryKind, id: string | null, body: unknown) {
+    if (id) this.parse(z.uuid(), id);
+    if (kind === 'articles') {
+      const value = this.parse(articleInput, body);
+      await this.database.db
+        .insert(healthArticleCategories)
+        .values({ name: value.category })
+        .onConflictDoNothing();
+      const rows = id
+        ? await this.database.db
+            .update(healthArticles)
+            .set({ ...value, updated_at: new Date() })
+            .where(eq(healthArticles.id, id))
+            .returning()
+        : await this.database.db
+            .insert(healthArticles)
+            .values({ ...value, record_key: `manual-${randomUUID()}` })
+            .returning();
+      if (!rows[0]) throw new NotFoundException();
+      return rows[0];
+    }
+    const draft = this.parse(bankInput, body);
+    const value = { ...draft, is_verified: false, verified_at: null };
+    const rows = id
+      ? await this.database.db
+          .update(bloodBankDirectoryEntries)
+          .set({ ...value, updated_at: new Date() })
+          .where(eq(bloodBankDirectoryEntries.id, id))
+          .returning()
+      : await this.database.db
+          .insert(bloodBankDirectoryEntries)
+          .values({ ...value, record_key: `manual-${randomUUID()}` })
+          .returning();
+    if (!rows[0]) throw new NotFoundException();
+    return rows[0];
+  }
+  async setArticleVisibility(id: string, body: unknown, actorId: string) {
+    this.parse(z.uuid(), id);
+    const { visible, expectedUpdatedAt } = this.parse(visibilityInput, body);
+    return this.database.db.transaction(async (tx) => {
+      const [row] = await tx.select({ title: healthArticles.title_en, visible: healthArticles.is_published, updatedAt: healthArticles.updated_at })
+        .from(healthArticles).where(eq(healthArticles.id, id)).for('update');
+      if (!row) throw new NotFoundException('Article not found.');
+      const updatedAt = nextVisibilityTimestamp(row.updatedAt, expectedUpdatedAt);
+      if (row.visible === visible) return row;
+      await tx.update(healthArticles).set({ is_published: visible, updated_at: updatedAt }).where(eq(healthArticles.id, id));
+      await tx.insert(administrationAuditLogs).values({ actorId, targetId: id, action: visible ? 'articles.publish' : 'articles.unpublish', outcome: 'succeeded' });
+      return { title: row.title, visible, updatedAt };
+    });
+  }
+  async setBloodBankVisibility(id: string, body: unknown, actorId: string) {
+    this.parse(z.uuid(), id);
+    const { visible, expectedUpdatedAt } = this.parse(visibilityInput, body);
+    return this.database.db.transaction(async (tx) => {
+      const [row] = await tx.select({ visible: bloodBankDirectoryEntries.is_active, updatedAt: bloodBankDirectoryEntries.updated_at })
+        .from(bloodBankDirectoryEntries).where(eq(bloodBankDirectoryEntries.id, id)).for('update');
+      if (!row) throw new NotFoundException('Blood bank not found.');
+      const updatedAt = nextVisibilityTimestamp(row.updatedAt, expectedUpdatedAt);
+      if (row.visible === visible) return row;
+      await tx.update(bloodBankDirectoryEntries).set({ is_active: visible, updated_at: updatedAt }).where(eq(bloodBankDirectoryEntries.id, id));
+      await tx.insert(administrationAuditLogs).values({ actorId, targetId: id, action: visible ? 'blood-banks.show' : 'blood-banks.hide', outcome: 'succeeded' });
+      return { visible, updatedAt };
+    });
+  }
+  async remove(kind: DirectoryKind, id: string) {
+    this.parse(z.uuid(), id);
+    const rows =
+      kind === 'articles'
+        ? await this.database.db
+            .delete(healthArticles)
+            .where(eq(healthArticles.id, id))
+            .returning({ id: healthArticles.id })
+        : await this.database.db
+            .delete(bloodBankDirectoryEntries)
+            .where(eq(bloodBankDirectoryEntries.id, id))
+            .returning({ id: bloodBankDirectoryEntries.id });
+    if (!rows.length) throw new NotFoundException();
+    return { deleted: true };
+  }
+  private async prepared(kind: DirectoryKind, file?: Express.Multer.File) {
+    if (!file?.buffer) throw new BadRequestException('Choose an Excel (.xlsx) or UTF-8 CSV file.');
+    try {
+      const name = file.originalname.toLowerCase();
+      if (!name.endsWith('.csv') && !name.endsWith('.xlsx'))
+        throw new Error('Use .xlsx or .csv. Save legacy .xls workbooks as .xlsx first.');
+      const workbook = name.endsWith('.xlsx')
+        ? await readDirectoryWorkbook(file.buffer, kind)
+        : { csv: file.buffer, categories: [] };
+      const result = prepareImport(kind, workbook.csv);
+      if (workbook.categories.length) {
+        const names = new Set(workbook.categories.map((row) => row.name));
+        if (result.articles.some((row) => !names.has(row.category)))
+          throw new Error('Every article category must appear in the Categories worksheet.');
+      }
+      return { ...result, categories: workbook.categories };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Import file could not be read.',
+      );
+    }
+  }
+  async preview(kind: DirectoryKind, file?: Express.Multer.File) {
+    const result = await this.prepared(kind, file),
+      ids = [...result.articles, ...result.banks].map((row) => row.record_key);
+    const existing = !ids.length
+      ? []
+      : kind === 'articles'
+        ? await this.database.db
+            .select({ id: healthArticles.id })
+            .from(healthArticles)
+            .where(inArray(healthArticles.record_key, ids))
+        : await this.database.db
+            .select({ id: bloodBankDirectoryEntries.id })
+            .from(bloodBankDirectoryEntries)
+            .where(inArray(bloodBankDirectoryEntries.record_key, ids));
+    return {
+      totalRows: result.totalRows,
+      validRows: ids.length,
+      errorCount: result.errors.length,
+      errors: result.errors.slice(0, 100),
+      creates: ids.length - existing.length,
+      updates: existing.length,
+      publishedRows: result.articles.filter((row) => row.is_published).length,
+      categoryCount: new Set(result.articles.map((row) => row.category)).size,
+      thumbnailFallbacks: result.articles.filter((row) => !row.image_url).length,
+      missingCoordinates: result.banks.filter((row) => row.latitude == null).length,
+      sample:
+        kind === 'articles'
+          ? result.articles
+              .slice(0, 5)
+              .map((row) => ({ record_key: row.record_key, title: row.title_en }))
+          : result.banks
+              .slice(0, 5)
+              .map((row) => ({ record_key: row.record_key, title: row.name_en })),
+    };
+  }
+  async import(kind: DirectoryKind, file?: Express.Multer.File) {
+    const result = await this.prepared(kind, file);
+    if (result.errors.length)
+      throw new BadRequestException(
+        `Nothing imported. Fix ${result.errors.length} invalid rows first.`,
+      );
+    await this.database.db.transaction(async (tx) => {
+      if (kind === 'articles') {
+        for (const category of result.categories) {
+          const { image_url, ...metadata } = category;
+          await tx
+            .insert(healthArticleCategories)
+            .values(category)
+            .onConflictDoUpdate({
+              target: healthArticleCategories.name,
+              set: { ...metadata, ...(image_url ? { image_url } : {}), updated_at: new Date() },
+            });
+        }
+        for (const name of new Set(result.articles.map((row) => row.category)))
+          await tx.insert(healthArticleCategories).values({ name }).onConflictDoNothing();
+        for (const row of result.articles)
+          await tx
+            .insert(healthArticles)
+            .values(row)
+            .onConflictDoUpdate({
+              target: healthArticles.record_key,
+              set: { ...row, ...(row.image_url ? {} : { image_url: sql`${healthArticles.image_url}` }) },
+            });
+      } else
+        for (const row of result.banks) {
+          const { is_active: _active, ...updates } = row;
+          void _active;
+          await tx
+            .insert(bloodBankDirectoryEntries)
+            .values({ ...row, is_verified: false, verified_at: null })
+            .onConflictDoUpdate({
+              target: bloodBankDirectoryEntries.record_key,
+              set: { ...updates, is_verified: false, verified_at: null, updated_at: new Date() },
+            });
+        }
+    });
+    return {
+      imported: result.totalRows,
+      categories: new Set(result.articles.map((row) => row.category)).size,
+      missingCoordinates: result.banks.filter((row) => row.latitude == null).length,
+    };
+  }
+}

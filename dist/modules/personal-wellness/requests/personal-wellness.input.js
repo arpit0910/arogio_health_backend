@@ -1,0 +1,118 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.activityDayInput = exports.activityGoalsInput = exports.doseTimeInput = exports.doseDayInput = exports.medicineDoseInput = exports.medicineInput = exports.entryInput = exports.periodInput = exports.taskInput = exports.logInput = exports.cycleInput = exports.planInput = void 0;
+const zod_1 = require("zod");
+const personal_wellness_domain_1 = require("../domain/personal-wellness.domain");
+const clock = zod_1.z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+const day = zod_1.z.string().refine(personal_wellness_domain_1.validDay, 'Use a valid calendar date.');
+const timezone = zod_1.z
+    .string()
+    .refine(personal_wellness_domain_1.validTimezone, 'Choose a valid timezone.')
+    .transform(() => personal_wellness_domain_1.APP_TIMEZONE);
+exports.planInput = zod_1.z
+    .object({
+    wakeTime: clock,
+    sleepTime: clock,
+    targetMl: zod_1.z.number().int().min(100).max(6000),
+    servingMl: zod_1.z.number().int().min(50).max(1000),
+    timezone,
+    remindersEnabled: zod_1.z.boolean(),
+    pausedUntil: zod_1.z.iso.datetime().nullable(),
+})
+    .strict()
+    .refine((p) => (0, personal_wellness_domain_1.awakeMinutes)(p) >= 120 && (0, personal_wellness_domain_1.awakeMinutes)(p) <= 1320, 'Waking hours must be between 2 and 22 hours.');
+exports.cycleInput = zod_1.z
+    .object({
+    cycleLength: zod_1.z.number().int().min(10).max(120),
+    periodLength: zod_1.z.number().int().min(1).max(30),
+    predictionsEnabled: zod_1.z.boolean(),
+    remindersEnabled: zod_1.z.boolean(),
+    discreet: zod_1.z.boolean(),
+    reminderDaysBefore: zod_1.z.number().int().min(0).max(7),
+    reminderTime: clock,
+    timezone,
+})
+    .strict();
+exports.logInput = zod_1.z
+    .object({
+    amountMl: zod_1.z.number().int().min(1).max(3000),
+    loggedAt: zod_1.z.iso.datetime(),
+    taskId: zod_1.z.string().max(100).nullable().default(null),
+})
+    .strict();
+exports.taskInput = zod_1.z
+    .object({
+    day,
+    status: zod_1.z.enum(['pending', 'skipped']),
+    snoozedUntil: zod_1.z.iso.datetime().nullable(),
+})
+    .strict();
+exports.periodInput = zod_1.z.object({ startDate: day, endDate: day.nullable() }).strict();
+exports.entryInput = zod_1.z
+    .object({
+    flow: zod_1.z.enum(personal_wellness_domain_1.flows),
+    symptoms: zod_1.z
+        .array(zod_1.z.enum(personal_wellness_domain_1.symptoms))
+        .max(8)
+        .refine((a) => new Set(a).size === a.length),
+    mood: zod_1.z.enum(personal_wellness_domain_1.moods).nullable(),
+    notes: zod_1.z.string().max(1000),
+})
+    .strict();
+exports.medicineInput = zod_1.z
+    .object({
+    name: zod_1.z.string().trim().min(1).max(80),
+    notes: zod_1.z.string().trim().max(1000),
+    enabled: zod_1.z.boolean(),
+    alertType: zod_1.z.enum(['default', 'gentle', 'vibrate']).optional(),
+    form: zod_1.z.enum(['Tablet', 'Capsule', 'Syrup', 'Drops', 'Inhaler', 'Injection']).optional(),
+    strength: zod_1.z.string().trim().max(30).optional(),
+    unit: zod_1.z.enum(['mg', 'ml', 'mcg']).optional(),
+    recurrence: zod_1.z.enum(['daily', 'weekly', 'cycle', 'sos']).optional(),
+    weekdays: zod_1.z.array(zod_1.z.number().int().min(0).max(6)).max(7).optional(),
+    startDate: day.optional(), endDate: day.nullable().optional(),
+    cycleOnDays: zod_1.z.number().int().min(1).max(365).optional(),
+    cycleOffDays: zod_1.z.number().int().min(1).max(365).optional(),
+    expectedStock: zod_1.z.number().min(0).max(100000).nullable().optional(),
+    stock: zod_1.z.number().min(0).max(100000).nullable().optional(),
+    lowStockThreshold: zod_1.z.number().min(0).max(100000).optional(),
+    doses: zod_1.z
+        .array(zod_1.z.object({ time: clock, amount: zod_1.z.string().trim().min(1).max(80), meal: zod_1.z.enum(['any', 'before', 'after']).optional() }).strict())
+        .min(1)
+        .max(12)
+        .refine((doses) => new Set(doses.map((d) => d.time)).size === doses.length, 'Choose a different time for each dose.'),
+})
+    .strict()
+    .refine(m => !m.endDate || (!!m.startDate && m.endDate >= m.startDate), 'Choose an end date on or after the start.')
+    .refine(m => m.recurrence !== 'weekly' || !!m.weekdays?.length, 'Choose at least one weekday.')
+    .refine(m => m.recurrence !== 'cycle' || !!m.startDate, 'Choose a cycle start date.');
+exports.medicineDoseInput = zod_1.z
+    .object({
+    status: zod_1.z.enum(['taken', 'skipped', 'pending']),
+    snooze: zod_1.z.boolean().default(false),
+    snoozeMinutes: zod_1.z.number().int().min(5).max(60).multipleOf(5).optional(),
+})
+    .strict()
+    .refine((value) => !value.snooze || value.status === 'pending', 'Only pending doses can be snoozed.')
+    .refine(value => value.snoozeMinutes === undefined || value.snooze, 'Snooze duration requires a snooze action.');
+exports.doseDayInput = day;
+exports.doseTimeInput = clock;
+const activityValues = zod_1.z
+    .object({
+    Steps: zod_1.z.number().int().min(0).max(200000).nullable().optional(),
+    ActiveCaloriesBurned: zod_1.z.number().min(0).max(20000).nullable().optional(),
+    Distance: zod_1.z.number().min(0).max(500).nullable().optional(),
+    ExerciseSession: zod_1.z.number().min(0).max(1440).nullable().optional(),
+    SleepSession: zod_1.z.number().min(0).max(24).nullable().optional(),
+    Nutrition: zod_1.z.number().min(0).max(20000).nullable().optional(),
+})
+    .strict();
+exports.activityGoalsInput = zod_1.z
+    .object({ goals: activityValues })
+    .strict()
+    .refine((value) => Object.values(value.goals).every((goal) => goal == null || goal > 0), 'Targets must be positive, or null to remove them.');
+exports.activityDayInput = zod_1.z
+    .object({ values: activityValues })
+    .strict()
+    .refine((value) => Object.keys(value.values).length > 0, 'Include at least one reading.');
+//# sourceMappingURL=personal-wellness.input.js.map

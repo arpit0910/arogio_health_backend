@@ -1,0 +1,121 @@
+import {
+  ValidateIf,
+  IsString,
+  IsNumber,
+  IsIn,
+  IsArray,
+  ArrayUnique,
+  IsBoolean,
+  IsInt,
+  Min,
+  Max,
+  MaxLength,
+  Matches,
+} from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+
+export class ProfileSetupDto {
+  @ApiPropertyOptional({ enum: [2] })
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsIn([2])
+  flowVersion?: number;
+
+  @ApiPropertyOptional({ enum: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] })
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsIn(['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'])
+  bloodGroup?: string;
+
+  @ApiPropertyOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @Matches(/^\+?[0-9]{10,15}$/)
+  contactNumber?: string;
+
+  @ApiPropertyOptional({ description: 'Defer profile setup without marking it complete' })
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsBoolean()
+  setupDeferred?: boolean;
+
+  @ApiPropertyOptional({ minimum: 20, maximum: 300 })
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsNumber({ maxDecimalPlaces: 1 })
+  @Min(20)
+  @Max(300)
+  heightValue?: number;
+  @ApiPropertyOptional({ enum: ['cm', 'in'] })
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsIn(['cm', 'in'])
+  heightUnit?: 'cm' | 'in';
+  @ApiPropertyOptional({ minimum: 2, maximum: 1102.3 })
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsNumber({ maxDecimalPlaces: 1 })
+  @Min(2)
+  @Max(1102.3)
+  weightValue?: number;
+  @ApiPropertyOptional({ enum: ['kg', 'lb'] })
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsIn(['kg', 'lb'])
+  weightUnit?: 'kg' | 'lb';
+  @ApiPropertyOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  dateOfBirth?: string;
+  @ApiPropertyOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsIn(['sedentary', 'lightly_active', 'moderately_active', 'very_active'])
+  activityLevel?: string;
+  @ApiPropertyOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsArray()
+  @ArrayUnique()
+  @IsIn(
+    [
+      'weight_management',
+      'fitness_activity',
+      'lose_weight',
+      'gain_weight',
+      'stay_fit',
+      'manage_condition',
+      'better_eating',
+      'improve_sleep',
+      'manage_stress',
+    ],
+    { each: true },
+  )
+  healthGoals?: string[];
+  @ApiPropertyOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsIn(['female', 'male', 'other', 'prefer_not_to_say'])
+  gender?: string;
+  @ApiPropertyOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsString()
+  @MaxLength(100)
+  location?: string;
+  @ApiPropertyOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsString()
+  @MaxLength(100)
+  referralSource?: string;
+  @ApiPropertyOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsBoolean()
+  healthReminders?: boolean;
+  @ApiPropertyOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsBoolean()
+  tipsAndInsights?: boolean;
+  @ApiPropertyOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsBoolean()
+  productUpdates?: boolean;
+  @ApiPropertyOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsInt()
+  @Min(0)
+  @Max(7)
+  step?: number;
+  @ApiPropertyOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsBoolean()
+  complete?: boolean;
+}

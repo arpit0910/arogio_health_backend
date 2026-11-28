@@ -1,0 +1,14 @@
+process.env.NODE_ENV = 'test';
+process.env.PORT = '3001';
+process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/arogio_test';
+process.env.DATABASE_POOL_MAX = '2';
+process.env.DATABASE_IDLE_TIMEOUT_MS = '1000';
+process.env.CORS_ORIGINS = 'http://localhost:3000';
+process.env.JWT_ISSUER = 'arogio-api-test';
+process.env.JWT_AUDIENCE = 'arogio-test-clients';
+process.env.JWT_ACCESS_SECRET = 'test-secret-that-is-at-least-32-characters-long';
+process.env.JWT_ACCESS_TTL_SECONDS = '900';
+process.env.REFRESH_TOKEN_TTL_DAYS = '30';
+process.env.GOOGLE_CLIENT_IDS = 'test-client.apps.googleusercontent.com';
+process.env.LOG_LEVEL = 'fatal';
+process.env.SWAGGER_ENABLED = 'false';
