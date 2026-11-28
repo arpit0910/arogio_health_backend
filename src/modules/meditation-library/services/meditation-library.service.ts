@@ -75,7 +75,7 @@ export class MeditationLibraryService {
     const { youtubeUrl, expectedUpdatedAt, ...values } = data;
     const record = {
       ...values,
-      videoId: data.kind === 'video' ? youtubeVideoId(youtubeUrl) : null,
+      videoId: youtubeUrl ? youtubeVideoId(youtubeUrl) : null,
       durationSeconds:
         data.kind === 'practice'
           ? data.steps.reduce((sum, step) => sum + step.seconds, 0) * data.repeat

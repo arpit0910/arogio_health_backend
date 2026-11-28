@@ -21,6 +21,17 @@ export function youtubeVideoId(value: string): string | null {
     return null;
   }
 }
+function safeMediaUrl(value: string): boolean {
+  if (!value) return true;
+  if (/^posture:[a-z0-9-]+$/i.test(value)) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
 export const meditationInput = z
   .object({
     kind: z.enum(['video', 'practice']),
@@ -31,6 +42,12 @@ export const meditationInput = z
     description_hi: z.string().trim().max(1000).default(''),
     preparation_en: z.string().trim().max(2000).default(''),
     preparation_hi: z.string().trim().max(2000).default(''),
+    impact_en: z.string().trim().max(1000).default(''),
+    impact_hi: z.string().trim().max(1000).default(''),
+    sanskritName: z.string().trim().max(160).default(''),
+    difficulty: z.enum(['gentle', 'beginner', 'intermediate']).default('gentle'),
+    imageUrl: z.string().trim().max(500).default('').refine(safeMediaUrl, 'Enter a valid HTTPS image URL or posture key.'),
+    audioUrl: z.string().trim().max(500).default('').refine((v) => !v || (safeMediaUrl(v) && !v.startsWith('posture:')), 'Enter a valid HTTPS audio URL.'),
     author: z.string().trim().max(160).default(''),
     youtubeUrl: z.string().trim().max(500).default(''),
     durationSeconds: z.number().int().min(1).max(14400).nullable().default(null),
@@ -43,6 +60,12 @@ export const meditationInput = z
             instruction_en: z.string().trim().min(1).max(2000),
             instruction_hi: z.string().trim().max(2000).default(''),
             seconds: z.number().int().min(1).max(900),
+            sanskritName: z.string().trim().max(160).optional(),
+            imageUrl: z.string().trim().max(500).refine(safeMediaUrl, 'Enter a valid HTTPS image URL or posture key.').optional(),
+            impact_en: z.string().trim().max(1000).optional(),
+            impact_hi: z.string().trim().max(1000).optional(),
+            videoId: z.string().regex(/^[A-Za-z0-9_-]{11}$/).nullable().optional(),
+            phase: z.enum(['warmup', 'main', 'cooldown']).optional(),
           })
           .strict(),
       )
@@ -69,11 +92,11 @@ export const meditationInput = z
           message: 'Videos cannot contain timed steps or repeats.',
         });
     } else {
-      if (value.youtubeUrl)
+      if (value.youtubeUrl && !youtubeVideoId(value.youtubeUrl))
         ctx.addIssue({
           code: 'custom',
           path: ['youtubeUrl'],
-          message: 'Guided practices use steps, not a video URL.',
+          message: 'Enter a valid HTTPS YouTube video link.',
         });
       const duration = value.steps.reduce((sum, step) => sum + step.seconds, 0) * value.repeat;
       if (!value.steps.length || duration > 3600)

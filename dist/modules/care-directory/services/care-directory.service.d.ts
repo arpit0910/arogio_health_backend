@@ -240,6 +240,9 @@ export declare class CareDirectoryService {
         emergency_phone: string | null;
         email: string | null;
         website: string | null;
+        image_url: string;
+        image_data: Buffer<ArrayBufferLike> | null;
+        image_revision: string | null;
         is_verified: boolean;
         verified_at: Date | null;
         is_24_7: boolean;

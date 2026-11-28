@@ -12,6 +12,9 @@ export declare class PublicMedicalDepartmentsController {
             name_hi: string;
             description_en: string;
             description_hi: string;
+            icon: string;
+            image_url: string;
+            sort_order: number;
             is_active: boolean;
             version: number;
             created_at: Date;
@@ -28,6 +31,9 @@ export declare class PublicMedicalDepartmentsController {
         name_hi: string;
         description_en: string;
         description_hi: string;
+        icon: string;
+        image_url: string;
+        sort_order: number;
         is_active: boolean;
         version: number;
         created_at: Date;
@@ -45,6 +51,9 @@ export declare class MedicalDepartmentsAdministrationController {
             name_hi: string;
             description_en: string;
             description_hi: string;
+            icon: string;
+            image_url: string;
+            sort_order: number;
             is_active: boolean;
             version: number;
             created_at: Date;
@@ -88,6 +97,9 @@ export declare class MedicalDepartmentsAdministrationController {
         name_hi: string;
         description_en: string;
         description_hi: string;
+        icon: string;
+        image_url: string;
+        sort_order: number;
         is_active: boolean;
         version: number;
         created_at: Date;
@@ -100,9 +112,12 @@ export declare class MedicalDepartmentsAdministrationController {
         record_key: string;
         name_en: string;
         name_hi: string;
+        image_url: string;
         is_active: boolean;
+        sort_order: number;
         description_en: string;
         description_hi: string;
+        icon: string;
         version: number;
     }>;
     update(user: RequestUser, id: string, body: unknown): Promise<{
@@ -112,6 +127,9 @@ export declare class MedicalDepartmentsAdministrationController {
         name_hi: string;
         description_en: string;
         description_hi: string;
+        icon: string;
+        image_url: string;
+        sort_order: number;
         is_active: boolean;
         version: number;
         created_at: Date;

@@ -1,4 +1,4 @@
-import { decodeProviderImage } from '../../../common/media/provider-image';
+import { decodeProviderImage, omitProviderImage } from '../../../common/media/provider-image';
 import { nearbyDirectory } from '../../../common/directory/nearby';
 import { directoryCountFields, directoryPredicates, directoryRowStatus } from '../../../common/directory/admin-status';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
@@ -250,7 +250,7 @@ export class HealthResourcesService {
     ]);
     return {
       ...(admin ? { summary, total: matchingTotal ?? 0 } : {}),
-      items: items.slice(0, q.limit).map(row => ({ ...row, ...(admin ? { adminStatus: directoryRowStatus('blood-banks', row) } : {}) })),
+      items: items.slice(0, q.limit).map(row => ({ ...omitProviderImage(row), ...(admin ? { adminStatus: directoryRowStatus('blood-banks', row) } : {}) })),
       page: q.page,
       hasNext: items.length > q.limit,
       missingCoordinates: missing[0]!.count,
@@ -284,7 +284,7 @@ export class HealthResourcesService {
         .where(and(...filters, or(isNull(bloodBankDirectoryEntries.latitude), isNull(bloodBankDirectoryEntries.longitude)))),
     ]);
     return {
-      items: items.slice(0, q.limit).map((item) => ({ ...item.bank, distanceKm: item.distanceKm })),
+      items: items.slice(0, q.limit).map((item) => ({ ...omitProviderImage(item.bank), distanceKm: item.distanceKm })),
       page: q.page,
       hasNext: items.length > q.limit,
       missingCoordinates: missing[0]!.count,
@@ -303,6 +303,19 @@ export class HealthResourcesService {
       .where(eq(bloodBankDirectoryEntries.id, id))
       .limit(1);
     if (!row) throw new NotFoundException('Blood bank not found.');
+    return omitProviderImage(row);
+  }
+  async bankImage(id: string) {
+    this.parse(z.uuid(), id);
+    const [row] = await this.database.db
+      .select({
+        image_data: bloodBankDirectoryEntries.image_data,
+        image_revision: bloodBankDirectoryEntries.image_revision,
+      })
+      .from(bloodBankDirectoryEntries)
+      .where(and(eq(bloodBankDirectoryEntries.id, id), eq(bloodBankDirectoryEntries.is_active, true)))
+      .limit(1);
+    if (!row?.image_data) throw new NotFoundException('Blood bank image not found.');
     return row;
   }
   async save(kind: DirectoryKind, id: string | null, body: unknown) {

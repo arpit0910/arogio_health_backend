@@ -36,6 +36,9 @@ let PublicHealthResourcesController = class PublicHealthResourcesController {
     banks(query) {
         return this.directory.listBanks(query);
     }
+    async bankImage(id, response) {
+        (0, provider_image_1.sendProviderImage)(response, await this.directory.bankImage(id));
+    }
     nearby(body) {
         return this.directory.nearby(body);
     }
@@ -76,6 +79,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], PublicHealthResourcesController.prototype, "banks", null);
+__decorate([
+    (0, common_1.Get)('blood-banks/:id/image'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], PublicHealthResourcesController.prototype, "bankImage", null);
 __decorate([
     (0, common_1.Post)('blood-banks/nearby'),
     (0, common_1.HttpCode)(200),

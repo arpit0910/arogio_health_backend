@@ -10,6 +10,7 @@ export declare class MeditationLibraryService {
             createdAt: Date;
             updatedAt: Date;
             kind: "video" | "practice";
+            imageUrl: string;
             published: boolean;
             title_en: string;
             title_hi: string;
@@ -19,6 +20,11 @@ export declare class MeditationLibraryService {
             section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
             preparation_en: string;
             preparation_hi: string;
+            impact_en: string;
+            impact_hi: string;
+            sanskritName: string;
+            difficulty: "gentle" | "beginner" | "intermediate";
+            audioUrl: string;
             author: string;
             videoId: string | null;
             durationSeconds: number | null;
@@ -32,6 +38,7 @@ export declare class MeditationLibraryService {
             createdAt: Date;
             updatedAt: Date;
             kind: "video" | "practice";
+            imageUrl: string;
             published: boolean;
             title_en: string;
             title_hi: string;
@@ -41,6 +48,11 @@ export declare class MeditationLibraryService {
             section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
             preparation_en: string;
             preparation_hi: string;
+            impact_en: string;
+            impact_hi: string;
+            sanskritName: string;
+            difficulty: "gentle" | "beginner" | "intermediate";
+            audioUrl: string;
             author: string;
             videoId: string | null;
             durationSeconds: number | null;
@@ -58,6 +70,7 @@ export declare class MeditationLibraryService {
         createdAt: Date;
         updatedAt: Date;
         kind: "video" | "practice";
+        imageUrl: string;
         published: boolean;
         title_en: string;
         title_hi: string;
@@ -67,6 +80,11 @@ export declare class MeditationLibraryService {
         section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
+        impact_en: string;
+        impact_hi: string;
+        sanskritName: string;
+        difficulty: "gentle" | "beginner" | "intermediate";
+        audioUrl: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;
@@ -80,6 +98,7 @@ export declare class MeditationLibraryService {
         createdAt: Date;
         updatedAt: Date;
         kind: "video" | "practice";
+        imageUrl: string;
         published: boolean;
         title_en: string;
         title_hi: string;
@@ -89,6 +108,11 @@ export declare class MeditationLibraryService {
         section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
+        impact_en: string;
+        impact_hi: string;
+        sanskritName: string;
+        difficulty: "gentle" | "beginner" | "intermediate";
+        audioUrl: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;
@@ -101,6 +125,7 @@ export declare class MeditationLibraryService {
         createdAt: Date;
         updatedAt: Date;
         kind: "video" | "practice";
+        imageUrl: string;
         published: boolean;
         title_en: string;
         title_hi: string;
@@ -110,6 +135,11 @@ export declare class MeditationLibraryService {
         section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
+        impact_en: string;
+        impact_hi: string;
+        sanskritName: string;
+        difficulty: "gentle" | "beginner" | "intermediate";
+        audioUrl: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;
@@ -123,6 +153,7 @@ export declare class MeditationLibraryService {
         createdAt: Date;
         updatedAt: Date;
         kind: "video" | "practice";
+        imageUrl: string;
         published: boolean;
         title_en: string;
         title_hi: string;
@@ -132,6 +163,11 @@ export declare class MeditationLibraryService {
         section: "affirmations" | "meditation" | "breathing" | "grounding" | "yoga" | "focus" | "rest";
         preparation_en: string;
         preparation_hi: string;
+        impact_en: string;
+        impact_hi: string;
+        sanskritName: string;
+        difficulty: "gentle" | "beginner" | "intermediate";
+        audioUrl: string;
         author: string;
         videoId: string | null;
         durationSeconds: number | null;

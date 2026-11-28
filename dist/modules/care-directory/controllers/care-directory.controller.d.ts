@@ -93,7 +93,10 @@ export declare class CareDirectorySearchController {
                     reviewStatus: string;
                     visibility: string;
                 } | undefined;
+                email: string | null;
                 id: string;
+                created_at: Date;
+                updated_at: Date;
                 record_key: string;
                 name_en: string;
                 name_hi: string;
@@ -107,8 +110,9 @@ export declare class CareDirectorySearchController {
                 phone: string | null;
                 emergency_country_code: string;
                 emergency_phone: string | null;
-                email: string | null;
                 website: string | null;
+                image_url: string;
+                image_revision: string | null;
                 is_verified: boolean;
                 verified_at: Date | null;
                 is_24_7: boolean;
@@ -119,8 +123,6 @@ export declare class CareDirectorySearchController {
                 latitude: number | null;
                 longitude: number | null;
                 is_active: boolean;
-                created_at: Date;
-                updated_at: Date;
             }[];
             page: number;
             hasNext: boolean;
@@ -323,6 +325,9 @@ export declare class CareDirectoryAdministrationController {
         emergency_phone: string | null;
         email: string | null;
         website: string | null;
+        image_url: string;
+        image_data: Buffer<ArrayBufferLike> | null;
+        image_revision: string | null;
         is_verified: boolean;
         verified_at: Date | null;
         is_24_7: boolean;

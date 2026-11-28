@@ -11,6 +11,11 @@ exports.medicalDiseases = (0, pg_core_1.pgTable)('medical_diseases', {
     name_hi: (0, pg_core_1.text)('name_hi').notNull().default(''),
     description_en: (0, pg_core_1.text)('description_en').notNull().default(''),
     description_hi: (0, pg_core_1.text)('description_hi').notNull().default(''),
+    symptoms_en: (0, pg_core_1.text)('symptoms_en').notNull().default(''),
+    symptoms_hi: (0, pg_core_1.text)('symptoms_hi').notNull().default(''),
+    precautions_en: (0, pg_core_1.text)('precautions_en').notNull().default(''),
+    precautions_hi: (0, pg_core_1.text)('precautions_hi').notNull().default(''),
+    icon: (0, pg_core_1.text)('icon').notNull().default('heart-pulse'),
     department_id: (0, pg_core_1.uuid)('department_id')
         .notNull()
         .references(() => medical_departments_schema_1.medicalDepartments.id),

@@ -15,6 +15,11 @@ const meditationCopyFields = [
   'description_hi',
   'preparation_en',
   'preparation_hi',
+  'impact_en',
+  'impact_hi',
+  'sanskritName',
+  'imageUrl',
+  'audioUrl',
   'author',
 ];
 function meditationBody(row) {
@@ -23,6 +28,7 @@ function meditationBody(row) {
       ...meditationCopyFields,
       'kind',
       'section',
+      'difficulty',
       'durationSeconds',
       'steps',
       'repeat',
@@ -178,9 +184,8 @@ async function meditationEditor(id, initialKind = 'video', onSaved = meditationP
     stepArea = el('div'),
     duration = el('p');
   duration.setAttribute('aria-live', 'polite');
-  const url = field('youtubeUrl', 'YouTube video link', row.youtubeUrl || '', 'url');
+  const url = field('youtubeUrl', 'YouTube video link (optional for practices)', row.youtubeUrl || '', 'url');
   videoFields.append(
-    url,
     field(
       'durationSeconds',
       'Video duration in seconds (optional)',
@@ -199,14 +204,21 @@ async function meditationEditor(id, initialKind = 'video', onSaved = meditationP
   );
   let nextStep = 0;
   function readSteps() {
-    return [...stepArea.children].map((group) =>
-      Object.fromEntries(
-        [...group.querySelectorAll('[data-step-field]')].map((input) => [
-          input.dataset.stepField,
-          input.dataset.stepField === 'seconds' ? Number(input.value) : input.value.trim(),
-        ]),
-      ),
-    );
+    return [...stepArea.children].map((group) => {
+      const entry = {};
+      for (const input of group.querySelectorAll('[data-step-field]')) {
+        const key = input.dataset.stepField;
+        const val = input.value.trim();
+        if (key === 'seconds') {
+          entry[key] = Number(val);
+        } else if (['title_en', 'title_hi', 'instruction_en', 'instruction_hi'].includes(key)) {
+          entry[key] = val;
+        } else if (val) {
+          entry[key] = val;
+        }
+      }
+      return entry;
+    });
   }
   function updateDuration() {
     const seconds =
@@ -219,11 +231,17 @@ async function meditationEditor(id, initialKind = 'video', onSaved = meditationP
     const group = el('fieldset'),
       legend = el('legend', 'Practice step');
     group.append(legend);
-    for (const [key, label, type] of [
+    for (const [key, label, type, options] of [
       ['title_en', 'Step title (English)', 'text'],
       ['title_hi', 'Step title (Hindi, optional)', 'text'],
+      ['sanskritName', 'Sanskrit posture name (optional)', 'text'],
+      ['phase', 'Session phase (optional)', 'text', [['', 'Default'], ['warmup', 'Warm-up'], ['main', 'Main posture'], ['cooldown', 'Cool-down']]],
       ['instruction_en', 'Instruction (English)', 'textarea'],
       ['instruction_hi', 'Instruction (Hindi, optional)', 'textarea'],
+      ['impact_en', 'Impact on body (English, optional)', 'textarea'],
+      ['impact_hi', 'Impact on body (Hindi, optional)', 'textarea'],
+      ['imageUrl', 'Posture image URL or key (optional)', 'text'],
+      ['videoId', 'How-to YouTube 11-char video ID (optional)', 'text'],
       ['seconds', 'Seconds', 'number'],
     ]) {
       const control = field(
@@ -231,8 +249,9 @@ async function meditationEditor(id, initialKind = 'video', onSaved = meditationP
         label,
         step[key] ?? (key === 'seconds' ? 30 : ''),
         type,
+        options,
       );
-      const input = control.querySelector('input,textarea');
+      const input = control.querySelector('input,textarea,select');
       input.dataset.stepField = key;
       if (key === 'seconds') {
         input.min = '1';
@@ -273,11 +292,22 @@ async function meditationEditor(id, initialKind = 'video', onSaved = meditationP
   const fields = [
     kindField,
     field('section', 'Section', row.section, 'text', meditationSections),
+    field('difficulty', 'Difficulty', row.difficulty || 'gentle', 'text', [
+      ['gentle', 'Gentle'],
+      ['beginner', 'Beginner'],
+      ['intermediate', 'Intermediate'],
+    ]),
     field('title_en', 'Title (English)', row.title_en),
     field('title_hi', 'Title (Hindi, optional)', row.title_hi),
+    field('sanskritName', 'Sanskrit name (optional)', row.sanskritName || ''),
     field('description_en', 'Description (English)', row.description_en, 'textarea'),
     field('description_hi', 'Description (Hindi, optional)', row.description_hi, 'textarea'),
+    field('impact_en', 'Impact on body (English, optional)', row.impact_en || '', 'textarea'),
+    field('impact_hi', 'Impact on body (Hindi, optional)', row.impact_hi || '', 'textarea'),
+    field('imageUrl', 'Cover / posture image URL or key (optional)', row.imageUrl || ''),
+    field('audioUrl', 'Guided audio HTTPS URL (optional)', row.audioUrl || '', 'url'),
     field('author', 'Creator / credit (optional)', row.author),
+    url,
     videoFields,
     practiceFields,
     field('sortOrder', 'Display order (lower numbers first)', row.sortOrder, 'number'),
@@ -294,7 +324,8 @@ async function meditationEditor(id, initialKind = 'video', onSaved = meditationP
       Object.assign(body, {
         kind,
         section: form.get('section'),
-        youtubeUrl: kind === 'video' ? String(form.get('youtubeUrl') ?? '').trim() : '',
+        difficulty: form.get('difficulty') || 'gentle',
+        youtubeUrl: String(form.get('youtubeUrl') ?? '').trim(),
         durationSeconds:
           kind === 'video' && form.get('durationSeconds')
             ? Number(form.get('durationSeconds'))

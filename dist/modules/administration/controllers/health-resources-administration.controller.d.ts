@@ -59,7 +59,10 @@ export declare class HealthResourcesAdministrationController {
                 reviewStatus: string;
                 visibility: string;
             } | undefined;
+            email: string | null;
             id: string;
+            created_at: Date;
+            updated_at: Date;
             record_key: string;
             name_en: string;
             name_hi: string;
@@ -73,8 +76,9 @@ export declare class HealthResourcesAdministrationController {
             phone: string | null;
             emergency_country_code: string;
             emergency_phone: string | null;
-            email: string | null;
             website: string | null;
+            image_url: string;
+            image_revision: string | null;
             is_verified: boolean;
             verified_at: Date | null;
             is_24_7: boolean;
@@ -85,8 +89,6 @@ export declare class HealthResourcesAdministrationController {
             latitude: number | null;
             longitude: number | null;
             is_active: boolean;
-            created_at: Date;
-            updated_at: Date;
         }[];
         page: number;
         hasNext: boolean;
@@ -113,7 +115,7 @@ export declare class HealthResourcesAdministrationController {
     deleteThumbnail(user: RequestUser, id: string): Promise<{
         removed: boolean;
     }>;
-    get(kind: string, id: string): Promise<{
+    get(kind: string, id: string): Promise<Omit<{
         id: string;
         record_key: string;
         name_en: string;
@@ -130,6 +132,9 @@ export declare class HealthResourcesAdministrationController {
         emergency_phone: string | null;
         email: string | null;
         website: string | null;
+        image_url: string;
+        image_data: Buffer<ArrayBufferLike> | null;
+        image_revision: string | null;
         is_verified: boolean;
         verified_at: Date | null;
         is_24_7: boolean;
@@ -142,7 +147,7 @@ export declare class HealthResourcesAdministrationController {
         is_active: boolean;
         created_at: Date;
         updated_at: Date;
-    }> | Promise<{
+    }, "image_data">> | Promise<{
         content_en: string;
         content_hi: string;
         id: string;
@@ -219,6 +224,9 @@ export declare class HealthResourcesAdministrationController {
         emergency_phone: string | null;
         email: string | null;
         website: string | null;
+        image_url: string;
+        image_data: Buffer<ArrayBufferLike> | null;
+        image_revision: string | null;
         is_verified: boolean;
         verified_at: Date | null;
         is_24_7: boolean;
@@ -264,6 +272,9 @@ export declare class HealthResourcesAdministrationController {
         emergency_phone: string | null;
         email: string | null;
         website: string | null;
+        image_url: string;
+        image_data: Buffer<ArrayBufferLike> | null;
+        image_revision: string | null;
         is_verified: boolean;
         verified_at: Date | null;
         is_24_7: boolean;

@@ -224,7 +224,7 @@ let HealthResourcesService = class HealthResourcesService {
         ]);
         return {
             ...(admin ? { summary, total: matchingTotal ?? 0 } : {}),
-            items: items.slice(0, q.limit).map(row => ({ ...row, ...(admin ? { adminStatus: (0, admin_status_1.directoryRowStatus)('blood-banks', row) } : {}) })),
+            items: items.slice(0, q.limit).map(row => ({ ...(0, provider_image_1.omitProviderImage)(row), ...(admin ? { adminStatus: (0, admin_status_1.directoryRowStatus)('blood-banks', row) } : {}) })),
             page: q.page,
             hasNext: items.length > q.limit,
             missingCoordinates: missing[0].count,
@@ -256,7 +256,7 @@ let HealthResourcesService = class HealthResourcesService {
                 .where((0, drizzle_orm_1.and)(...filters, (0, drizzle_orm_1.or)((0, drizzle_orm_1.isNull)(schema_1.bloodBankDirectoryEntries.latitude), (0, drizzle_orm_1.isNull)(schema_1.bloodBankDirectoryEntries.longitude)))),
         ]);
         return {
-            items: items.slice(0, q.limit).map((item) => ({ ...item.bank, distanceKm: item.distanceKm })),
+            items: items.slice(0, q.limit).map((item) => ({ ...(0, provider_image_1.omitProviderImage)(item.bank), distanceKm: item.distanceKm })),
             page: q.page,
             hasNext: items.length > q.limit,
             missingCoordinates: missing[0].count,
@@ -276,6 +276,20 @@ let HealthResourcesService = class HealthResourcesService {
             .limit(1);
         if (!row)
             throw new common_1.NotFoundException('Blood bank not found.');
+        return (0, provider_image_1.omitProviderImage)(row);
+    }
+    async bankImage(id) {
+        this.parse(zod_1.z.uuid(), id);
+        const [row] = await this.database.db
+            .select({
+            image_data: schema_1.bloodBankDirectoryEntries.image_data,
+            image_revision: schema_1.bloodBankDirectoryEntries.image_revision,
+        })
+            .from(schema_1.bloodBankDirectoryEntries)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.id, id), (0, drizzle_orm_1.eq)(schema_1.bloodBankDirectoryEntries.is_active, true)))
+            .limit(1);
+        if (!row?.image_data)
+            throw new common_1.NotFoundException('Blood bank image not found.');
         return row;
     }
     async save(kind, id, body) {

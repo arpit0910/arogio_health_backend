@@ -274,6 +274,59 @@ export declare const bloodBankDirectoryEntries: import("drizzle-orm/pg-core").Pg
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        image_url: import("drizzle-orm/pg-core").PgColumn<{
+            name: "image_url";
+            tableName: "blood_bank_directory_entries";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        image_data: import("drizzle-orm/pg-core").PgColumn<{
+            name: "image_data";
+            tableName: "blood_bank_directory_entries";
+            dataType: "custom";
+            columnType: "PgCustomColumn";
+            data: Buffer<ArrayBufferLike>;
+            driverParam: Buffer<ArrayBufferLike>;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            pgColumnBuilderBrand: "PgCustomColumnBuilderBrand";
+        }>;
+        image_revision: import("drizzle-orm/pg-core").PgColumn<{
+            name: "image_revision";
+            tableName: "blood_bank_directory_entries";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         is_verified: import("drizzle-orm/pg-core").PgColumn<{
             name: "is_verified";
             tableName: "blood_bank_directory_entries";

@@ -92,7 +92,10 @@ export declare class HealthResourcesService {
                 reviewStatus: string;
                 visibility: string;
             } | undefined;
+            email: string | null;
             id: string;
+            created_at: Date;
+            updated_at: Date;
             record_key: string;
             name_en: string;
             name_hi: string;
@@ -106,8 +109,9 @@ export declare class HealthResourcesService {
             phone: string | null;
             emergency_country_code: string;
             emergency_phone: string | null;
-            email: string | null;
             website: string | null;
+            image_url: string;
+            image_revision: string | null;
             is_verified: boolean;
             verified_at: Date | null;
             is_24_7: boolean;
@@ -118,8 +122,6 @@ export declare class HealthResourcesService {
             latitude: number | null;
             longitude: number | null;
             is_active: boolean;
-            created_at: Date;
-            updated_at: Date;
         }[];
         page: number;
         hasNext: boolean;
@@ -133,7 +135,10 @@ export declare class HealthResourcesService {
     nearby(body: unknown, reviewedOnly?: boolean): Promise<{
         items: {
             distanceKm: number;
+            email: string | null;
             id: string;
+            created_at: Date;
+            updated_at: Date;
             record_key: string;
             name_en: string;
             name_hi: string;
@@ -147,8 +152,9 @@ export declare class HealthResourcesService {
             phone: string | null;
             emergency_country_code: string;
             emergency_phone: string | null;
-            email: string | null;
             website: string | null;
+            image_url: string;
+            image_revision: string | null;
             is_verified: boolean;
             verified_at: Date | null;
             is_24_7: boolean;
@@ -159,8 +165,6 @@ export declare class HealthResourcesService {
             latitude: number | null;
             longitude: number | null;
             is_active: boolean;
-            created_at: Date;
-            updated_at: Date;
         }[];
         page: number;
         hasNext: boolean;
@@ -210,7 +214,10 @@ export declare class HealthResourcesService {
                 reviewStatus: string;
                 visibility: string;
             } | undefined;
+            email: string | null;
             id: string;
+            created_at: Date;
+            updated_at: Date;
             record_key: string;
             name_en: string;
             name_hi: string;
@@ -224,8 +231,9 @@ export declare class HealthResourcesService {
             phone: string | null;
             emergency_country_code: string;
             emergency_phone: string | null;
-            email: string | null;
             website: string | null;
+            image_url: string;
+            image_revision: string | null;
             is_verified: boolean;
             verified_at: Date | null;
             is_24_7: boolean;
@@ -236,8 +244,6 @@ export declare class HealthResourcesService {
             latitude: number | null;
             longitude: number | null;
             is_active: boolean;
-            created_at: Date;
-            updated_at: Date;
         }[];
         page: number;
         hasNext: boolean;
@@ -247,7 +253,7 @@ export declare class HealthResourcesService {
         } | undefined;
         total?: number | undefined;
     }>;
-    bank(id: string): Promise<{
+    bank(id: string): Promise<Omit<{
         id: string;
         record_key: string;
         name_en: string;
@@ -264,6 +270,9 @@ export declare class HealthResourcesService {
         emergency_phone: string | null;
         email: string | null;
         website: string | null;
+        image_url: string;
+        image_data: Buffer<ArrayBufferLike> | null;
+        image_revision: string | null;
         is_verified: boolean;
         verified_at: Date | null;
         is_24_7: boolean;
@@ -276,6 +285,10 @@ export declare class HealthResourcesService {
         is_active: boolean;
         created_at: Date;
         updated_at: Date;
+    }, "image_data">>;
+    bankImage(id: string): Promise<{
+        image_data: Buffer<ArrayBufferLike> | null;
+        image_revision: string | null;
     }>;
     save(kind: DirectoryKind, id: string | null, body: unknown): Promise<{
         id: string;
@@ -309,6 +322,9 @@ export declare class HealthResourcesService {
         emergency_phone: string | null;
         email: string | null;
         website: string | null;
+        image_url: string;
+        image_data: Buffer<ArrayBufferLike> | null;
+        image_revision: string | null;
         is_verified: boolean;
         verified_at: Date | null;
         is_24_7: boolean;

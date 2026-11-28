@@ -232,6 +232,27 @@
       "when": 1795488000032,
       "tag": "0032_remove_directory_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1795488000033,
+      "tag": "0033_yoga_postures_media_bilingual",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1795488000034,
+      "tag": "0034_departments_diseases_media_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1795488000035,
+      "tag": "0035_blood_bank_image_data",
+      "breakpoints": true
     }
   ]
 }

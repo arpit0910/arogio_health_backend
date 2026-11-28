@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.bloodBankDirectoryEntries = void 0;
+const binary_column_1 = require("../types/binary-column");
 const drizzle_orm_1 = require("drizzle-orm");
 const pg_core_1 = require("drizzle-orm/pg-core");
 exports.bloodBankDirectoryEntries = (0, pg_core_1.pgTable)('blood_bank_directory_entries', {
@@ -20,6 +21,9 @@ exports.bloodBankDirectoryEntries = (0, pg_core_1.pgTable)('blood_bank_directory
     emergency_phone: (0, pg_core_1.text)('emergency_phone'),
     email: (0, pg_core_1.text)('email'),
     website: (0, pg_core_1.text)('website'),
+    image_url: (0, pg_core_1.text)('image_url').notNull().default(''),
+    image_data: (0, binary_column_1.binaryColumn)('image_data'),
+    image_revision: (0, pg_core_1.uuid)('image_revision'),
     is_verified: (0, pg_core_1.boolean)('is_verified').notNull().default(false),
     verified_at: (0, pg_core_1.timestamp)('verified_at', { withTimezone: true }),
     is_24_7: (0, pg_core_1.boolean)('is_24_7').notNull().default(false),

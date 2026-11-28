@@ -17,6 +17,12 @@ export type MeditationStep = {
   instruction_en: string;
   instruction_hi: string;
   seconds: number;
+  sanskritName?: string;
+  imageUrl?: string;
+  impact_en?: string;
+  impact_hi?: string;
+  videoId?: string | null;
+  phase?: 'warmup' | 'main' | 'cooldown';
 };
 export const meditationLibraryItems = pgTable(
   'meditation_library_items',
@@ -32,6 +38,12 @@ export const meditationLibraryItems = pgTable(
     description_hi: text('description_hi').notNull().default(''),
     preparation_en: text('preparation_en').notNull().default(''),
     preparation_hi: text('preparation_hi').notNull().default(''),
+    impact_en: text('impact_en').notNull().default(''),
+    impact_hi: text('impact_hi').notNull().default(''),
+    sanskritName: text('sanskrit_name').notNull().default(''),
+    difficulty: text('difficulty').$type<'gentle' | 'beginner' | 'intermediate'>().notNull().default('gentle'),
+    imageUrl: text('image_url').notNull().default(''),
+    audioUrl: text('audio_url').notNull().default(''),
     author: text('author').notNull().default(''),
     videoId: text('video_id'),
     durationSeconds: integer('duration_seconds'),

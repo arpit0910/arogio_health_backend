@@ -249,6 +249,7 @@ export declare class DoctorsService {
         landmark: string;
         address_hi: string;
         website: string | null;
+        image_revision: string | null;
         latitude: number | null;
         longitude: number | null;
         image_alt: string;
@@ -261,7 +262,6 @@ export declare class DoctorsService {
         phone_2: string | null;
         summary_en: string;
         summary_hi: string;
-        image_revision: string | null;
         registration_number: string;
         medical_council: string;
         qualifications: string[];
@@ -285,6 +285,7 @@ export declare class DoctorsService {
         landmark: string;
         address_hi: string;
         website: string | null;
+        image_revision: string | null;
         latitude: number | null;
         longitude: number | null;
         image_alt: string;
@@ -297,7 +298,6 @@ export declare class DoctorsService {
         phone_2: string | null;
         summary_en: string;
         summary_hi: string;
-        image_revision: string | null;
         registration_number: string;
         medical_council: string;
         qualifications: string[];
@@ -320,6 +320,7 @@ export declare class DoctorsService {
         landmark: string;
         address_hi: string;
         website: string | null;
+        image_revision: string | null;
         latitude: number | null;
         longitude: number | null;
         image_alt: string;
@@ -332,7 +333,6 @@ export declare class DoctorsService {
         phone_2: string | null;
         summary_en: string;
         summary_hi: string;
-        image_revision: string | null;
         registration_number: string;
         medical_council: string;
         qualifications: string[];

@@ -19,6 +19,11 @@ export declare class DiseasesService {
             name_hi: string;
             description_en: string;
             description_hi: string;
+            symptoms_en: string;
+            symptoms_hi: string;
+            precautions_en: string;
+            precautions_hi: string;
+            icon: string;
             department_id: string;
             is_active: boolean;
             version: number;
@@ -42,6 +47,11 @@ export declare class DiseasesService {
         name_hi: string;
         description_en: string;
         description_hi: string;
+        symptoms_en: string;
+        symptoms_hi: string;
+        precautions_en: string;
+        precautions_hi: string;
+        icon: string;
         department_id: string;
         is_active: boolean;
         version: number;
@@ -60,7 +70,12 @@ export declare class DiseasesService {
         is_active: boolean;
         description_en: string;
         description_hi: string;
+        icon: string;
         version: number;
+        symptoms_en: string;
+        symptoms_hi: string;
+        precautions_en: string;
+        precautions_hi: string;
         department_id: string;
     }>;
     update(actorId: string, id: string, body: unknown): Promise<{
@@ -70,6 +85,11 @@ export declare class DiseasesService {
         name_hi: string;
         description_en: string;
         description_hi: string;
+        symptoms_en: string;
+        symptoms_hi: string;
+        precautions_en: string;
+        precautions_hi: string;
+        icon: string;
         department_id: string;
         is_active: boolean;
         version: number;

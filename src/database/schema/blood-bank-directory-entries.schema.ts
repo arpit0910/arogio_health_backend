@@ -1,3 +1,4 @@
+import { binaryColumn } from '../types/binary-column';
 import { sql } from 'drizzle-orm';
 import {
   boolean,
@@ -29,6 +30,9 @@ export const bloodBankDirectoryEntries = pgTable(
     emergency_phone: text('emergency_phone'),
     email: text('email'),
     website: text('website'),
+    image_url: text('image_url').notNull().default(''),
+    image_data: binaryColumn('image_data'),
+    image_revision: uuid('image_revision'),
     is_verified: boolean('is_verified').notNull().default(false),
     verified_at: timestamp('verified_at', { withTimezone: true }),
     is_24_7: boolean('is_24_7').notNull().default(false),

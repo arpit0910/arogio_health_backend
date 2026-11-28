@@ -337,6 +337,7 @@ export declare class HospitalsAdministrationController {
         landmark: string;
         address_hi: string;
         website: string | null;
+        image_revision: string | null;
         is_24_7: boolean | null;
         latitude: number | null;
         longitude: number | null;
@@ -361,7 +362,6 @@ export declare class HospitalsAdministrationController {
         specialties: string[];
         summary_en: string;
         summary_hi: string;
-        image_revision: string | null;
     }>;
     detail(id: string): Promise<{
         image_url: string | null;
@@ -423,6 +423,7 @@ export declare class HospitalsAdministrationController {
         landmark: string;
         address_hi: string;
         website: string | null;
+        image_revision: string | null;
         is_24_7: boolean | null;
         latitude: number | null;
         longitude: number | null;
@@ -447,7 +448,6 @@ export declare class HospitalsAdministrationController {
         specialties: string[];
         summary_en: string;
         summary_hi: string;
-        image_revision: string | null;
     }>;
     update(user: RequestUser, id: string, body: unknown): Promise<{
         published: boolean;
@@ -465,6 +465,7 @@ export declare class HospitalsAdministrationController {
         landmark: string;
         address_hi: string;
         website: string | null;
+        image_revision: string | null;
         is_24_7: boolean | null;
         latitude: number | null;
         longitude: number | null;
@@ -489,7 +490,6 @@ export declare class HospitalsAdministrationController {
         specialties: string[];
         summary_en: string;
         summary_hi: string;
-        image_revision: string | null;
     }>;
     remove(user: RequestUser, id: string, query: unknown): Promise<{
         deleted: boolean;

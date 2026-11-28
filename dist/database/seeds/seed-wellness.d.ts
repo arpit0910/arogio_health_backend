@@ -6,13 +6,27 @@ export declare function prepareWellnessSeed(): {
     title_en: string;
     title_hi: string;
     description_en: string;
+    description_hi: string;
     preparation_en: string;
+    preparation_hi: string;
+    impact_en: string;
+    impact_hi: string;
+    sanskritName: string;
+    difficulty: "gentle" | "beginner" | "intermediate";
+    imageUrl: string;
+    audioUrl: string;
     steps: {
         title_en: string;
         title_hi: string;
         instruction_en: string;
         instruction_hi: string;
         seconds: number;
+        sanskritName?: string | undefined;
+        imageUrl?: string | undefined;
+        impact_en?: string | undefined;
+        impact_hi?: string | undefined;
+        videoId?: string | null | undefined;
+        phase?: "warmup" | "main" | "cooldown" | undefined;
     }[];
     author: string;
     videoId: string | null;
@@ -20,7 +34,45 @@ export declare function prepareWellnessSeed(): {
     sortOrder: number;
     durationSeconds: number | null;
 }[];
-export declare function seedWellness<TQuery extends PgQueryResultHKT, TSchema extends Record<string, unknown>>(db: PgDatabase<TQuery, TSchema>): Promise<{
+export declare function prepareStructuredSessions(): {
+    id: string;
+    kind: "video" | "practice";
+    section: "meditation" | "yoga";
+    title_en: string;
+    title_hi: string;
+    description_en: string;
+    description_hi: string;
+    preparation_en: string;
+    preparation_hi: string;
+    impact_en: string;
+    impact_hi: string;
+    sanskritName: string;
+    difficulty: "gentle" | "beginner" | "intermediate";
+    imageUrl: string;
+    audioUrl: string;
+    steps: {
+        title_en: string;
+        title_hi: string;
+        instruction_en: string;
+        instruction_hi: string;
+        seconds: number;
+        sanskritName?: string | undefined;
+        imageUrl?: string | undefined;
+        impact_en?: string | undefined;
+        impact_hi?: string | undefined;
+        videoId?: string | null | undefined;
+        phase?: "warmup" | "main" | "cooldown" | undefined;
+    }[];
+    author: string;
+    videoId: string | null;
+    published: boolean;
+    sortOrder: number;
+    durationSeconds: number | null;
+}[];
+export declare function seedWellness<TQuery extends PgQueryResultHKT, TSchema extends Record<string, unknown>>(db: PgDatabase<TQuery, TSchema>, options?: {
+    includeSessions?: boolean;
+    publish?: boolean;
+}): Promise<{
     inserted: number;
     skipped: number;
 }>;

@@ -20,6 +20,11 @@ export const medicalDiseases = pgTable(
     name_hi: text('name_hi').notNull().default(''),
     description_en: text('description_en').notNull().default(''),
     description_hi: text('description_hi').notNull().default(''),
+    symptoms_en: text('symptoms_en').notNull().default(''),
+    symptoms_hi: text('symptoms_hi').notNull().default(''),
+    precautions_en: text('precautions_en').notNull().default(''),
+    precautions_hi: text('precautions_hi').notNull().default(''),
+    icon: text('icon').notNull().default('heart-pulse'),
     department_id: uuid('department_id')
       .notNull()
       .references(() => medicalDepartments.id),

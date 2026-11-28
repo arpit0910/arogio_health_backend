@@ -20,6 +20,9 @@ export class PublicHealthResourcesController {
   @Get('blood-banks') banks(@Query() query: unknown) {
     return this.directory.listBanks(query);
   }
+  @Get('blood-banks/:id/image') async bankImage(@Param('id') id: string, @Res() response: Response) {
+    sendProviderImage(response, await this.directory.bankImage(id));
+  }
   @Post('blood-banks/nearby') @HttpCode(200) @Header('Cache-Control', 'private, no-store') nearby(
     @Body() body: unknown,
   ) {

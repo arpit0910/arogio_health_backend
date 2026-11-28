@@ -20,6 +20,16 @@ export declare const meditationInput: z.ZodObject<{
     description_hi: z.ZodDefault<z.ZodString>;
     preparation_en: z.ZodDefault<z.ZodString>;
     preparation_hi: z.ZodDefault<z.ZodString>;
+    impact_en: z.ZodDefault<z.ZodString>;
+    impact_hi: z.ZodDefault<z.ZodString>;
+    sanskritName: z.ZodDefault<z.ZodString>;
+    difficulty: z.ZodDefault<z.ZodEnum<{
+        gentle: "gentle";
+        beginner: "beginner";
+        intermediate: "intermediate";
+    }>>;
+    imageUrl: z.ZodDefault<z.ZodString>;
+    audioUrl: z.ZodDefault<z.ZodString>;
     author: z.ZodDefault<z.ZodString>;
     youtubeUrl: z.ZodDefault<z.ZodString>;
     durationSeconds: z.ZodDefault<z.ZodNullable<z.ZodNumber>>;
@@ -29,6 +39,16 @@ export declare const meditationInput: z.ZodObject<{
         instruction_en: z.ZodString;
         instruction_hi: z.ZodDefault<z.ZodString>;
         seconds: z.ZodNumber;
+        sanskritName: z.ZodOptional<z.ZodString>;
+        imageUrl: z.ZodOptional<z.ZodString>;
+        impact_en: z.ZodOptional<z.ZodString>;
+        impact_hi: z.ZodOptional<z.ZodString>;
+        videoId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        phase: z.ZodOptional<z.ZodEnum<{
+            warmup: "warmup";
+            main: "main";
+            cooldown: "cooldown";
+        }>>;
     }, z.core.$strict>>>;
     repeat: z.ZodDefault<z.ZodNumber>;
     published: z.ZodDefault<z.ZodBoolean>;

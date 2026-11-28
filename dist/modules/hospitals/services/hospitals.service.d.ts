@@ -198,6 +198,7 @@ export declare class HospitalsService {
         landmark: string;
         address_hi: string;
         website: string | null;
+        image_revision: string | null;
         is_24_7: boolean | null;
         latitude: number | null;
         longitude: number | null;
@@ -222,7 +223,6 @@ export declare class HospitalsService {
         specialties: string[];
         summary_en: string;
         summary_hi: string;
-        image_revision: string | null;
     }>;
     update(actor: string, id: string, body: unknown): Promise<{
         published: boolean;
@@ -240,6 +240,7 @@ export declare class HospitalsService {
         landmark: string;
         address_hi: string;
         website: string | null;
+        image_revision: string | null;
         is_24_7: boolean | null;
         latitude: number | null;
         longitude: number | null;
@@ -264,7 +265,6 @@ export declare class HospitalsService {
         specialties: string[];
         summary_en: string;
         summary_hi: string;
-        image_revision: string | null;
     }>;
     review(actor: string, id: string, body: unknown): Promise<{
         published: boolean;
@@ -281,6 +281,7 @@ export declare class HospitalsService {
         landmark: string;
         address_hi: string;
         website: string | null;
+        image_revision: string | null;
         is_24_7: boolean | null;
         latitude: number | null;
         longitude: number | null;
@@ -305,7 +306,6 @@ export declare class HospitalsService {
         specialties: string[];
         summary_en: string;
         summary_hi: string;
-        image_revision: string | null;
     }>;
     visibility(actor: string, id: string, body: unknown): Promise<Omit<{
         id: string;
