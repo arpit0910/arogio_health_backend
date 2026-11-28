@@ -23,6 +23,11 @@ export function configureApplication(app: NestExpressApplication): void {
     }),
   );
   app.use(app.get(RequestActivityService).middleware);
+  app.useStaticAssets(join(process.cwd(), 'public', 'images'), {
+    prefix: '/images/',
+    index: false,
+    maxAge: '7d',
+  });
   app.useStaticAssets(join(__dirname, '..', 'modules', 'administration', 'public'), {
     prefix: '/admin-assets/',
     index: false,

@@ -23,6 +23,11 @@ function configureApplication(app) {
         contentSecurityPolicy: { directives: { imgSrc: ["'self'", 'data:', 'blob:', 'https:'] } },
     }));
     app.use(app.get(request_activity_service_1.RequestActivityService).middleware);
+    app.useStaticAssets((0, node_path_1.join)(process.cwd(), 'public', 'images'), {
+        prefix: '/images/',
+        index: false,
+        maxAge: '7d',
+    });
     app.useStaticAssets((0, node_path_1.join)(__dirname, '..', 'modules', 'administration', 'public'), {
         prefix: '/admin-assets/',
         index: false,
