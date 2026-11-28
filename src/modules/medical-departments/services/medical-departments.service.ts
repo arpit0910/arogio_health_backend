@@ -14,6 +14,7 @@ import {
   medicalDepartments as departments,
 } from '../../../database/schema';
 import { isUniqueViolation, getDatabaseErrorCode } from '../../../common/errors/database-error';
+import { omitProviderImage } from '../../../common/media/provider-image';
 import {
   departmentInput,
   departmentUpdate,
@@ -79,7 +80,7 @@ export class MedicalDepartmentsService {
       this.database.db.select({ count: count() }).from(departments).where(where),
     ]);
     return {
-      items,
+      items: items.map((row) => omitProviderImage(row)),
       total: totals[0]!.count,
       page: q.page,
       hasNext: q.page * q.limit < totals[0]!.count,
@@ -93,6 +94,16 @@ export class MedicalDepartmentsService {
       .where(and(eq(departments.id, id), admin ? undefined : eq(departments.is_active, true)))
       .limit(1);
     if (!row) throw new NotFoundException('Department not found.');
+    return omitProviderImage(row);
+  }
+  async departmentImage(id: string) {
+    this.parse(z.uuid(), id);
+    const [row] = await this.database.db
+      .select({ image_data: departments.image_data, image_revision: departments.image_revision })
+      .from(departments)
+      .where(and(eq(departments.id, id), eq(departments.is_active, true)))
+      .limit(1);
+    if (!row?.image_data) throw new NotFoundException('Department image not found.');
     return row;
   }
   private async audit(

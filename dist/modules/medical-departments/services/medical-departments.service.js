@@ -18,6 +18,7 @@ const zod_1 = require("zod");
 const database_service_1 = require("../../../database/database.service");
 const schema_1 = require("../../../database/schema");
 const database_error_1 = require("../../../common/errors/database-error");
+const provider_image_1 = require("../../../common/media/provider-image");
 const medical_departments_input_1 = require("../requests/medical-departments.input");
 const medical_departments_import_1 = require("../imports/medical-departments.import");
 const lock = (0, drizzle_orm_1.sql) `select pg_advisory_xact_lock(6389022)`;
@@ -61,7 +62,7 @@ let MedicalDepartmentsService = class MedicalDepartmentsService {
             this.database.db.select({ count: (0, drizzle_orm_1.count)() }).from(schema_1.medicalDepartments).where(where),
         ]);
         return {
-            items,
+            items: items.map((row) => (0, provider_image_1.omitProviderImage)(row)),
             total: totals[0].count,
             page: q.page,
             hasNext: q.page * q.limit < totals[0].count,
@@ -76,6 +77,17 @@ let MedicalDepartmentsService = class MedicalDepartmentsService {
             .limit(1);
         if (!row)
             throw new common_1.NotFoundException('Department not found.');
+        return (0, provider_image_1.omitProviderImage)(row);
+    }
+    async departmentImage(id) {
+        this.parse(zod_1.z.uuid(), id);
+        const [row] = await this.database.db
+            .select({ image_data: schema_1.medicalDepartments.image_data, image_revision: schema_1.medicalDepartments.image_revision })
+            .from(schema_1.medicalDepartments)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.medicalDepartments.id, id), (0, drizzle_orm_1.eq)(schema_1.medicalDepartments.is_active, true)))
+            .limit(1);
+        if (!row?.image_data)
+            throw new common_1.NotFoundException('Department image not found.');
         return row;
     }
     async audit(tx, actorId, action, targetId, metadata = {}) {

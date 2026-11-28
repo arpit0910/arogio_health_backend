@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.medicalDepartments = void 0;
+const binary_column_1 = require("../types/binary-column");
 const drizzle_orm_1 = require("drizzle-orm");
 const pg_core_1 = require("drizzle-orm/pg-core");
 exports.medicalDepartments = (0, pg_core_1.pgTable)('medical_departments', {
@@ -12,6 +13,8 @@ exports.medicalDepartments = (0, pg_core_1.pgTable)('medical_departments', {
     description_hi: (0, pg_core_1.text)('description_hi').notNull().default(''),
     icon: (0, pg_core_1.text)('icon').notNull().default('stethoscope'),
     image_url: (0, pg_core_1.text)('image_url').notNull().default(''),
+    image_data: (0, binary_column_1.binaryColumn)('image_data'),
+    image_revision: (0, pg_core_1.uuid)('image_revision'),
     sort_order: (0, pg_core_1.integer)('sort_order').notNull().default(0),
     is_active: (0, pg_core_1.boolean)('is_active').notNull().default(false),
     version: (0, pg_core_1.integer)('version').notNull().default(1),

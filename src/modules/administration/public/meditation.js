@@ -42,23 +42,28 @@ function meditationBody(row) {
       ]),
   );
 }
-async function meditationPage(current = 1, term = '', kind = '', selectedSection = '') {
-  reset('Meditation');
+const meditationOnlySections = meditationSections.filter(([key]) => key !== 'yoga');
+function yogaPage(current = 1, term = '', kind = '') {
+  return meditationPage(current, term, kind, 'yoga', 'yoga');
+}
+async function meditationPage(current = 1, term = '', kind = '', selectedSection = '', mode = 'meditation') {
+  const isYoga = mode === 'yoga' || selectedSection === 'yoga';
+  reset(isYoga ? 'Yoga' : 'Meditation');
   const rev = requestRevision,
-    section = panel('Your meditation library'),
+    section = panel(isYoga ? 'Your yoga library' : 'Your meditation library'),
     tools = el('form', null, 'toolbar');
   section.classList.add('meditation-library');
   const search = el('input');
   search.type = 'search';
   search.placeholder = 'Search titles';
   search.value = term;
-  search.setAttribute('aria-label', 'Search meditation content');
+  search.setAttribute('aria-label', isYoga ? 'Search yoga content' : 'Search meditation content');
   const type = el('select');
   type.setAttribute('aria-label', 'Content type');
   for (const [value, label] of [
     ['', 'All content'],
     ['video', 'Videos'],
-    ['practice', 'Guided practices'],
+    ['practice', isYoga ? 'Postures & sessions' : 'Guided practices'],
   ]) {
     const option = el('option', label);
     option.value = value;
@@ -67,31 +72,35 @@ async function meditationPage(current = 1, term = '', kind = '', selectedSection
   type.value = kind;
   const sectionFilter = el('select');
   sectionFilter.setAttribute('aria-label', 'Content section');
-  for (const [value, label] of [['', 'All sections'], ...meditationSections]) {
+  const availableSections = isYoga ? [['yoga', 'Yoga']] : [['', 'All meditation sections'], ...meditationOnlySections];
+  for (const [value, label] of availableSections) {
     const option = el('option', label);
     option.value = value;
     sectionFilter.append(option);
   }
-  sectionFilter.value = selectedSection;
-  const reload = (page = current) => meditationPage(page, term, kind, selectedSection);
+  sectionFilter.value = isYoga ? 'yoga' : selectedSection;
+  if (isYoga) sectionFilter.hidden = true;
+  const reload = (page = current) => meditationPage(page, term, kind, isYoga ? 'yoga' : selectedSection, mode);
   const submit = el('button', 'Search');
   submit.type = 'submit';
   tools.addEventListener('submit', (event) => {
     event.preventDefault();
-    void safely(() => meditationPage(1, search.value.trim(), type.value, sectionFilter.value));
+    void safely(() => meditationPage(1, search.value.trim(), type.value, isYoga ? 'yoga' : sectionFilter.value, mode));
   });
   tools.append(
     search,
     type,
     sectionFilter,
     submit,
-    button('Add video', () => meditationEditor(null, 'video')),
-    button('Add guided practice', () => meditationEditor(null, 'practice')),
+    button(isYoga ? 'Add yoga video' : 'Add video', () => meditationEditor(null, 'video', reload, isYoga ? 'yoga' : 'meditation')),
+    button(isYoga ? 'Add yoga posture / session' : 'Add guided practice', () => meditationEditor(null, 'practice', reload, isYoga ? 'yoga' : 'meditation')),
   );
   section.append(
     el(
       'p',
-      'Manage videos, affirmations and timed written practices. New content starts as a draft. Only published items appear in the app.',
+      isYoga
+        ? 'Manage yoga postures, structured sessions, body impact, and how-to videos. Only published items appear in the app.'
+        : 'Manage meditation, breathing, grounding, focus, rest, and affirmations. Only published items appear in the app.',
     ),
     tools,
   );
@@ -101,20 +110,22 @@ async function meditationPage(current = 1, term = '', kind = '', selectedSection
   try {
     const params = new URLSearchParams({ page: String(current), search: term });
     if (kind) params.set('kind', kind);
-    if (selectedSection) params.set('section', selectedSection);
+    if (isYoga) params.set('section', 'yoga');
+    else if (selectedSection) params.set('section', selectedSection);
     data = await api(`/admin/meditation?${params}`);
   } finally {
     section.setAttribute('aria-busy', 'false');
   }
   if (rev !== requestRevision) return;
+  const rows = isYoga ? data.items : data.items.filter((row) => row.section !== 'yoga');
   section.append(
-    el('p', `${number(data.total)} items`),
+    el('p', `${number(isYoga ? data.total : rows.length)} items${!isYoga && !selectedSection ? ' on this page (excluding Yoga)' : ''}`),
     el('p', 'Scroll the table sideways to reach all actions.', 'meditation-table-hint help'),
   );
   section.append(
     table(
       ['Title', 'Section', 'Type / duration', 'Status / order', 'Actions'],
-      data.items.map((row) => {
+      rows.map((row) => {
         const actions = el('div', null, 'actions');
         actions.append(
           button('Edit', () => meditationEditor(row.id, row.kind, reload)),
@@ -162,13 +173,13 @@ async function meditationPage(current = 1, term = '', kind = '', selectedSection
     section.append(el('p', 'No content found. Add a video or guided practice to get started.'));
   pager(section, current, data.hasNext, reload);
 }
-async function meditationEditor(id, initialKind = 'video', onSaved = meditationPage) {
+async function meditationEditor(id, initialKind = 'video', onSaved = meditationPage, defaultSection = '') {
   const rev = requestRevision;
   const row = id
     ? await api(`/admin/meditation/${id}`)
     : {
         kind: initialKind,
-        section: initialKind === 'video' ? 'affirmations' : 'meditation',
+        section: defaultSection || (initialKind === 'video' ? 'affirmations' : 'meditation'),
         steps: [],
         repeat: 1,
         published: false,

@@ -19,6 +19,7 @@ const exceljs_1 = require("exceljs");
 const jwt_auth_guard_1 = require("../../../common/authentication/jwt-auth.guard");
 const current_user_decorator_1 = require("../../../common/authentication/current-user.decorator");
 const administration_guard_1 = require("../../administration/guards/administration.guard");
+const provider_image_1 = require("../../../common/media/provider-image");
 const medical_departments_service_1 = require("../services/medical-departments.service");
 const medical_departments_import_1 = require("../imports/medical-departments.import");
 const upload = (0, platform_express_1.FileInterceptor)('file', {
@@ -32,6 +33,9 @@ let PublicMedicalDepartmentsController = class PublicMedicalDepartmentsControlle
     list(query) {
         return this.service.list(query);
     }
+    async image(id, response) {
+        (0, provider_image_1.sendProviderImage)(response, await this.service.departmentImage(id));
+    }
     detail(id) {
         return this.service.detail(id);
     }
@@ -44,6 +48,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], PublicMedicalDepartmentsController.prototype, "list", null);
+__decorate([
+    (0, common_1.Get)(':id/image'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], PublicMedicalDepartmentsController.prototype, "image", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

@@ -253,6 +253,13 @@
       "when": 1795488000035,
       "tag": "0035_blood_bank_image_data",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1795488000036,
+      "tag": "0036_department_image_data",
+      "breakpoints": true
     }
   ]
 }

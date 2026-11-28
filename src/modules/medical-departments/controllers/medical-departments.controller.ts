@@ -19,6 +19,7 @@ import { JwtAuthGuard } from '../../../common/authentication/jwt-auth.guard';
 import { CurrentUser } from '../../../common/authentication/current-user.decorator';
 import type { RequestUser } from '../../../common/authentication/request-user';
 import { SuperAdministratorGuard } from '../../administration/guards/administration.guard';
+import { sendProviderImage } from '../../../common/media/provider-image';
 import { MedicalDepartmentsService } from '../services/medical-departments.service';
 import { departmentHeaders } from '../imports/medical-departments.import';
 
@@ -30,6 +31,9 @@ export class PublicMedicalDepartmentsController {
   constructor(private readonly service: MedicalDepartmentsService) {}
   @Get() list(@Query() query: unknown) {
     return this.service.list(query);
+  }
+  @Get(':id/image') async image(@Param('id') id: string, @Res() response: Response) {
+    sendProviderImage(response, await this.service.departmentImage(id));
   }
   @Get(':id') detail(@Param('id') id: string) {
     return this.service.detail(id);

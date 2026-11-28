@@ -6,7 +6,7 @@ export declare class MedicalDepartmentsService {
     constructor(database: DatabaseService, config: ConfigService);
     private parse;
     list(query: unknown, admin?: boolean): Promise<{
-        items: {
+        items: Omit<{
             id: string;
             record_key: string;
             name_en: string;
@@ -15,17 +15,19 @@ export declare class MedicalDepartmentsService {
             description_hi: string;
             icon: string;
             image_url: string;
+            image_data: Buffer<ArrayBufferLike> | null;
+            image_revision: string | null;
             sort_order: number;
             is_active: boolean;
             version: number;
             created_at: Date;
             updated_at: Date;
-        }[];
+        }, "image_data">[];
         total: number;
         page: number;
         hasNext: boolean;
     }>;
-    detail(id: string, admin?: boolean): Promise<{
+    detail(id: string, admin?: boolean): Promise<Omit<{
         id: string;
         record_key: string;
         name_en: string;
@@ -34,11 +36,17 @@ export declare class MedicalDepartmentsService {
         description_hi: string;
         icon: string;
         image_url: string;
+        image_data: Buffer<ArrayBufferLike> | null;
+        image_revision: string | null;
         sort_order: number;
         is_active: boolean;
         version: number;
         created_at: Date;
         updated_at: Date;
+    }, "image_data">>;
+    departmentImage(id: string): Promise<{
+        image_data: Buffer<ArrayBufferLike> | null;
+        image_revision: string | null;
     }>;
     private audit;
     private write;
@@ -50,6 +58,8 @@ export declare class MedicalDepartmentsService {
         name_en: string;
         name_hi: string;
         image_url: string;
+        image_data: Buffer<ArrayBufferLike> | null;
+        image_revision: string | null;
         is_active: boolean;
         sort_order: number;
         description_en: string;
@@ -66,6 +76,8 @@ export declare class MedicalDepartmentsService {
         description_hi: string;
         icon: string;
         image_url: string;
+        image_data: Buffer<ArrayBufferLike> | null;
+        image_revision: string | null;
         sort_order: number;
         is_active: boolean;
         version: number;

@@ -429,6 +429,7 @@ async function show() {
   if (page === 'overview') return overview();
   if (page === 'people') return people();
   if (page === 'banners') return homeBanners();
+  if (page === 'yoga') return yogaPage();
   if (page === 'meditation') return meditationPage();
   if (page === 'departments') return departmentsPage(current, term, status);
   if (page === 'hospitals') return hospitalsPage(current, term, city, status);

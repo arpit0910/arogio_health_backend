@@ -138,6 +138,42 @@ export declare const medicalDepartments: import("drizzle-orm/pg-core").PgTableWi
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        image_data: import("drizzle-orm/pg-core").PgColumn<{
+            name: "image_data";
+            tableName: "medical_departments";
+            dataType: "custom";
+            columnType: "PgCustomColumn";
+            data: Buffer<ArrayBufferLike>;
+            driverParam: Buffer<ArrayBufferLike>;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            pgColumnBuilderBrand: "PgCustomColumnBuilderBrand";
+        }>;
+        image_revision: import("drizzle-orm/pg-core").PgColumn<{
+            name: "image_revision";
+            tableName: "medical_departments";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         sort_order: import("drizzle-orm/pg-core").PgColumn<{
             name: "sort_order";
             tableName: "medical_departments";

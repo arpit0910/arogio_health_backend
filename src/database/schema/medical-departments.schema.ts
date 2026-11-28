@@ -1,3 +1,4 @@
+import { binaryColumn } from '../types/binary-column';
 import { sql } from 'drizzle-orm';
 import {
   boolean,
@@ -21,6 +22,8 @@ export const medicalDepartments = pgTable(
     description_hi: text('description_hi').notNull().default(''),
     icon: text('icon').notNull().default('stethoscope'),
     image_url: text('image_url').notNull().default(''),
+    image_data: binaryColumn('image_data'),
+    image_revision: uuid('image_revision'),
     sort_order: integer('sort_order').notNull().default(0),
     is_active: boolean('is_active').notNull().default(false),
     version: integer('version').notNull().default(1),

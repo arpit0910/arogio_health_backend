@@ -12,20 +12,20 @@ const doctorGroups = [
       'consultation_fee',
       'languages',
     ],
-  ],
+  ], T
   [
-    'Location',
-    [
-      'address_line1',
-      'address_line2',
-      'landmark',
-      'address_hi',
-      'city',
-      'state',
-      'pincode',
-      'latitude',
-      'longitude',
-    ],
+  'Location',
+  [
+    'address_line1',
+    'address_line2',
+    'landmark',
+    'address_hi',
+    'city',
+    'state',
+    'pincode',
+    'latitude',
+    'longitude',
+  ],
   ],
   [
     'Contacts',
@@ -391,9 +391,9 @@ async function doctorEditor(id) {
               : null
             : ['qualifications', 'languages'].includes(key)
               ? text
-                  .split(';')
-                  .map((value) => value.trim())
-                  .filter(Boolean)
+                .split(';')
+                .map((value) => value.trim())
+                .filter(Boolean)
               : ['phone_1', 'phone_2', 'email', 'website'].includes(key)
                 ? text || null
                 : text;
